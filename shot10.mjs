@@ -1,0 +1,41 @@
+import { chromium } from 'playwright-core'
+const SHOT = 'C:/Users/gotsb/AppData/Local/Temp/claude/c--Users-gotsb-OneDrive-Desktop-diplom/54ee3a97-b209-497c-b043-f8e18c9dfa86/scratchpad/'
+const browser = await chromium.launch({ executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true })
+const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage()
+const errors = []
+page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message))
+await page.goto('http://localhost:5173', { waitUntil: 'domcontentloaded' })
+await page.waitForTimeout(4200)
+await page.click('button:has-text("Нэвтрэх")')
+await page.waitForTimeout(400)
+await page.click('.auth-tabs button:has-text("Бүртгүүлэх")')
+await page.fill('input[name="name"]', 'Уранбаяр')
+await page.fill('input[name="email"]', 't9@mail.com')
+await page.fill('input[name="pass"]', 'test123')
+await page.fill('input[name="pass2"]', 'test123')
+await page.click('button[type="submit"]')
+await page.waitForTimeout(1400)
+await page.fill('input[name="email"]', 't9@mail.com')
+await page.fill('input[name="pass"]', 'test123')
+await page.click('button[type="submit"]')
+await page.waitForTimeout(1500)
+// тохиргооны цэс нээх
+await page.click('.sp-icbtn[aria-label="Мэдрэхүйн тохиргоо"]')
+await page.waitForTimeout(500)
+await page.screenshot({ path: SHOT + 'v3-settings.png' })
+// хүчтэй болгож үзье
+await page.click('.sp-seg >> nth=0 >> button:has-text("Хүчтэй")')
+await page.waitForTimeout(300)
+// профайл нээх
+await page.click('.sp-avatar')
+await page.waitForTimeout(500)
+await page.screenshot({ path: SHOT + 'v3-profile.png' })
+await page.keyboard.press('Escape')
+// дуу тоглуулаад мэдрэх горим
+await page.click('.sp-card >> nth=2')
+await page.waitForTimeout(2000)
+await page.click('.sp-immbtn')
+await page.waitForTimeout(1200)
+await page.screenshot({ path: SHOT + 'v3-immersive.png' })
+console.log('errors:', errors.length ? errors : 'none')
+await browser.close()

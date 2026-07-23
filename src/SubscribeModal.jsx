@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { loadUsers, saveUsers } from './AuthModal.jsx'
+import { pushPayment } from './library.js'
 
 /* Stripe загварын сарын захиалга — ДЕМО горим.
    Туршилтын карт: 4242 4242 4242 4242, ирээдүйн дуусах хугацаа, дурын CVC.
@@ -53,6 +54,15 @@ export default function SubscribeModal({ open, onClose, user, onSubscribed }) {
       const users = loadUsers()
       const u = users.find((x) => x.email === user.email)
       if (u) { u.sub = sub; saveUsers(users) }
+      /* төлбөрийн түүхэнд бичнэ (billing хуудсанд харагдана) */
+      pushPayment(user.email, {
+        id: 'inv-' + Date.now(),
+        date: now.getTime(),
+        amount: PLAN.price,
+        plan: PLAN.name,
+        method: 'Карт •••• 4242',
+        status: 'Амжилттай',
+      })
       setBusy(false); setDone(true)
       onSubscribed(sub)
       setTimeout(onClose, 1400)

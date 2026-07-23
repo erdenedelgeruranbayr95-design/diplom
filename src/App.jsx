@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { initMedreh } from './engine.js'
-import AuthModal, { loadSession, saveSession, seedAdmin } from './AuthModal.jsx'
+import AuthModal, { loadSession, saveSession, seedAdmin, loadUsers, saveUsers } from './AuthModal.jsx'
+import { seedFeed } from './library.js'
 import AdminPanel from './AdminPanel.jsx'
 import Player from './Player.jsx'
 import SubscribeModal from './SubscribeModal.jsx'
@@ -12,7 +13,7 @@ import gal05 from './assets/gal-05.jpg'
 import gal06 from './assets/gal-06.jpg'
 
 export default function App() {
-  useEffect(() => { seedAdmin(); return initMedreh() }, [])
+  useEffect(() => { seedAdmin(); seedFeed(); return initMedreh() }, [])
 
   const [user, setUser] = useState(loadSession)
   const [authOpen, setAuthOpen] = useState(false)
@@ -31,6 +32,14 @@ export default function App() {
   const handleSubscribed = (sub) => {
     const nu = { ...user, sub }
     setUser(nu); saveSession(nu)
+  }
+  /* захиалга цуцлах — session + users store хоёуланд нь */
+  const handleCancelSub = () => {
+    const nu = { ...user, sub: { ...user.sub, active: false } }
+    setUser(nu); saveSession(nu)
+    const users = loadUsers()
+    const u = users.find((x) => x.email === user.email)
+    if (u) { u.sub = nu.sub; saveUsers(users) }
   }
 
   return (
@@ -55,7 +64,9 @@ export default function App() {
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuth={handleAuth} />
       <AdminPanel open={adminOpen} onClose={() => setAdminOpen(false)} currentUser={user} />
       <Player open={playerOpen} onClose={() => setPlayerOpen(false)} user={user}
-        subscribed={subscribed} onSubscribe={() => setSubOpen(true)} />
+        subscribed={subscribed} onSubscribe={() => setSubOpen(true)}
+        isAdmin={isAdmin} onAdmin={() => setAdminOpen(true)} onLogout={logout}
+        onCancelSub={handleCancelSub} />
       <SubscribeModal open={subOpen} onClose={() => setSubOpen(false)} user={user}
         onSubscribed={handleSubscribed} />
     </>
