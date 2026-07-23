@@ -119,7 +119,6 @@ function Hero() {
           <canvas id="slash"></canvas>
           <h1 id="wm">
             <em><i>М</i></em><em><i>Э</i></em><em><i>Д</i></em><em><i>Р</i></em><em><i>Э</i></em><em><i>Х</i></em>
-            <sup>®</sup>
           </h1>
         </div>
         <p className="sub">(Дуу авиаг чичиргээ, гэрэл, хөдөлгөөн болгон хөрвүүлнэ)</p>

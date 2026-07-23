@@ -7,49 +7,12 @@ import {
 } from './library.js'
 import { loadUsers } from './AuthModal.jsx'
 import Calibrate from './Calibrate.jsx'
-
-const PREVIEW_SEC = 30 // захиалгагүй хэрэглэгчийн урьдчилан сонсох хугацаа
-
-const VIB_LEVELS = [
-  { label: 'Сул', mult: .5 },
-  { label: 'Дунд', mult: 1 },
-  { label: 'Хүчтэй', mult: 1.7 },
-]
-const LIGHT_LEVELS = [
-  { label: 'Бүдэг', mult: .5 },
-  { label: 'Дунд', mult: 1 },
-  { label: 'Тод', mult: 1.7 },
-]
-const DEFAULT_PREFS = { vib: 1, light: 1, bands: { bass: true, mid: true, high: true }, calibrated: false }
-
-/* Төрөл бүрийн "мэдрэмжийн" профайл — дэлгэрэнгүй хуудсанд харагдана */
-const FEEL = {
-  'Электрон': { bass: 78, mid: 52, high: 38, pattern: [230, 80, 230], text: 'Гүн бас давамгайлсан — урт, хүчтэй чичиргээ голлон мэдрэгдэнэ. Гар дээр аажуу лугшилт болж бууна.' },
-  'Чилл': { bass: 46, mid: 62, high: 30, pattern: [140, 90, 140, 90], text: 'Зөөлөн дунд давтамжтай — намуухан, урсгал мэт хэмнэлтэй чичиргээ. Тайвшруулах мэдрэмж өгнө.' },
-  'Синт поп': { bass: 58, mid: 72, high: 55, pattern: [80, 50, 80, 50, 120], text: 'Тод аялгуу, дунд бүс голлосон — хэмнэлтэй, «дуулж» буй мэт чичиргээ мэдрэгдэнэ.' },
-  'Данс': { bass: 86, mid: 48, high: 52, pattern: [95, 55, 95, 55, 95], text: 'Хүчтэй тогтмол цохилт — бүжгийн хэмнэл шиг тэнцүү зайтай, эрчтэй чичиргээ. Хамгийн «мэдрэгддэг» төрөл.' },
-  'Эмбиент': { bass: 36, mid: 56, high: 46, pattern: [300, 220, 300], text: 'Уужим, удаан өөрчлөгдөх дуу — маш зөөлөн, урт долгион мэт чичиргээ. Гэрлийн пульс нь гол мэдрэмж.' },
-  'Электрон рок': { bass: 72, mid: 68, high: 62, pattern: [60, 40, 60, 40, 130], text: 'Бүх бүс идэвхтэй — богино түргэн + урт хүчтэй чичиргээ ээлжилнэ. Эрч хүчтэй мэдрэмж.' },
-}
-const FEEL_DEFAULT = { bass: 55, mid: 55, high: 45, pattern: [120, 70, 120], text: 'Олон төрлийн давтамж холилдсон — дунд зэргийн хэмнэлтэй чичиргээ мэдрэгдэнэ.' }
-
-function fmt(t) {
-  if (!isFinite(t)) return '0:00'
-  const m = Math.floor(t / 60), s = Math.floor(t % 60)
-  return m + ':' + String(s).padStart(2, '0')
-}
-function fmtDur(sec) {
-  if (sec < 60) return sec + ' сек'
-  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60)
-  return h > 0 ? h + ' цаг ' + m + ' мин' : m + ' мин'
-}
-function relTime(ts) {
-  const d = Math.floor((Date.now() - ts) / 60000)
-  if (d < 1) return 'дөнгөж сая'
-  if (d < 60) return d + ' мин өмнө'
-  if (d < 1440) return Math.floor(d / 60) + ' цаг өмнө'
-  return Math.floor(d / 1440) + ' өдрийн өмнө'
-}
+import { PREVIEW_SEC, VIB_LEVELS, LIGHT_LEVELS, DEFAULT_PREFS, FEEL, FEEL_DEFAULT, ICONS } from './player/constants.jsx'
+import { fmt, fmtDur, relTime } from './player/format.js'
+import StatCard from './player/StatCard.jsx'
+import BackBar from './player/BackBar.jsx'
+import { LikeBtn, SaveBtn, InfoBtn } from './player/TrackButtons.jsx'
+import SideList from './player/SideList.jsx'
 
 export default function Player({ open, onClose, user, subscribed, onSubscribe, isAdmin, onAdmin, onLogout, onCancelSub }) {
   const [view, setView] = useState('home') // home | stats | billing | help | detail
@@ -431,92 +394,6 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
   const initial = (user?.name || '?').trim().charAt(0).toUpperCase()
   const renewDate = user?.sub?.renews ? new Date(user.sub.renews).toLocaleDateString('mn-MN') : null
 
-  /* ---------- статистикийн icon-ууд (SVG) ---------- */
-  const ICONS = {
-    users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>,
-    gem: <><path d="M6 3h12l4 6-10 12L2 9l4-6z" /><path d="M2 9h20" /><path d="m12 21-4-12 2.5-6" /><path d="m12 21 4-12-2.5-6" /></>,
-    money: <><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="3" /><path d="M6 10v4M18 10v4" /></>,
-    music: <><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></>,
-    phones: <><path d="M3 14v-2a9 9 0 0 1 18 0v2" /><rect x="3" y="14" width="4" height="6" rx="2" /><rect x="17" y="14" width="4" height="6" rx="2" /></>,
-    vibrate: <><rect x="8" y="3" width="8" height="18" rx="2" /><path d="M3 9v6M21 9v6" /><path d="M5.5 10.5v3M18.5 10.5v3" /></>,
-    star: <path d="m12 2 3 6.6 7 .9-5.2 4.8 1.4 7-6.2-3.6L5.8 21l1.4-7L2 9.5l7-.9z" />,
-    horn: <><path d="m3 10 16-5v14L3 14v-4z" /><path d="M7 14.5V18a2 2 0 0 0 4 0v-2.3" /><path d="M21 9v6" /></>,
-  }
-  function StatCard({ icon, color, value, label }) {
-    return (
-      <div className="st-card">
-        <span className={'st-ico ' + color} aria-hidden="true">
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-            {icon}
-          </svg>
-        </span>
-        <span className="st-meta">
-          <b>{value}</b>
-          <span className="mono">{label}</span>
-        </span>
-      </div>
-    )
-  }
-
-  /* ---------- жижиг компонентууд ---------- */
-  function LikeBtn({ id, row }) {
-    const on = likes.includes(id)
-    return (
-      <span className={'sp-like' + (row ? ' sp-like-row' : '') + (on ? ' on' : '')}
-        role="button" tabIndex={0}
-        aria-label={on ? 'Дуртайгаас хасах' : 'Дуртайд нэмэх'}
-        onClick={(e) => { e.stopPropagation(); toggleLike(id) }}
-        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleLike(id) } }}
-      >{on ? '♥' : '♡'}</span>
-    )
-  }
-  function SaveBtn({ id, row }) {
-    const on = saves.includes(id)
-    return (
-      <span className={'sp-like' + (row ? ' sp-like-row sp-save-row' : ' sp-save') + (on ? ' on' : '')}
-        role="button" tabIndex={0}
-        aria-label={on ? 'Хадгалснаас хасах' : 'Хадгалах'}
-        onClick={(e) => { e.stopPropagation(); toggleSave(id) }}
-        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleSave(id) } }}
-      >
-        <svg width={row ? 14 : 15} height={row ? 14 : 15} viewBox="0 0 24 24" fill={on ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
-          <path d="M6 3h12v18l-6-3.6L6 21V3z" />
-        </svg>
-      </span>
-    )
-  }
-  function InfoBtn({ t, row }) {
-    return (
-      <span className={'sp-like sp-info' + (row ? ' sp-like-row' : '')}
-        role="button" tabIndex={0} aria-label={t.title + ' — дэлгэрэнгүй'}
-        onClick={(e) => { e.stopPropagation(); openDetail(t) }}
-        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); openDetail(t) } }}
-      >ⓘ</span>
-    )
-  }
-  function SideList({ tracks }) {
-    return (
-      <div className="sp-side-recent">
-        {tracks.map((t) => (
-          <button key={t.id} className={'sp-rcard' + (cur?.id === t.id ? ' on' : '')} onClick={() => playTrack(t)}>
-            <img src={t.cover} alt="" />
-            <span>{t.title}</span>
-            {cur?.id === t.id && playing
-              ? <span className="pl-eq sp-req" aria-hidden="true"><u></u><u></u><u></u></span>
-              : <i aria-hidden="true">▶</i>}
-          </button>
-        ))}
-      </div>
-    )
-  }
-  function BackBar({ title }) {
-    return (
-      <div className="sp-backbar">
-        <button className="sp-back" onClick={() => setView('home')}>← Буцах</button>
-        <h2 className="sp-h" style={{ margin: 0 }}>{title}</h2>
-      </div>
-    )
-  }
 
   /* ---------- дэд хуудсууд ---------- */
   function renderStats() {
@@ -533,7 +410,7 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
     const maxDay = Math.max(1, ...days.map((d) => d.sec))
     return (
       <>
-        <BackBar title="Миний статистик" />
+        <BackBar title="Миний статистик" onBack={() => setView('home')} />
         <div className="st-cards">
           <StatCard icon={ICONS.phones} color="c-aqua" value={fmtDur(s.total)} label="Нийт сонссон" />
           <StatCard icon={ICONS.vibrate} color="c-gold" value={s.vib.toLocaleString()} label="Мэдэрсэн чичиргээ" />
@@ -579,7 +456,7 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
     const daysLeft = user?.sub?.renews ? Math.max(0, Math.ceil((user.sub.renews - Date.now()) / 86400000)) : 0
     return (
       <>
-        <BackBar title="Захиалгын удирдлага" />
+        <BackBar title="Захиалгын удирдлага" onBack={() => setView('home')} />
         <div className={'bil-plan' + (active || isAdmin ? ' pro' : '')}>
           <div>
             <span className="mono">Идэвхтэй план</span>
@@ -646,7 +523,7 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
     ]
     return (
       <>
-        <BackBar title="Тусламж — Хэрхэн ашиглах вэ?" />
+        <BackBar title="Тусламж — Хэрхэн ашиглах вэ?" onBack={() => setView('home')} />
         <div className="hlp-grid">
           {items.map((x) => (
             <div className="hlp-card" key={x.t}>
@@ -675,7 +552,7 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
     const isCur = cur?.id === t.id
     return (
       <>
-        <BackBar title="Дууны дэлгэрэнгүй" />
+        <BackBar title="Дууны дэлгэрэнгүй" onBack={() => setView('home')} />
         <div className="dt-wrap">
           <div className="dt-left">
             <img className="dt-cover" src={t.cover} alt={t.title} />
@@ -833,9 +710,9 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
               <button key={t.id} className={'sp-card' + (isCur ? ' on' : '')} onClick={() => playTrack(t)}>
                 <span className="sp-cover">
                   <img src={t.cover} alt="" loading="lazy" />
-                  <LikeBtn id={t.id} />
-                  <SaveBtn id={t.id} />
-                  <InfoBtn t={t} />
+                  <LikeBtn id={t.id} active={likes.includes(t.id)} onToggle={() => toggleLike(t.id)} />
+                  <SaveBtn id={t.id} active={saves.includes(t.id)} onToggle={() => toggleSave(t.id)} />
+                  <InfoBtn t={t} onInfo={() => openDetail(t)} />
                   <span className={'sp-playbtn' + (isCur && playing ? ' show' : '')} aria-hidden="true">
                     {isCur && playing ? '⏸' : '▶'}
                   </span>
@@ -865,9 +742,9 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
                       <i>{t.artist}</i>
                     </span>
                     <span className="sp-lgenre mono">{t.genre}</span>
-                    <LikeBtn id={t.id} row />
-                    <SaveBtn id={t.id} row />
-                    <InfoBtn t={t} row />
+                    <LikeBtn id={t.id} row active={likes.includes(t.id)} onToggle={() => toggleLike(t.id)} />
+                    <SaveBtn id={t.id} row active={saves.includes(t.id)} onToggle={() => toggleSave(t.id)} />
+                    <InfoBtn t={t} row onInfo={() => openDetail(t)} />
                     <span className="sp-lact" aria-hidden="true">
                       {isCur && playing
                         ? <span className="pl-eq" style={{ height: 14 }}><u></u><u></u><u></u></span>
@@ -1090,7 +967,7 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
               </span>
               <p>Дууны <b>♥ зүрхэн</b> дээр дарахад дуртай дуу чинь энд цуглана</p>
             </div>
-          ) : <SideList tracks={likedTracks} />}
+          ) : <SideList tracks={likedTracks} curId={cur?.id} playing={playing} onPlay={playTrack} />}
 
           <span className="mono sp-side-h">Хадгалсан</span>
           {savedTracks.length === 0 ? (
@@ -1102,12 +979,12 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
               </span>
               <p>Дууг <b>🔖 хадгалах</b> товчоор тэмдэглээд дараа нь сонсоорой</p>
             </div>
-          ) : <SideList tracks={savedTracks} />}
+          ) : <SideList tracks={savedTracks} curId={cur?.id} playing={playing} onPlay={playTrack} />}
 
           {recentTracks.length > 0 && (
             <>
               <span className="mono sp-side-h">Саяхан сонссон</span>
-              <SideList tracks={recentTracks} />
+              <SideList tracks={recentTracks} curId={cur?.id} playing={playing} onPlay={playTrack} />
             </>
           )}
         </aside>
