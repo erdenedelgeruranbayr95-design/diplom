@@ -24,6 +24,23 @@ function scramble(s) {
   return btoa(unescape(encodeURIComponent(s + '·medreh')))
 }
 
+/* ---- профайл засах туслахууд (scramble-ийг энд нууц үлдээнэ) ---- */
+export function updateUserFields(email, fields) {
+  const users = loadUsers()
+  const u = users.find((x) => x.email === email)
+  if (!u) return false
+  Object.assign(u, fields)
+  saveUsers(users)
+  return true
+}
+export function verifyPassword(email, pass) {
+  const u = loadUsers().find((x) => x.email === email)
+  return !!u && u.pass === scramble(pass)
+}
+export function setPassword(email, newPass) {
+  return updateUserFields(email, { pass: scramble(newPass) })
+}
+
 export function loadSession() {
   try { return JSON.parse(localStorage.getItem(SESSION_KEY)) } catch { return null }
 }
@@ -104,7 +121,8 @@ export default function AuthModal({ open, onClose, onAuth }) {
       setTimeout(() => { setMode('login'); setOk('Бүртгэл үүслээ — имэйл, нууц үгээрээ нэвтэрнэ үү') }, 900)
     } else {
       const u = users.find((x) => x.email === email)
-      if (!u || u.pass !== scramble(pass)) { setErr('Имэйл эсвэл нууц үг буруу байна'); return }
+      if (!u) { setErr('Энэ имэйл энэ төхөөрөмжид бүртгэлгүй байна. Эхлээд бүртгүүлнэ үү.'); return }
+      if (u.pass !== scramble(pass)) { setErr('Нууц үг буруу байна'); return }
       onAuth({ name: u.name, email: u.email, role: u.role || 'user', sub: u.sub || null })
       setOk('Тавтай морил, ' + u.name + '!')
       setTimeout(onClose, 700)

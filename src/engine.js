@@ -208,11 +208,16 @@ export function initMedreh() {
     ticking = false
     if (!reduced) parx.forEach((el) => { el.style.transform = 'translateY(' + (sy * +el.dataset.sp) + 'px)' })
     if (!reduced && galOuter) {
-      const r = galOuter.getBoundingClientRect(), tot = galOuter.offsetHeight - innerHeight
-      const p = Math.min(1, Math.max(0, -r.top / tot)), max = track.scrollWidth - innerWidth + 64
-      track.style.transform = 'translateX(' + (-p * Math.max(0, max)) + 'px)'
-      galbar.style.width = (p * 100) + '%'
-      galno.textContent = '0' + Math.min(6, Math.floor(p * 6) + 1)
+      const tot = galOuter.offsetHeight - innerHeight
+      if (tot > 0) {
+        const r = galOuter.getBoundingClientRect()
+        const p = Math.min(1, Math.max(0, -r.top / tot)), max = track.scrollWidth - innerWidth + 64
+        track.style.transform = 'translateX(' + (-p * Math.max(0, max)) + 'px)'
+        galbar.style.width = (p * 100) + '%'
+        galno.textContent = '0' + Math.min(6, Math.floor(p * 6) + 1)
+      } else {
+        track.style.transform = 'none'
+      }
     }
   }
   on(window, 'scroll', onScroll, { passive: true })

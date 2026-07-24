@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { initMedreh } from './engine.js'
-import AuthModal, { loadSession, saveSession, seedAdmin, loadUsers, saveUsers } from './AuthModal.jsx'
+import AuthModal, { seedAdmin } from './AuthModal.jsx'
 import { seedFeed } from './library.js'
 import AdminPanel from './AdminPanel.jsx'
 import Player from './Player.jsx'
 import SubscribeModal from './SubscribeModal.jsx'
+import { useAuth } from './auth/AuthContext.jsx'
 import gal01 from './assets/gal-01.jpg'
 import gal02 from './assets/gal-02.jpg'
 import gal03 from './assets/gal-03.jpg'
@@ -15,32 +16,22 @@ import gal06 from './assets/gal-06.jpg'
 export default function App() {
   useEffect(() => { seedAdmin(); seedFeed(); return initMedreh() }, [])
 
-  const [user, setUser] = useState(loadSession)
+  /* auth төлөв AuthContext-оос (session нэг эх сурвалж) */
+  const { user, isAdmin, subscribed, login, logout: authLogout, setSub, cancelSub } = useAuth()
+
   const [authOpen, setAuthOpen] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
   const [playerOpen, setPlayerOpen] = useState(false)
   const [subOpen, setSubOpen] = useState(false)
 
-  const handleAuth = (u) => { setUser(u); saveSession(u); setPlayerOpen(true) }
+  const handleAuth = (u) => { login(u); setPlayerOpen(true) }
   const logout = () => {
-    setUser(null); saveSession(null)
+    authLogout()
     setAdminOpen(false); setPlayerOpen(false); setSubOpen(false)
   }
-  const isAdmin = user?.role === 'admin'
-  const subscribed = isAdmin || !!user?.sub?.active
   const openPlayer = () => { user ? setPlayerOpen(true) : setAuthOpen(true) }
-  const handleSubscribed = (sub) => {
-    const nu = { ...user, sub }
-    setUser(nu); saveSession(nu)
-  }
-  /* захиалга цуцлах — session + users store хоёуланд нь */
-  const handleCancelSub = () => {
-    const nu = { ...user, sub: { ...user.sub, active: false } }
-    setUser(nu); saveSession(nu)
-    const users = loadUsers()
-    const u = users.find((x) => x.email === user.email)
-    if (u) { u.sub = nu.sub; saveUsers(users) }
-  }
+  const handleSubscribed = (sub) => setSub(sub)
+  const handleCancelSub = () => cancelSub()
 
   return (
     <>
@@ -94,7 +85,7 @@ function Hero() {
 
       <div className="fc fc1" data-sp="0.12">
         <div className="fr">
-          <canvas data-shot="stage" data-seed="11"></canvas>
+          <img src={gal02} alt="Концертын танхим, гэрэлтсэн тайз" loading="lazy" />
           <div className="tint t-warm"></div>
         </div>
         <span className="cap">Тайз / 40 Hz</span>
@@ -154,13 +145,16 @@ function Dock({ user, isAdmin, onLogin, onLogout, onAdmin, onPlayer }) {
         <a href="#top" className="nav-logo keep">МЭДРЭХ<sup>®</sup></a>
       </div>
 
-      <div className="nav-links">
-        <a href="#top" className="keep">Нүүр</a>
-        <a href="#feel">Мэдрэх</a>
-        <a href="#gal">Галерей</a>
-        <a href="#how">Хэрхэн</a>
-        <button className="nav-play keep" onClick={onPlayer}>♫ Тоглуулагч</button>
-      </div>
+      {/* цэс — зөвхөн нэвтэрсний дараа харагдана */}
+      {user && (
+        <div className="nav-links">
+          <a href="#top" className="keep">Нүүр</a>
+          <a href="#feel">Мэдрэх</a>
+          <a href="#gal">Галерей</a>
+          <a href="#how">Хэрхэн</a>
+          <button className="nav-play keep" onClick={onPlayer}>♫ Тоглуулагч</button>
+        </div>
+      )}
 
       <div className="nav-right">
         {isAdmin && (

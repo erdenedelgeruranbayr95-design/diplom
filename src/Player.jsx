@@ -3,16 +3,23 @@ import { TRACKS } from './tracks.js'
 import { idbGet } from './idb.js'
 import {
   loadCustomMeta, loadFeed, getReadTs, markFeedRead,
-  loadStats, saveStats, todayKey, loadPayments, pushFeed,
+  loadStats, saveStats, todayKey,
 } from './library.js'
-import { loadUsers } from './AuthModal.jsx'
 import Calibrate from './Calibrate.jsx'
-import { PREVIEW_SEC, VIB_LEVELS, LIGHT_LEVELS, DEFAULT_PREFS, FEEL, FEEL_DEFAULT, ICONS } from './player/constants.jsx'
-import { fmt, fmtDur, relTime } from './player/format.js'
-import StatCard from './player/StatCard.jsx'
+import { PREVIEW_SEC, VIB_LEVELS, LIGHT_LEVELS, DEFAULT_PREFS, FEEL, FEEL_DEFAULT } from './player/constants.jsx'
+import { fmt, relTime } from './player/format.js'
 import BackBar from './player/BackBar.jsx'
-import { LikeBtn, SaveBtn, InfoBtn } from './player/TrackButtons.jsx'
 import SideList from './player/SideList.jsx'
+import ProfileView from './player/ProfileView.jsx'
+import DevicesView from './player/DevicesView.jsx'
+import PlaylistsView from './player/PlaylistsView.jsx'
+import HelpView from './player/HelpView.jsx'
+import DetailView from './player/DetailView.jsx'
+import StatsView from './player/StatsView.jsx'
+import AdminView from './player/AdminView.jsx'
+import ImmersiveMode from './player/ImmersiveMode.jsx'
+import BillingView from './player/BillingView.jsx'
+import HomeView from './player/HomeView.jsx'
 
 export default function Player({ open, onClose, user, subscribed, onSubscribe, isAdmin, onAdmin, onLogout, onCancelSub }) {
   const [view, setView] = useState('home') // home | stats | billing | help | detail
@@ -38,8 +45,6 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
   const [readTs, setReadTs] = useState(0)
   const [immersive, setImmersive] = useState(false)
   const [calibOpen, setCalibOpen] = useState(false)
-  const [bcast, setBcast] = useState('')       // админы зарлал
-  const [bcastOk, setBcastOk] = useState('')
   const [, setUsersTick] = useState(0)         // хэрэглэгч өөрчлөгдөхөд дахин зурна
 
   const audioRef = useRef(null)
@@ -395,381 +400,6 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
   const renewDate = user?.sub?.renews ? new Date(user.sub.renews).toLocaleDateString('mn-MN') : null
 
 
-  /* ---------- дэд хуудсууд ---------- */
-  function renderStats() {
-    const s = statsRef.current || loadStats(email)
-    const topGenre = Object.entries(s.byGenre).sort((a, b) => b[1] - a[1])[0]
-    const topTracks = Object.entries(s.byTrack).sort((a, b) => b[1] - a[1]).slice(0, 3)
-      .map(([id, sec]) => ({ t: byId(isNaN(+id) ? id : +id), sec })).filter((x) => x.t)
-    const days = []
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(); d.setDate(d.getDate() - i)
-      const k = todayKey(d)
-      days.push({ label: ['Ня', 'Да', 'Мя', 'Лх', 'Пү', 'Ба', 'Бя'][d.getDay()], sec: s.days[k] || 0, today: i === 0 })
-    }
-    const maxDay = Math.max(1, ...days.map((d) => d.sec))
-    return (
-      <>
-        <BackBar title="Миний статистик" onBack={() => setView('home')} />
-        <div className="st-cards">
-          <StatCard icon={ICONS.phones} color="c-aqua" value={fmtDur(s.total)} label="Нийт сонссон" />
-          <StatCard icon={ICONS.vibrate} color="c-gold" value={s.vib.toLocaleString()} label="Мэдэрсэн чичиргээ" />
-          <StatCard icon={ICONS.music} color="c-purple" value={Object.keys(s.byTrack).length} label="Сонссон дуу" />
-          <StatCard icon={ICONS.star} color="c-rose" value={topGenre ? topGenre[0] : '—'} label="Топ төрөл" />
-        </div>
-
-        <h3 className="st-h">Сүүлийн 7 хоног</h3>
-        <div className="st-chart">
-          {days.map((d, i) => (
-            <div className="st-col" key={i}>
-              <span className="st-val mono">{d.sec ? fmtDur(d.sec) : ''}</span>
-              <i className={d.today ? 'today' : ''} style={{ height: Math.max(3, (d.sec / maxDay) * 100) + '%' }}></i>
-              <span className={'mono' + (d.today ? ' st-today' : '')}>{d.label}</span>
-            </div>
-          ))}
-        </div>
-
-        {topTracks.length > 0 && (
-          <>
-            <h3 className="st-h">Хамгийн их сонссон</h3>
-            <div className="sp-list">
-              {topTracks.map(({ t, sec }, i) => (
-                <button key={t.id} className="sp-lrow st-toprow" onClick={() => playTrack(t)}>
-                  <span className="sp-lno mono">{'0' + (i + 1)}</span>
-                  <img className="sp-lthumb" src={t.cover} alt="" />
-                  <span className="sp-lmeta"><b>{t.title}</b><i>{t.artist}</i></span>
-                  <span className="sp-lgenre mono">{fmtDur(sec)}</span>
-                  <span className="sp-lact" aria-hidden="true">▶</span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-        {s.total === 0 && <p className="adm-empty">Дуу сонсож эхлэхэд статистик энд цуглана 🎶</p>}
-      </>
-    )
-  }
-
-  function renderBilling() {
-    const payments = loadPayments(email)
-    const active = user?.sub?.active
-    const daysLeft = user?.sub?.renews ? Math.max(0, Math.ceil((user.sub.renews - Date.now()) / 86400000)) : 0
-    return (
-      <>
-        <BackBar title="Захиалгын удирдлага" onBack={() => setView('home')} />
-        <div className={'bil-plan' + (active || isAdmin ? ' pro' : '')}>
-          <div>
-            <span className="mono">Идэвхтэй план</span>
-            <b>{isAdmin ? 'Админ — бүх эрх' : active ? 'МЭДРЭХ PRO' : user?.sub ? 'PRO (цуцлагдсан)' : 'Үнэгүй горим'}</b>
-            <p>
-              {isAdmin ? 'Админ эрхтэй тул төлбөр шаардлагагүй.'
-                : active ? `Дараагийн төлбөр: ${renewDate} — ${daysLeft} хоногийн дараа · 9'900₮`
-                  : user?.sub ? `${renewDate} хүртэл эрх хадгалагдана, дараа нь үнэгүй горимд шилжинэ.`
-                    : `Дуу тус бүрээс ${PREVIEW_SEC} секунд сонсох эрхтэй.`}
-            </p>
-            {active && !isAdmin && (
-              <div className="bil-count" aria-label="Дараагийн төлбөр хүртэл">
-                <i style={{ width: Math.min(100, ((30 - daysLeft) / 30) * 100) + '%' }}></i>
-              </div>
-            )}
-          </div>
-          <div className="bil-actions">
-            {!isAdmin && active && (
-              <button className="sp-prof-btn danger" onClick={() => {
-                if (confirm('PRO захиалгаа цуцлах уу? ' + renewDate + ' хүртэл эрх чинь хадгалагдана.')) onCancelSub()
-              }}>Захиалга цуцлах</button>
-            )}
-            {!isAdmin && !active && (
-              <button className="sp-prof-btn accent" onClick={onSubscribe}>
-                {user?.sub ? 'Сэргээх — 9\'900₮/сар' : 'PRO болох — 9\'900₮/сар'}
-              </button>
-            )}
-          </div>
-        </div>
-
-        <h3 className="st-h">Төлбөрийн түүх</h3>
-        {payments.length === 0 ? (
-          <p className="adm-empty">Төлбөрийн түүх хоосон байна</p>
-        ) : (
-          <div className="bil-table">
-            <div className="bil-row bil-head">
-              <span className="mono">Огноо</span><span className="mono">План</span>
-              <span className="mono">Төлбөрийн хэрэгсэл</span><span className="mono">Дүн</span><span className="mono">Төлөв</span>
-            </div>
-            {payments.map((p) => (
-              <div className="bil-row" key={p.id}>
-                <span>{new Date(p.date).toLocaleDateString('mn-MN')}</span>
-                <span>{p.plan}</span>
-                <span className="bil-mth">{p.method}</span>
-                <span><b>{p.amount}</b></span>
-                <span className="bil-ok">✓ {p.status}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        <p className="auth-note mono" style={{ textAlign: 'left' }}>Демо горим — Stripe test. Жинхэнэ мөнгө шилжээгүй.</p>
-      </>
-    )
-  }
-
-  function renderHelp() {
-    const items = [
-      { ic: '🎵', t: 'Дуу сонгох', d: 'Картан дээр дарахад дуу тоглоно. Хайлт болон төрлийн шүүлтүүрээр хүссэн дуугаа ол.' },
-      { ic: '📳', t: 'Чичиргээ мэдрэх', d: 'Утсан дээр нээвэл дууны хэмнэлээр утас чичирнэ. Бас = урт хүчтэй, өндөр = богино түргэн.' },
-      { ic: '💡', t: 'Гэрлээр мэдрэх', d: 'Дэлгэцийн гэрэл дууны цохилтоор лугшина. ⛶ товчоор бүтэн дэлгэцийн «Мэдрэх горим» нээгдэнэ.' },
-      { ic: '🎛', t: 'Өөрт тааруулах', d: '⚙️ цэснээс чичиргээний хүч, гэрлийн эрчим, давтамжийн бүсээ тохируул. Калибровк дахин хийж болно.' },
-      { ic: '♥', t: 'Цуглуулга', d: 'Зүрх дарж дуртай дуугаа, 🔖 дарж дараа сонсох дуугаа хадгал. Зүүн самбарт цуглана.' },
-      { ic: '💳', t: 'PRO захиалга', d: 'Үнэгүй горимд 30 сек сонсоно. PRO бол бүрэн эрхтэй — профайл цэснээс захиалгаа удирдаарай.' },
-    ]
-    return (
-      <>
-        <BackBar title="Тусламж — Хэрхэн ашиглах вэ?" onBack={() => setView('home')} />
-        <div className="hlp-grid">
-          {items.map((x) => (
-            <div className="hlp-card" key={x.t}>
-              <span className="hlp-ic" aria-hidden="true">{x.ic}</span>
-              <b>{x.t}</b>
-              <p>{x.d}</p>
-            </div>
-          ))}
-        </div>
-        <div className="sp-banner" style={{ marginTop: 26 }}>
-          <div>
-            <b>Мэдрэхүйн калибровк</b>
-            <p>Таны мэдрэх босгыг 1 минутын тестээр тодорхойлж, тохиргоог автоматаар тааруулна.</p>
-          </div>
-          <button className="bt bt-a" onClick={() => setCalibOpen(true)}>🎛 Калибровк эхлүүлэх</button>
-        </div>
-      </>
-    )
-  }
-
-  function renderDetail() {
-    const t = detail
-    if (!t) return null
-    const f = FEEL[t.genre] || FEEL_DEFAULT
-    const tot = f.pattern.reduce((a, b) => a + b, 0)
-    const isCur = cur?.id === t.id
-    return (
-      <>
-        <BackBar title="Дууны дэлгэрэнгүй" onBack={() => setView('home')} />
-        <div className="dt-wrap">
-          <div className="dt-left">
-            <img className="dt-cover" src={t.cover} alt={t.title} />
-            <div className="dt-btns">
-              <button className="bt bt-a" onClick={() => playTrack(t)}>
-                {isCur && playing ? '⏸ Зогсоох' : '▶ Тоглуулах'}
-              </button>
-              <button className="bt" onClick={() => feelTest(t)}>📳 Туршиж мэдрэх</button>
-            </div>
-          </div>
-          <div className="dt-right">
-            <span className="sp-chip on dt-genre">{t.genre}</span>
-            <h2 className="dt-title">{t.title}</h2>
-            <p className="dt-artist">
-              Дуучин: {t.artist}
-              {t.composer && <> · Зохиолч: {t.composer}</>}
-            </p>
-
-            <h3 className="st-h">Энэ дуу хэрхэн мэдрэгдэх вэ?</h3>
-            <p className="dt-feel">{f.text}</p>
-
-            <div className="dt-bands">
-              {[['Бас', f.bass, '20—250 Hz'], ['Дунд', f.mid, '250 Hz—4 kHz'], ['Өндөр', f.high, '4—20 kHz']].map(([lbl, v, hz]) => (
-                <div className="dt-band" key={lbl}>
-                  <div className="dt-band-top"><b>{lbl}</b><span className="mono">{hz}</span><span className="dt-pct">{v}%</span></div>
-                  <div className="dt-meter"><i style={{ width: v + '%' }}></i></div>
-                </div>
-              ))}
-            </div>
-
-            <h3 className="st-h">Чичиргээний хэв маяг</h3>
-            <div className="dt-hap" aria-label="Чичиргээний хэв маяг">
-              {f.pattern.map((ms, i) => (
-                i % 2 === 0
-                  ? <i key={i} style={{ flex: ms / tot + ' 0 0' }} title={ms + ' мс чичиргээ'}></i>
-                  : <u key={i} style={{ flex: ms / tot + ' 0 0' }}></u>
-              ))}
-            </div>
-            <p className="dt-hap-lb mono">{f.pattern.join(' · ')} мс</p>
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  /* ---------- админы хяналтын самбар ---------- */
-  function renderAdmin() {
-    const users = loadUsers().filter((u) => u.role !== 'admin')
-    const proCount = users.filter((u) => u.sub?.active).length
-    const revenue = users.reduce((sum, u) => sum + loadPayments(u.email).length * 9900, 0)
-    const recentUsers = [...users].sort((a, b) => (b.created || 0) - (a.created || 0)).slice(0, 5)
-    function sendBcast(e) {
-      e.preventDefault()
-      const text = bcast.trim()
-      if (text.length < 3) { setBcastOk('❌ Зарлалын текстээ бичнэ үү'); return }
-      pushFeed(text, '📢')
-      setBcast('')
-      setBcastOk('✅ Зарлал бүх хэрэглэгчид илгээгдлээ')
-      setTimeout(() => setBcastOk(''), 3000)
-    }
-    return (
-      <>
-        <div className="ab-head">
-          <div>
-            <span className="mono">Хяналтын самбар</span>
-            <h2 className="sp-h" style={{ margin: '8px 0 0' }}>Сайн уу, Админ 🛠</h2>
-          </div>
-          <button className="bt bt-a" onClick={onAdmin}>Хэрэглэгч · Дуу удирдах →</button>
-        </div>
-
-        <div className="st-cards">
-          <StatCard icon={ICONS.users} color="c-aqua" value={users.length} label="Нийт хэрэглэгч" />
-          <StatCard icon={ICONS.gem} color="c-purple" value={proCount} label="PRO захиалагч" />
-          <StatCard icon={ICONS.money} color="c-gold" value={revenue.toLocaleString() + '₮'} label="Нийт орлого (демо)" />
-          <StatCard icon={ICONS.music} color="c-rose" value={ALL.length} label="Дууны сан" />
-        </div>
-
-        <div className="ab-card">
-          <div className="ab-card-h">
-            <span className="st-ico c-gold" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                {ICONS.horn}
-              </svg>
-            </span>
-            <div>
-              <b>Бүх хэрэглэгчид зарлал илгээх</b>
-              <p>Зарлал хэрэглэгч бүрийн хонхонд шууд очно. Дуу нэмэхэд мэдэгдэл автоматаар илгээгддэг.</p>
-            </div>
-          </div>
-          <form className="ab-bcast" onSubmit={sendBcast}>
-            <input
-              type="text"
-              value={bcast}
-              onChange={(e) => setBcast(e.target.value)}
-              placeholder="ж: Маргааш 20:00 цагт шинэ цомог нэмэгдэнэ!"
-              aria-label="Зарлалын текст"
-            />
-            <button type="submit" className="bt bt-a">Илгээх</button>
-          </form>
-          {bcastOk && <p className={bcastOk.startsWith('✅') ? 'auth-ok' : 'auth-err'} style={{ fontSize: 13 }}>{bcastOk}</p>}
-        </div>
-
-        <h3 className="st-h">Сүүлийн бүртгэлүүд</h3>
-        {recentUsers.length === 0 ? (
-          <p className="adm-empty">Бүртгүүлсэн хэрэглэгч алга</p>
-        ) : (
-          <div className="bil-table">
-            <div className="bil-row bil-head ab-urow">
-              <span className="mono">Хэрэглэгч</span><span className="mono">Имэйл</span>
-              <span className="mono">Огноо</span><span className="mono">Статус</span>
-            </div>
-            {recentUsers.map((u) => (
-              <div className="bil-row ab-urow" key={u.email}>
-                <span className="ab-uname">
-                  <i className="ab-uav" aria-hidden="true">{(u.name || '?').charAt(0).toUpperCase()}</i>
-                  {u.name}
-                </span>
-                <span className="bil-mth">{u.email}</span>
-                <span>{u.created ? new Date(u.created).toLocaleDateString('mn-MN') : '—'}</span>
-                <span className={u.sub?.active ? 'bil-ok' : 'ab-free'}>{u.sub?.active ? '💎 PRO' : 'Үнэгүй'}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="sp-banner" style={{ marginTop: 30 }}>
-          <div>
-            <b>Тоглуулагч руу шилжих</b>
-            <p>Хэрэглэгчийн нүдээр аппаа туршиж, дуу сонсож, мэдрэх горимыг шалгаарай.</p>
-          </div>
-          <button className="bt" onClick={() => setView('home')}>🎧 Тоглуулагч нээх</button>
-        </div>
-      </>
-    )
-  }
-
-  /* ---------- нүүр (home) ---------- */
-  function renderHome() {
-    return (
-      <>
-        <div className="sp-chips">
-          {GENRES.map((g) => (
-            <button key={g} className={'sp-chip' + (genre === g ? ' on' : '')} onClick={() => setGenre(g)}>
-              {g}
-            </button>
-          ))}
-        </div>
-
-        <h2 className="sp-h">Тренд дуунууд</h2>
-        {list.length === 0 && <p className="adm-empty">"{query}" — олдсонгүй</p>}
-        <div className="sp-grid">
-          {list.map((t) => {
-            const isCur = cur?.id === t.id
-            return (
-              <button key={t.id} className={'sp-card' + (isCur ? ' on' : '')} onClick={() => playTrack(t)}>
-                <span className="sp-cover">
-                  <img src={t.cover} alt="" loading="lazy" />
-                  <LikeBtn id={t.id} active={likes.includes(t.id)} onToggle={() => toggleLike(t.id)} />
-                  <SaveBtn id={t.id} active={saves.includes(t.id)} onToggle={() => toggleSave(t.id)} />
-                  <InfoBtn t={t} onInfo={() => openDetail(t)} />
-                  <span className={'sp-playbtn' + (isCur && playing ? ' show' : '')} aria-hidden="true">
-                    {isCur && playing ? '⏸' : '▶'}
-                  </span>
-                  {isCur && playing && (
-                    <span className="pl-eq sp-eq" aria-hidden="true"><u></u><u></u><u></u></span>
-                  )}
-                </span>
-                <b>{t.title}{t.custom && <em className="sp-new"> шинэ</em>}</b>
-                <i>{t.artist} · {t.genre}</i>
-              </button>
-            )
-          })}
-        </div>
-
-        {list.length > 0 && (
-          <>
-            <h2 className="sp-h sp-h2">Бүх дуунууд</h2>
-            <div className="sp-list">
-              {list.map((t, i) => {
-                const isCur = cur?.id === t.id
-                return (
-                  <button key={t.id} className={'sp-lrow' + (isCur ? ' on' : '')} onClick={() => playTrack(t)}>
-                    <span className="sp-lno mono">{String(i + 1).padStart(2, '0')}</span>
-                    <img className="sp-lthumb" src={t.cover} alt="" loading="lazy" />
-                    <span className="sp-lmeta">
-                      <b>{t.title}{t.custom && <em className="sp-new"> шинэ</em>}</b>
-                      <i>{t.artist}</i>
-                    </span>
-                    <span className="sp-lgenre mono">{t.genre}</span>
-                    <LikeBtn id={t.id} row active={likes.includes(t.id)} onToggle={() => toggleLike(t.id)} />
-                    <SaveBtn id={t.id} row active={saves.includes(t.id)} onToggle={() => toggleSave(t.id)} />
-                    <InfoBtn t={t} row onInfo={() => openDetail(t)} />
-                    <span className="sp-lact" aria-hidden="true">
-                      {isCur && playing
-                        ? <span className="pl-eq" style={{ height: 14 }}><u></u><u></u><u></u></span>
-                        : '▶'}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </>
-        )}
-
-        {!subscribed && (
-          <div className="sp-banner">
-            <div>
-              <b>МЭДРЭХ PRO болоорой</b>
-              <p>Бүх дууг бүрэн сонсож, чичиргээ + гэрлийн горимыг хязгааргүй мэдэр. Үнэгүй горимд дуу тус бүрээс {PREVIEW_SEC} секунд сонсоно.</p>
-            </div>
-            <button className="bt bt-a" onClick={onSubscribe}>9'900₮ / сар — Захиалах</button>
-          </div>
-        )}
-      </>
-    )
-  }
-
   return (
     <div className="pl-ov sp">
       <audio ref={audioRef} crossOrigin="anonymous" />
@@ -935,6 +565,9 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
                       ? <><b>PRO идэвхтэй</b><span>Дараагийн төлбөр: {renewDate}</span></>
                       : <><b>Үнэгүй горим</b><span>Дуу тус бүрээс {PREVIEW_SEC} сек</span></>}
                 </div>
+                <button className="sp-prof-btn" onClick={() => { setProfileOpen(false); setView('profile') }}>👤 Профайл засах</button>
+                <button className="sp-prof-btn" onClick={() => { setProfileOpen(false); setView('playlists') }}>🎧 Миний жагсаалт</button>
+                <button className="sp-prof-btn" onClick={() => { setProfileOpen(false); setView('devices') }}>📱 Төхөөрөмж холбох</button>
                 <button className="sp-prof-btn" onClick={() => { setProfileOpen(false); setView('stats') }}>📊 Миний статистик</button>
                 <button className="sp-prof-btn" onClick={() => { setProfileOpen(false); setView('billing') }}>💳 Захиалга удирдах</button>
                 <button className="sp-prof-btn" onClick={() => { setProfileOpen(false); setView('help') }}>❓ Тусламж</button>
@@ -990,12 +623,66 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
         </aside>
 
         <main className="sp-main">
-          {view === 'home' && renderHome()}
-          {view === 'stats' && renderStats()}
-          {view === 'billing' && renderBilling()}
-          {view === 'help' && renderHelp()}
-          {view === 'detail' && renderDetail()}
-          {view === 'admin' && isAdmin && renderAdmin()}
+          {view === 'home' && (
+            <HomeView
+              genres={GENRES}
+              genre={genre}
+              onGenre={setGenre}
+              list={list}
+              query={query}
+              curId={cur?.id}
+              playing={playing}
+              onPlay={playTrack}
+              likes={likes}
+              saves={saves}
+              onToggleLike={toggleLike}
+              onToggleSave={toggleSave}
+              onInfo={openDetail}
+              subscribed={subscribed}
+              onSubscribe={onSubscribe}
+            />
+          )}
+          {view === 'stats' && (
+            <StatsView
+              stats={statsRef.current}
+              byId={byId}
+              onPlay={playTrack}
+              onBack={() => setView('home')}
+            />
+          )}
+          {view === 'billing' && (
+            <BillingView
+              email={email}
+              user={user}
+              isAdmin={isAdmin}
+              subscribed={subscribed}
+              renewDate={renewDate}
+              onSubscribe={onSubscribe}
+              onCancelSub={onCancelSub}
+              onBack={() => setView('home')}
+            />
+          )}
+          {view === 'help' && <HelpView onOpenCalibrate={() => setCalibOpen(true)} onBack={() => setView('home')} />}
+          {view === 'detail' && (
+            <DetailView
+              track={detail}
+              isCurrent={cur?.id === detail?.id}
+              playing={playing}
+              onPlay={() => playTrack(detail)}
+              onFeelTest={() => feelTest(detail)}
+              onBack={() => setView('home')}
+            />
+          )}
+          {view === 'admin' && isAdmin && (
+            <AdminView
+              allTracksCount={ALL.length}
+              onOpenAdmin={onAdmin}
+              onGoHome={() => setView('home')}
+            />
+          )}
+          {view === 'profile' && <ProfileView onBack={() => setView('home')} />}
+          {view === 'devices' && <DevicesView prefs={prefs} onUpdatePrefs={updatePrefs} canVibrate={canVibrate} onBack={() => setView('home')} />}
+          {view === 'playlists' && <PlaylistsView email={email} tracks={ALL} onPlay={playTrack} curId={cur?.id} playing={playing} onBack={() => setView('home')} />}
         </main>
       </div>
 
@@ -1068,25 +755,12 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
 
       {/* мэдрэх горим */}
       {immersive && cur && (
-        <div className="sp-imm" onClick={() => setImmersive(false)} role="dialog" aria-label="Мэдрэх горим">
-          <img className="sp-imm-bg" src={cur.cover} alt="" aria-hidden="true" />
-          <div className="sp-imm-veil" aria-hidden="true"></div>
-          <div className="sp-imm-center">
-            <span className="sp-imm-ring" ref={immPulseRef} aria-hidden="true"></span>
-            <img className="sp-imm-cover" src={cur.cover} alt="" />
-          </div>
-          <div className="sp-imm-info">
-            <span className="mono">Мэдрэх горим</span>
-            <h2>{cur.title}</h2>
-            <p>{cur.artist} · {cur.genre}</p>
-          </div>
-          <div className="sp-imm-bars" aria-hidden="true">
-            {Array.from({ length: 28 }).map((_, i) => (
-              <i key={i} ref={(el) => { immBarsRef.current[i] = el }}></i>
-            ))}
-          </div>
-          <span className="sp-imm-exit mono">ESC эсвэл дарж гарна</span>
-        </div>
+        <ImmersiveMode
+          track={cur}
+          onClose={() => setImmersive(false)}
+          barsRef={immBarsRef}
+          pulseRef={immPulseRef}
+        />
       )}
 
       {/* калибровк */}

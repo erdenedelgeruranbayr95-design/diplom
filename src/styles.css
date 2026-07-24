@@ -4,9 +4,9 @@
   --aqua:#38E8CE;--warm:#D9A54C;--line:rgba(242,245,244,.10);--maxw:1340px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;overflow-x:hidden;max-width:100%}
+html{scroll-behavior:smooth;overflow-x:clip;max-width:100%}
 body{background:var(--bg);color:var(--ink);font-family:'Golos Text',system-ui,sans-serif;font-size:16px;
-  line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;cursor:none}
+  line-height:1.6;overflow-x:clip;-webkit-font-smoothing:antialiased;cursor:none}
 h1,h2,h3,.disp{font-family:'Unbounded',sans-serif;letter-spacing:-.045em;line-height:.98;font-weight:800}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;color:inherit;background:none;border:none;cursor:none}
@@ -178,17 +178,17 @@ section{position:relative;z-index:5;padding:100px 0}
 .bars i{background:rgba(242,245,244,.32);height:2%;transition:height .07s linear}
 .anz-lb{display:flex;justify-content:space-between;margin-top:11px;grid-column:2}
 
-.gal-outer{height:360vh;position:relative;z-index:5}
-.gal-sticky{position:sticky;top:0;height:100svh;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
-.gal-head{max-width:var(--maxw);margin:0 auto 36px;padding:0 32px;width:100%;
+.gal-outer{position:relative;z-index:5}
+.gal-sticky{display:flex;flex-direction:column;padding:clamp(80px,10vw,132px) 0}
+.gal-head{max-width:var(--maxw);margin:0 auto 44px;padding:0 32px;width:100%;
   display:flex;justify-content:space-between;align-items:flex-end;gap:28px;flex-wrap:wrap}
 .gal-head h2{font-size:clamp(26px,4.2vw,54px)}
-.gal-prog{display:flex;align-items:center;gap:16px;min-width:220px}
+.gal-prog{display:none}
 .gal-prog .track{flex:1;height:1px;background:rgba(242,245,244,.14);position:relative}
 .gal-prog .track i{position:absolute;left:0;top:-.5px;height:2px;width:0;background:var(--aqua)}
-.gal-track{display:flex;gap:24px;padding-left:32px;align-items:flex-start;will-change:transform}
-.slide{flex:0 0 clamp(200px,20vw,280px)}
-.slide:nth-child(even){margin-top:58px}
+.gal-track{display:flex;flex-wrap:wrap;gap:40px 20px;padding:0 32px;align-items:flex-start;justify-content:center}
+.slide{flex:0 0 clamp(150px,14vw,200px)}
+.slide:nth-child(even){margin-top:0}
 .slide .fr{aspect-ratio:4/5;border:1px solid rgba(255,255,255,.1)}
 .slide:hover .fr canvas,.slide:hover .fr img{transform:scale(1.02)}
 .slide .no{position:absolute;top:14px;left:16px;z-index:3;font-family:'JetBrains Mono',monospace;

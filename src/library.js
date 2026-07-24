@@ -62,3 +62,36 @@ export function pushPayment(email, entry) {
   const list = [entry, ...loadPayments(email)]
   localStorage.setItem('medreh_payments:' + email, JSON.stringify(list))
 }
+
+/* ---- playlist (хэрэглэгч бүрд) ---- */
+const plKey = (email) => 'medreh_playlists:' + email
+export function loadPlaylists(email) {
+  try { return JSON.parse(localStorage.getItem(plKey(email))) || [] } catch { return [] }
+}
+function savePlaylists(email, list) {
+  localStorage.setItem(plKey(email), JSON.stringify(list))
+  dispatchEvent(new CustomEvent('medreh:playlists-changed'))
+}
+export function createPlaylist(email, name) {
+  const pl = { id: 'pl' + Date.now(), name, tracks: [], created: Date.now() }
+  savePlaylists(email, [pl, ...loadPlaylists(email)])
+  return pl
+}
+export function deletePlaylist(email, id) {
+  savePlaylists(email, loadPlaylists(email).filter((p) => p.id !== id))
+}
+export function renamePlaylist(email, id, name) {
+  const list = loadPlaylists(email)
+  const p = list.find((x) => x.id === id)
+  if (p) { p.name = name; savePlaylists(email, list) }
+}
+export function addToPlaylist(email, id, trackId) {
+  const list = loadPlaylists(email)
+  const p = list.find((x) => x.id === id)
+  if (p && !p.tracks.includes(trackId)) { p.tracks = [trackId, ...p.tracks]; savePlaylists(email, list) }
+}
+export function removeFromPlaylist(email, id, trackId) {
+  const list = loadPlaylists(email)
+  const p = list.find((x) => x.id === id)
+  if (p) { p.tracks = p.tracks.filter((t) => t !== trackId); savePlaylists(email, list) }
+}
