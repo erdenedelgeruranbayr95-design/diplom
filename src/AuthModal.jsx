@@ -82,13 +82,14 @@ function PassInput({ name, autoComplete }) {
 
 export default function AuthModal({ open, onClose, onAuth }) {
   const [mode, setMode] = useState('login') // 'login' | 'register'
+  const [email, setEmail] = useState('')    // таб солиход арилахгүйн тулд controlled
   const [err, setErr] = useState('')
   const [ok, setOk] = useState('')
 
   useEffect(() => {
     if (!open) return
     setMode('login') // нээгдэх бүрд "Нэвтрэх" табаас эхэлнэ
-    setErr(''); setOk('')
+    setEmail(''); setErr(''); setOk('')
     const onKey = (e) => { if (e.key === 'Escape') onClose() }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
@@ -100,10 +101,10 @@ export default function AuthModal({ open, onClose, onAuth }) {
     e.preventDefault()
     setErr(''); setOk('')
     const f = new FormData(e.target)
-    const email = (f.get('email') || '').trim().toLowerCase()
+    const mail = email.trim().toLowerCase()
     const pass = f.get('pass') || ''
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('Имэйл хаяг буруу байна'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) { setErr('Имэйл хаяг буруу байна'); return }
     if (pass.length < 6) { setErr('Нууц үг дор хаяж 6 тэмдэгт байх ёстой'); return }
 
     const users = loadUsers()
@@ -113,15 +114,27 @@ export default function AuthModal({ open, onClose, onAuth }) {
       const pass2 = f.get('pass2') || ''
       if (name.length < 2) { setErr('Нэрээ оруулна уу'); return }
       if (pass !== pass2) { setErr('Нууц үг таарахгүй байна'); return }
-      if (users.some((u) => u.email === email)) { setErr('Энэ имэйлээр аль хэдийн бүртгүүлсэн байна'); return }
-      users.push({ name, email, pass: scramble(pass), role: 'user', created: Date.now() })
+      if (users.some((u) => u.email === mail)) {
+        /* аль хэдийн бүртгэлтэй — Нэвтрэх таб руу шилжүүлнэ */
+        setMode('login')
+        setOk('Энэ имэйл бүртгэлтэй байна — нууц үгээ оруулаад нэвтэрнэ үү')
+        return
+      }
+      const nu = { name, email: mail, pass: scramble(pass), role: 'user', created: Date.now() }
+      users.push(nu)
       saveUsers(users)
-      /* шууд нэвтрүүлэхгүй — "Нэвтрэх" таб руу шилжүүлж, өөрөө нэвтэрнэ */
-      setOk('Амжилттай бүртгүүллээ! Одоо нэвтэрнэ үү.')
-      setTimeout(() => { setMode('login'); setOk('Бүртгэл үүслээ — имэйл, нууц үгээрээ нэвтэрнэ үү') }, 900)
+      /* бүртгүүлмэгц шууд нэвтрүүлнэ — дахин нэвтрэх шаардлагагүй */
+      onAuth({ name: nu.name, email: nu.email, role: 'user', sub: null })
+      setOk('Тавтай морил, ' + name + '!')
+      setTimeout(onClose, 700)
     } else {
-      const u = users.find((x) => x.email === email)
-      if (!u) { setErr('Энэ имэйл энэ төхөөрөмжид бүртгэлгүй байна. Эхлээд бүртгүүлнэ үү.'); return }
+      const u = users.find((x) => x.email === mail)
+      if (!u) {
+        /* мухардуулахгүй — Бүртгүүлэх таб руу шилжүүлж, имэйлийг хадгална */
+        setMode('register')
+        setOk('Энэ имэйл бүртгэлгүй байна — нэр, нууц үгээ оруулаад бүртгүүлээрэй')
+        return
+      }
       if (u.pass !== scramble(pass)) { setErr('Нууц үг буруу байна'); return }
       onAuth({ name: u.name, email: u.email, role: u.role || 'user', sub: u.sub || null })
       setOk('Тавтай морил, ' + u.name + '!')
@@ -154,7 +167,8 @@ export default function AuthModal({ open, onClose, onAuth }) {
           )}
           <label>
             <span className="mono">Имэйл</span>
-            <input name="email" type="email" placeholder="you@mail.com" autoComplete="email" />
+            <input name="email" type="email" placeholder="you@mail.com" autoComplete="email"
+              value={email} onChange={(e) => setEmail(e.target.value)} />
           </label>
           <label>
             <span className="mono">Нууц үг</span>

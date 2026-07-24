@@ -1,5 +1,4 @@
 import { LikeBtn, SaveBtn, InfoBtn } from './TrackButtons.jsx'
-import { PREVIEW_SEC } from './constants.jsx'
 
 /* Нүүр — Player.jsx-аас тусад нь гаргасан (хамгийн олон prop-той view).
    LikeBtn/SaveBtn/InfoBtn-г шууд импортлов (Player-ийн closure-оор биш).
@@ -73,16 +72,6 @@ export default function HomeView({
             })}
           </div>
         </>
-      )}
-
-      {!subscribed && (
-        <div className="sp-banner">
-          <div>
-            <b>МЭДРЭХ PRO болоорой</b>
-            <p>Бүх дууг бүрэн сонсож, чичиргээ + гэрлийн горимыг хязгааргүй мэдэр. Үнэгүй горимд дуу тус бүрээс {PREVIEW_SEC} секунд сонсоно.</p>
-          </div>
-          <button className="bt bt-a" onClick={onSubscribe}>9'900₮ / сар — Захиалах</button>
-        </div>
       )}
     </>
   )

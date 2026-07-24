@@ -11,7 +11,7 @@ const EMPTY_STATS = { total: 0, vib: 0, byGenre: {}, byTrack: {}, days: {} }
 export default function StatsView({ stats, byId, onPlay, onBack }) {
   const s = stats || EMPTY_STATS
   const topGenre = Object.entries(s.byGenre).sort((a, b) => b[1] - a[1])[0]
-  const topTracks = Object.entries(s.byTrack).sort((a, b) => b[1] - a[1]).slice(0, 3)
+  const topTracks = Object.entries(s.byTrack).sort((a, b) => b[1] - a[1]).slice(0, 5)
     .map(([id, sec]) => ({ t: byId(isNaN(+id) ? id : +id), sec })).filter((x) => x.t)
   const days = []
   for (let i = 6; i >= 0; i--) {

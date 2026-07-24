@@ -20,6 +20,8 @@ import AdminView from './player/AdminView.jsx'
 import ImmersiveMode from './player/ImmersiveMode.jsx'
 import BillingView from './player/BillingView.jsx'
 import HomeView from './player/HomeView.jsx'
+import LibraryView from './player/LibraryView.jsx'
+import NowPlayingPanel from './player/NowPlayingPanel.jsx'
 
 export default function Player({ open, onClose, user, subscribed, onSubscribe, isAdmin, onAdmin, onLogout, onCancelSub }) {
   const [view, setView] = useState('home') // home | stats | billing | help | detail
@@ -44,6 +46,7 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
   const [feed, setFeed] = useState([])
   const [readTs, setReadTs] = useState(0)
   const [immersive, setImmersive] = useState(false)
+  const [npOpen, setNpOpen] = useState(false) // дэлгэгддэг Мэдрэх самбар (Now-Playing)
   const [calibOpen, setCalibOpen] = useState(false)
   const [, setUsersTick] = useState(0)         // хэрэглэгч өөрчлөгдөхөд дахин зурна
 
@@ -58,6 +61,8 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
   const vizRef = useRef([])
   const immBarsRef = useRef([])
   const immPulseRef = useRef(null)
+  const immFlashRef = useRef(null)
+  const feelBarsRef = useRef([]) // Мэдрэх самбарын амьд 8 багана
   const autoCalRef = useRef(false)
   prefsRef.current = prefs
 
@@ -243,8 +248,24 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
           immPulseRef.current.style.transform = 'scale(' + (1 + lvl * .9 * lightMult).toFixed(3) + ')'
           immPulseRef.current.style.opacity = Math.min(1, .25 + lvl * .85 * lightMult).toFixed(3)
         }
+        if (immFlashRef.current) {
+          /* цохилт (хүчтэй бас) дээр богино flash */
+          immFlashRef.current.style.opacity = lo > .5 ? Math.min(.55, (lo - .5) * 1.8 * lightMult).toFixed(3) : '0'
+        }
+        /* Мэдрэх самбарын амьд 8 бүсийн meter — спектрийг 8 бүлэгт хувааж дунджилна */
+        feelBarsRef.current.forEach((el, idx) => {
+          if (!el) return
+          const lenB = feelBarsRef.current.length
+          const start = Math.floor(idx / lenB * n * .72)
+          const end = Math.max(start + 1, Math.floor((idx + 1) / lenB * n * .72))
+          let s = 0
+          for (let k = start; k < end; k++) s += a.data[k]
+          el.style.height = Math.max(5, (s / (end - start)) / 255 * 100) + '%'
+        })
       } else {
         vizRef.current.forEach((el) => { if (el) el.style.height = '3px' })
+        if (immFlashRef.current) immFlashRef.current.style.opacity = '0'
+        feelBarsRef.current.forEach((el) => { if (el) el.style.height = '5px' })
       }
     }
     loop()
@@ -315,6 +336,7 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
     const onKey = (e) => {
       if (e.key !== 'Escape') return
       if (immersive) { setImmersive(false); return }
+      if (npOpen) { setNpOpen(false); return }
       if (settingsOpen || profileOpen || notifOpen) {
         setSettingsOpen(false); setProfileOpen(false); setNotifOpen(false); return
       }
@@ -327,7 +349,7 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
       removeEventListener('keydown', onKey)
       document.body.classList.remove('native-cursor')
     }
-  }, [open, onClose, immersive, settingsOpen, profileOpen, notifOpen, view, calibOpen])
+  }, [open, onClose, immersive, npOpen, settingsOpen, profileOpen, notifOpen, view, calibOpen])
 
   useEffect(() => () => { if (toneCtxRef.current) toneCtxRef.current.close().catch(() => {}) }, [])
 
@@ -590,7 +612,33 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
       {/* их бие */}
       <div className="sp-shell">
         <aside className="sp-side">
-          <span className="mono sp-side-h">♥ Дуртай дуунууд</span>
+          <nav className="sp-navcol" aria-label="Үндсэн цэс">
+            <button className={'sp-navitem' + (view === 'home' ? ' on' : '')} onClick={() => setView('home')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /></svg>
+              Нүүр
+            </button>
+            <button className={'sp-navitem' + (view === 'playlists' ? ' on' : '')} onClick={() => setView('playlists')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 14v-2a9 9 0 0 1 18 0v2" /><rect x="3" y="14" width="4" height="6" rx="2" /><rect x="17" y="14" width="4" height="6" rx="2" /></svg>
+              Жагсаалт
+            </button>
+            <button className={'sp-navitem' + (view === 'stats' ? ' on' : '')} onClick={() => setView('stats')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M8 17v-5M13 17V9M18 17v-8" /></svg>
+              Статистик
+            </button>
+            <button className={'sp-navitem' + (view === 'billing' ? ' on' : '')} onClick={() => setView('billing')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>
+              Захиалга
+            </button>
+          </nav>
+          <div className="sp-navdiv" aria-hidden="true"></div>
+
+          <button className="mono sp-side-h sp-side-hbtn" onClick={() => setView('liked')}>
+            <svg className="sp-side-ic ic-love" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 21s-7.5-4.9-10-9.2C.3 8.6 2 5 5.5 5c2 0 3.4 1.1 4.2 2.3L12 9.6l2.3-2.3C15.1 6.1 16.5 5 18.5 5 22 5 23.7 8.6 22 11.8 19.5 16.1 12 21 12 21z"/>
+            </svg>
+            Дуртай дуунууд
+            <span className="sp-side-more" aria-hidden="true">→</span>
+          </button>
           {likedTracks.length === 0 ? (
             <div className="sp-empty-tile">
               <span className="sp-empty-ic" aria-hidden="true">
@@ -598,11 +646,17 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
                   <path d="M12 21s-7.5-4.9-10-9.2C.3 8.6 2 5 5.5 5c2 0 3.4 1.1 4.2 2.3L12 9.6l2.3-2.3C15.1 6.1 16.5 5 18.5 5 22 5 23.7 8.6 22 11.8 19.5 16.1 12 21 12 21z"/>
                 </svg>
               </span>
-              <p>Дууны <b>♥ зүрхэн</b> дээр дарахад дуртай дуу чинь энд цуглана</p>
+              <p>Дууны <b><svg className="sp-inl-ic ic-love" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.9-10-9.2C.3 8.6 2 5 5.5 5c2 0 3.4 1.1 4.2 2.3L12 9.6l2.3-2.3C15.1 6.1 16.5 5 18.5 5 22 5 23.7 8.6 22 11.8 19.5 16.1 12 21 12 21z"/></svg> зүрхэн</b> дээр дарахад дуртай дуу чинь энд цуглана</p>
             </div>
           ) : <SideList tracks={likedTracks} curId={cur?.id} playing={playing} onPlay={playTrack} />}
 
-          <span className="mono sp-side-h">Хадгалсан</span>
+          <button className="mono sp-side-h sp-side-hbtn" onClick={() => setView('saved')}>
+            <svg className="sp-side-ic ic-save" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M6 3h12v18l-6-3.6L6 21V3z"/>
+            </svg>
+            Хадгалсан
+            <span className="sp-side-more" aria-hidden="true">→</span>
+          </button>
           {savedTracks.length === 0 ? (
             <div className="sp-empty-tile">
               <span className="sp-empty-ic sp-empty-warm" aria-hidden="true">
@@ -610,13 +664,17 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
                   <path d="M6 2h12a1 1 0 0 1 1 1v19l-7-4.2L5 22V3a1 1 0 0 1 1-1z"/>
                 </svg>
               </span>
-              <p>Дууг <b>🔖 хадгалах</b> товчоор тэмдэглээд дараа нь сонсоорой</p>
+              <p>Дууг <b><svg className="sp-inl-ic ic-save" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 3h12v18l-6-3.6L6 21V3z"/></svg> хадгалах</b> товчоор тэмдэглээд дараа нь сонсоорой</p>
             </div>
           ) : <SideList tracks={savedTracks} curId={cur?.id} playing={playing} onPlay={playTrack} />}
 
           {recentTracks.length > 0 && (
             <>
-              <span className="mono sp-side-h">Саяхан сонссон</span>
+              <button className="mono sp-side-h sp-side-hbtn" onClick={() => setView('recent')}>
+                <svg className="sp-side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg>
+                Саяхан сонссон
+                <span className="sp-side-more" aria-hidden="true">→</span>
+              </button>
               <SideList tracks={recentTracks} curId={cur?.id} playing={playing} onPlay={playTrack} />
             </>
           )}
@@ -671,6 +729,10 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
               onPlay={() => playTrack(detail)}
               onFeelTest={() => feelTest(detail)}
               onBack={() => setView('home')}
+              liked={likes.includes(detail?.id)}
+              saved={saves.includes(detail?.id)}
+              onToggleLike={() => toggleLike(detail.id)}
+              onToggleSave={() => toggleSave(detail.id)}
             />
           )}
           {view === 'admin' && isAdmin && (
@@ -683,6 +745,36 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
           {view === 'profile' && <ProfileView onBack={() => setView('home')} />}
           {view === 'devices' && <DevicesView prefs={prefs} onUpdatePrefs={updatePrefs} canVibrate={canVibrate} onBack={() => setView('home')} />}
           {view === 'playlists' && <PlaylistsView email={email} tracks={ALL} onPlay={playTrack} curId={cur?.id} playing={playing} onBack={() => setView('home')} />}
+          {view === 'liked' && (
+            <LibraryView
+              title="Дуртай дуунууд" tracks={likedTracks}
+              curId={cur?.id} playing={playing} onPlay={playTrack}
+              likes={likes} saves={saves} onToggleLike={toggleLike} onToggleSave={toggleSave} onInfo={openDetail}
+              onBack={() => setView('home')}
+              emptyIcon="♥" emptyTitle="Дуртай дуу алга"
+              emptyHint="Дуу дээрх зүрхэн товчийг дарж дуртай дуугаа энд цуглуулаарай"
+            />
+          )}
+          {view === 'saved' && (
+            <LibraryView
+              title="Хадгалсан" tracks={savedTracks}
+              curId={cur?.id} playing={playing} onPlay={playTrack}
+              likes={likes} saves={saves} onToggleLike={toggleLike} onToggleSave={toggleSave} onInfo={openDetail}
+              onBack={() => setView('home')}
+              emptyIcon="🔖" emptyTitle="Хадгалсан дуу алга"
+              emptyHint="Дуу дээрх хавчуургыг дарж дараа сонсох дуугаа хадгалаарай"
+            />
+          )}
+          {view === 'recent' && (
+            <LibraryView
+              title="Саяхан сонссон" tracks={recentTracks}
+              curId={cur?.id} playing={playing} onPlay={playTrack}
+              likes={likes} saves={saves} onToggleLike={toggleLike} onToggleSave={toggleSave} onInfo={openDetail}
+              onBack={() => setView('home')}
+              emptyIcon="🕐" emptyTitle="Түүх хоосон"
+              emptyHint="Дуу сонсоход энд сонссон түүх чинь үлдэнэ"
+            />
+          )}
         </main>
       </div>
 
@@ -693,16 +785,40 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
         </div>
       )}
 
+      {/* дэлгэгддэг Мэдрэх самбар (Now-Playing) */}
+      <NowPlayingPanel
+        open={npOpen && !!cur}
+        track={cur}
+        prefs={prefs}
+        onToggleBand={(k) => updatePrefs({ bands: { [k]: !prefs.bands[k] } })}
+        vibro={vibro}
+        onToggleVibro={() => setVibro(!vibro)}
+        onImmersive={() => { setNpOpen(false); setImmersive(true) }}
+        onClose={() => setNpOpen(false)}
+        barsRef={feelBarsRef}
+      />
+
       {/* доод баар */}
       <footer className="sp-bar">
         <div className="sp-bar-l">
           {cur ? (
             <>
+              <button
+                className={'sp-np-toggle' + (npOpen ? ' on' : '')}
+                onClick={() => setNpOpen((o) => !o)}
+                aria-expanded={npOpen}
+                aria-label="Мэдрэх самбар"
+                title="Мэдрэх самбар"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 15l6-6 6 6" />
+                </svg>
+              </button>
               <img className="sp-thumb" src={cur.cover} alt="" />
-              <div className="sp-bar-meta">
+              <button className="sp-bar-meta sp-bar-metabtn" onClick={() => setNpOpen((o) => !o)}>
                 <b>{cur.title}</b>
                 <i>{cur.artist}</i>
-              </div>
+              </button>
             </>
           ) : (
             <span className="sp-bar-hint">Дуу сонгоогүй байна</span>
@@ -760,6 +876,7 @@ export default function Player({ open, onClose, user, subscribed, onSubscribe, i
           onClose={() => setImmersive(false)}
           barsRef={immBarsRef}
           pulseRef={immPulseRef}
+          flashRef={immFlashRef}
         />
       )}
 

@@ -43,6 +43,42 @@ export default function BillingView({ email, user, isAdmin, subscribed, renewDat
         </div>
       </div>
 
+      <h3 className="st-h">Планаа харьцуулах</h3>
+      <div className="bil-compare">
+        <div className={'bil-ccard' + (!active && !isAdmin ? ' current' : '')}>
+          {!active && !isAdmin && <span className="bil-badge">Таны план</span>}
+          <span className="mono">Үнэгүй</span>
+          <b className="bil-price">0₮<i>/сар</i></b>
+          <ul className="bil-feats">
+            <li>Дуу тус бүрээс {PREVIEW_SEC} секунд</li>
+            <li>Чичиргээ + гэрэл + визуал</li>
+            <li>Мэдрэхүйн калибровк</li>
+            <li>Дуртай / Хадгалах / Playlist</li>
+            <li className="off">Бүтэн дуу — хаалттай</li>
+            <li className="off">Олон төхөөрөмж — хаалттай</li>
+          </ul>
+        </div>
+
+        <div className={'bil-ccard pro' + (active || isAdmin ? ' current' : '')}>
+          {(active || isAdmin) && <span className="bil-badge">Идэвхтэй</span>}
+          <span className="mono">МЭДРЭХ PRO</span>
+          <b className="bil-price">9'900₮<i>/сар</i></b>
+          <ul className="bil-feats">
+            <li>Бүх дуу бүрэн, хязгааргүй</li>
+            <li>Олон төхөөрөмж (gamepad, хантааз)</li>
+            <li>Өндөр нарийвчлалтай хаптик</li>
+            <li>Шинэ дуунд эрт хандах</li>
+            <li>Реклам-гүй туршлага</li>
+            <li>Мэдрэх горим бүрэн нээлттэй</li>
+          </ul>
+          {!isAdmin && !active && (
+            <button className="bt bt-a bil-ccta" onClick={onSubscribe}>
+              {user?.sub ? 'Сэргээх →' : 'PRO болох →'}
+            </button>
+          )}
+        </div>
+      </div>
+
       <h3 className="st-h">Төлбөрийн түүх</h3>
       {payments.length === 0 ? (
         <p className="adm-empty">Төлбөрийн түүх хоосон байна</p>

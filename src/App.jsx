@@ -21,7 +21,9 @@ export default function App() {
 
   const [authOpen, setAuthOpen] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
-  const [playerOpen, setPlayerOpen] = useState(false)
+  /* нэвтэрсэн хэрэглэгч (сесс сэргээх/reload үед ч) шууд Player app руу орно —
+     landing/marketing нь зөвхөн зочдод зориулагдана */
+  const [playerOpen, setPlayerOpen] = useState(!!user)
   const [subOpen, setSubOpen] = useState(false)
 
   const handleAuth = (u) => { login(u); setPlayerOpen(true) }
@@ -145,18 +147,21 @@ function Dock({ user, isAdmin, onLogin, onLogout, onAdmin, onPlayer }) {
         <a href="#top" className="nav-logo keep">МЭДРЭХ<sup>®</sup></a>
       </div>
 
-      {/* цэс — зөвхөн нэвтэрсний дараа харагдана */}
-      {user && (
+      {/* landing-ийн цэс — зөвхөн зочдод (нэвтрээгүй үед) */}
+      {!user && (
         <div className="nav-links">
           <a href="#top" className="keep">Нүүр</a>
           <a href="#feel">Мэдрэх</a>
           <a href="#gal">Галерей</a>
           <a href="#how">Хэрхэн</a>
-          <button className="nav-play keep" onClick={onPlayer}>♫ Тоглуулагч</button>
         </div>
       )}
 
       <div className="nav-right">
+        {/* нэвтэрсэн хэрэглэгч Player-ээ хаасан бол буцаж нээх зам */}
+        {user && (
+          <button className="nav-play keep" onClick={onPlayer}>♫ Тоглуулагч</button>
+        )}
         {isAdmin && (
           <button className="dock-auth adm-btn keep" onClick={onAdmin}>Админ</button>
         )}
