@@ -1,0 +1,7 @@
+/* Эх сурвалж (React+Vite) CSS-ийг өөрчлөлтгүй импортолсон. Tailwind preflight
+   одоогийн handwritten reset (*{box-sizing:border-box;margin:0;padding:0} гэх мэт)-тэй
+   мөргөлддөг тул энэ migration-д Tailwind-ийн @import-ийг зориудаар оруулаагүй —
+   UI-г "яг хэвээр" байлгах шаардлагыг эрхэмлэв. Tailwind package hэвээр суусан,
+   ирээдүйд шинэ widget-д scoped ашиглаж болно. */
+@import "./medreh.css";
+@import "./ui.css";

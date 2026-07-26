@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  THERAPIST
+  USER
+  PARENT
+}
+
+enum SessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum QRStatus {
+  PENDING
+  CONNECTED
+  EXPIRED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+
+  subActive Boolean   @default(false)
+  subPlan   String?
+  subSince  DateTime?
+  subRenews DateTime?
+
+  refreshTokens RefreshToken[]
+
+  songs                           Song[]
+  therapySessionsAsTherapist      TherapySession[]      @relation("TherapistSessions")
+  therapySessionsAsPatient        TherapySession[]      @relation("PatientSessions")
+  progress                        Progress[]
+  qrSessions                      QRSession[]
+  therapistAssignmentsAsTherapist TherapistAssignment[] @relation("TherapistOf")
+  therapistAssignmentsAsPatient   TherapistAssignment[] @relation("PatientOf")
+  parentLinksAsParent             ParentLink[]          @relation("ParentOf")
+  parentLinksAsChild              ParentLink[]           @relation("ChildOf")
+  listenHistory                   ListenHistory[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model TherapistAssignment {
+  id          String   @id @default(cuid())
+  therapistId String
+  userId      String
+  therapist   User     @relation("TherapistOf", fields: [therapistId], references: [id], onDelete: Cascade)
+  patient     User     @relation("PatientOf", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([therapistId, userId])
+  @@index([userId])
+}
+
+model ParentLink {
+  id          String   @id @default(cuid())
+  parentId    String
+  childUserId String
+  parent      User     @relation("ParentOf", fields: [parentId], references: [id], onDelete: Cascade)
+  child       User     @relation("ChildOf", fields: [childUserId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([parentId, childUserId])
+  @@index([childUserId])
+}
+
+model Song {
+  id         String   @id @default(cuid())
+  title      String
+  artist     String?
+  genre      String?
+  fileUrl    String
+  duration   Int?
+  bpm        Int?
+  uploadedBy String
+  uploader   User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  // ---- client-side анализын үр дүн (backend зөвхөн хадгална, тооцоолохгүй) ----
+  analyzedBpm    Int?
+  beatCount      Int?
+  beatTimestamps Json?
+  rms            Float?
+  peak           Float?
+  bassEnergy     Float?
+  midEnergy      Float?
+  trebleEnergy   Float?
+  waveformPeaks  Json?
+  analyzedAt     DateTime?
+
+  sessions      TherapySession[]
+  listenHistory ListenHistory[]
+
+  @@index([uploadedBy])
+}
+
+model ListenHistory {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  songId          String
+  song            Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  playedAt        DateTime @default(now())
+  durationMs      Int?
+  bpm             Int?
+  visualizerStyle String?
+
+  @@index([userId, playedAt])
+  @@index([songId])
+}
+
+model TherapySession {
+  id          String        @id @default(cuid())
+  therapistId String
+  therapist   User          @relation("TherapistSessions", fields: [therapistId], references: [id], onDelete: Cascade)
+  userId      String
+  patient     User          @relation("PatientSessions", fields: [userId], references: [id], onDelete: Cascade)
+  songId      String?
+  song        Song?         @relation(fields: [songId], references: [id], onDelete: SetNull)
+  notes       String?
+  status      SessionStatus @default(SCHEDULED)
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime      @default(now())
+
+  progress Progress[]
+
+  @@index([therapistId])
+  @@index([userId])
+}
+
+model Progress {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  therapySessionId String?
+  session          TherapySession? @relation(fields: [therapySessionId], references: [id], onDelete: SetNull)
+  completionPct    Int?
+  engagementScore  Int?
+  recordedAt       DateTime        @default(now())
+
+  @@index([userId])
+  @@index([therapySessionId])
+}
+
+model QRSession {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    QRStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  desktopSocketId String?
+  phoneSocketId   String?
+
+  @@index([userId])
+}
