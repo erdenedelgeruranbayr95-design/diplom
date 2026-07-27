@@ -15,45 +15,79 @@ export default function Dock({
   onAdmin: () => void;
   onPlayer: () => void;
 }) {
+  const navLinkCls =
+    "keep text-sm font-medium text-[#D8E0DE] py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 whitespace-nowrap hover:text-aqua hover:bg-[rgba(56,232,206,.08)] focus-visible:shadow-glow-aqua";
+
   return (
-    <nav className="dock" id="dock">
-      <div className="nav-left">
+    <nav
+      className="dock fixed top-0 left-0 right-0 z-[60] flex items-center justify-between gap-5 p-[12px_28px] bg-[rgba(9,13,13,.88)] border-b border-white/[.18] backdrop-blur-3xl [backdrop-filter:blur(22px)]"
+      id="dock"
+    >
+      <div className="flex items-center gap-3.5">
         <button className="disc" id="disc" aria-label="Дуу эхлүүлэх"></button>
-        <a href="#top" className="nav-logo keep">
+        <a
+          href="#top"
+          className="keep font-display font-extrabold text-[17px] tracking-[-.04em] text-ink whitespace-nowrap hover:text-aqua [&>sup]:font-body [&>sup]:text-[9px] [&>sup]:font-medium [&>sup]:ml-0.5"
+        >
           МЭДРЭХ<sup>®</sup>
         </a>
       </div>
 
       {/* landing-ийн цэс — зөвхөн зочдод (нэвтрээгүй үед) */}
       {!user && (
-        <div className="nav-links">
-          <a href="#top" className="keep">
+        <div className="flex items-center gap-1.5">
+          <a href="#top" className={navLinkCls}>
             Нүүр
           </a>
-          <a href="#feel">Мэдрэх</a>
-          <a href="#gal">Галерей</a>
-          <a href="#how">Хэрхэн</a>
+          <a
+            href="#feel"
+            className="text-sm font-medium text-[#D8E0DE] py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 whitespace-nowrap hover:text-aqua hover:bg-[rgba(56,232,206,.08)] focus-visible:shadow-glow-aqua"
+          >
+            Мэдрэх
+          </a>
+          <a
+            href="#gal"
+            className="text-sm font-medium text-[#D8E0DE] py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 whitespace-nowrap hover:text-aqua hover:bg-[rgba(56,232,206,.08)] focus-visible:shadow-glow-aqua"
+          >
+            Галерей
+          </a>
+          <a
+            href="#how"
+            className="text-sm font-medium text-[#D8E0DE] py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 whitespace-nowrap hover:text-aqua hover:bg-[rgba(56,232,206,.08)] focus-visible:shadow-glow-aqua"
+          >
+            Хэрхэн
+          </a>
         </div>
       )}
 
-      <div className="nav-right">
+      <div className="flex items-center gap-2">
         {/* нэвтэрсэн хэрэглэгч Player-ээ хаасан бол буцаж нээх зам */}
         {user && (
-          <button className="nav-play keep" onClick={onPlayer}>
+          <button className={navLinkCls + " text-aqua"} onClick={onPlayer}>
             ♫ Тоглуулагч
           </button>
         )}
         {isAdmin && (
-          <button className="dock-auth adm-btn keep" onClick={onAdmin}>
+          <button
+            className="keep text-[13.5px] py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 focus-visible:shadow-glow-aqua text-warm border border-[rgba(217,165,76,.4)] hover:bg-warm hover:text-[#140D02]"
+            onClick={onAdmin}
+          >
             Админ
           </button>
         )}
         {user ? (
-          <button className="dock-auth keep" onClick={onLogout} title={user.email + " · Гарах"}>
+          <button
+            className="keep text-[13.5px] text-aqua py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 hover:text-[#04100E] hover:bg-aqua focus-visible:shadow-glow-aqua"
+            onClick={onLogout}
+            title={user.email + " · Гарах"}
+          >
             {user.name} · Гарах
           </button>
         ) : (
-          <button className="dock-auth keep" onClick={onLogin}>
+          <button
+            className="keep text-[13.5px] text-aqua py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 hover:text-[#04100E] hover:bg-aqua focus-visible:shadow-glow-aqua"
+            onClick={onLogin}
+          >
             Нэвтрэх
           </button>
         )}

@@ -132,5 +132,5 @@ export default function Visualizer({
     };
   }, [levelRef, beatFlashRef]);
 
-  return <canvas ref={canvasRef} className="sp-viz-canvas" aria-hidden="true" />;
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-[1] pointer-events-none" aria-hidden="true" />;
 }

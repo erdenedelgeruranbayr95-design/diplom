@@ -63,17 +63,26 @@ export default function DetailView({
   return (
     <>
       <BackBar title="Дууны дэлгэрэнгүй" onBack={onBack} />
-      <div className="dt-wrap">
-        <div className="dt-left">
-          <img className="dt-cover" src={t.cover} alt={t.title} />
-          <div className="dt-btns">
+      <div className="grid grid-cols-[300px_1fr] max-nav:grid-cols-1 gap-[34px] items-start">
+        <div>
+          <img
+            className="w-full aspect-square object-cover rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,.55)] max-nav:max-w-[280px]"
+            src={t.cover}
+            alt={t.title}
+          />
+          <div className="flex flex-col gap-2.5 mt-4 [&_.bt]:w-full [&_.bt]:text-center">
             <button className="bt bt-a" onClick={onPlay}>
               {isCurrent && playing ? '⏸ Зогсоох' : '▶ Тоглуулах'}
             </button>
             <button className="bt" onClick={onFeelTest}>📳 Туршиж мэдрэх</button>
-            <div className="dt-collect">
+            <div className="flex gap-2.5 mt-0.5">
               <button
-                className={'dt-cbtn' + (liked ? ' on love' : '')}
+                className={
+                  "flex-1 flex items-center justify-center gap-[7px] border rounded-full py-2.5 px-2 text-[12.5px] font-semibold cursor-pointer transition-[color,border-color,background] duration-150 " +
+                  (liked
+                    ? "text-aqua border-[rgba(56,232,206,.4)] bg-[rgba(56,232,206,.08)]"
+                    : "text-dim border-line bg-[rgba(20,28,27,.4)] hover:text-ink hover:border-[rgba(242,245,244,.24)]")
+                }
                 onClick={onToggleLike}
                 aria-pressed={liked}
               >
@@ -83,7 +92,12 @@ export default function DetailView({
                 Дуртай
               </button>
               <button
-                className={'dt-cbtn' + (saved ? ' on save' : '')}
+                className={
+                  "flex-1 flex items-center justify-center gap-[7px] border rounded-full py-2.5 px-2 text-[12.5px] font-semibold cursor-pointer transition-[color,border-color,background] duration-150 " +
+                  (saved
+                    ? "text-warm border-[rgba(217,165,76,.4)] bg-[rgba(217,165,76,.08)]"
+                    : "text-dim border-line bg-[rgba(20,28,27,.4)] hover:text-ink hover:border-[rgba(242,245,244,.24)]")
+                }
                 onClick={onToggleSave}
                 aria-pressed={saved}
               >
@@ -96,7 +110,7 @@ export default function DetailView({
           </div>
 
           {songId && (
-            <div className="sp-banner dv-note" style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 20 }}>
+            <div className="sp-banner !mt-1" style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 20 }}>
               <span style={{ background: "#fff", padding: 10, borderRadius: 8, display: "inline-flex" }}>
                 <QRCodeSVG value={`${window.location.origin}/song/${songId}`} size={112} />
               </span>
@@ -107,36 +121,52 @@ export default function DetailView({
             </div>
           )}
         </div>
-        <div className="dt-right">
-          <span className="sp-chip on dt-genre">{t.genre}</span>
-          <h2 className="dt-title">{t.title}</h2>
-          <p className="dt-artist">
+        <div>
+          <span className="sp-chip on">{t.genre}</span>
+          <h2 className="text-[clamp(26px,3.4vw,40px)] font-extrabold tracking-[-.04em] mt-3">{t.title}</h2>
+          <p className="text-dim text-[14.5px] mt-1">
             Дуучин: {t.artist}
             {t.composer && <> · Зохиолч: {t.composer}</>}
           </p>
 
           <h3 className="st-h">Энэ дуу хэрхэн мэдрэгдэх вэ?</h3>
-          <p className="dt-feel">{f.text}</p>
+          <p className="text-ink text-[14.5px] leading-[1.65] max-w-[60ch]">{f.text}</p>
 
           <h3 className="st-h">Давтамжийн спектр — 8 бүс</h3>
-          <div className="dt-bands">
+          <div className="flex flex-col gap-[13px] mt-1">
             {BANDS8.map(([lbl, hz], i) => (
-              <div className="dt-band" key={lbl}>
-                <div className="dt-band-top"><b>{lbl}</b><span className="mono">{hz}</span><span className="dt-pct">{bands[i]}%</span></div>
-                <div className="dt-meter"><i style={{ width: bands[i] + '%' }}></i></div>
+              <div key={lbl}>
+                <div className="flex items-baseline gap-3 mb-1.5">
+                  <b className="text-[13.5px] font-semibold min-w-[44px]">{lbl}</b>
+                  <span className="mono !text-[9px]">{hz}</span>
+                  <span className="ml-auto font-mono text-[11px] text-aqua">{bands[i]}%</span>
+                </div>
+                <div className="h-[7px] rounded-[10px] bg-white/[.09] overflow-hidden">
+                  <i
+                    className="block h-full rounded-[10px] bg-[linear-gradient(90deg,rgba(56,232,206,.5),var(--aqua))] transition-[width] duration-[800ms] ease-[cubic-bezier(.16,.8,.24,1)]"
+                    style={{ width: bands[i] + '%' }}
+                  ></i>
+                </div>
               </div>
             ))}
           </div>
 
           <h3 className="st-h">Чичиргээний хэв маяг</h3>
-          <div className="dt-hap" aria-label="Чичиргээний хэв маяг">
+          <div className="flex items-center h-[26px] border border-line rounded-[9px] px-2.5 bg-[rgba(20,28,27,.4)]" aria-label="Чичиргээний хэв маяг">
             {f.pattern.map((ms, i) => (
               i % 2 === 0
-                ? <i key={i} style={{ flex: ms / tot + ' 0 0' }} title={ms + ' мс чичиргээ'}></i>
-                : <u key={i} style={{ flex: ms / tot + ' 0 0' }}></u>
+                ? (
+                  <i
+                    key={i}
+                    className="block h-3 rounded-[3px] bg-aqua shadow-[0_0_8px_rgba(56,232,206,.4)]"
+                    style={{ flex: ms / tot + ' 0 0' }}
+                    title={ms + ' мс чичиргээ'}
+                  ></i>
+                )
+                : <u key={i} className="block h-0.5 bg-[rgba(242,245,244,.18)]" style={{ flex: ms / tot + ' 0 0' }}></u>
             ))}
           </div>
-          <p className="dt-hap-lb mono">{f.pattern.join(' · ')} мс</p>
+          <p className="mono !text-[9px] mt-2">{f.pattern.join(' · ')} мс</p>
         </div>
       </div>
     </>

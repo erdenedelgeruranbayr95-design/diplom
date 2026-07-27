@@ -63,7 +63,7 @@ export default function AnalysisView({
             <p className="adm-empty">Энэ дуу хараахан анализ хийгдээгүй байна</p>
           ) : (
             <>
-              <div className="st-cards">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
                 <StatCard icon={ICONS.music} color="c-aqua" value={song.analyzedBpm ?? song.bpm ?? "—"} label="BPM" />
                 <StatCard icon={ICONS.vibrate} color="c-gold" value={song.beatCount ?? "—"} label="Цохилтын тоо" />
                 <StatCard icon={ICONS.phones} color="c-purple" value={durationLabel} label="Үргэлжлэх хугацаа" />
@@ -113,10 +113,16 @@ export default function AnalysisView({
               {song.waveformPeaks && song.waveformPeaks.length > 0 && (
                 <>
                   <h3 className="st-h">Долгион (waveform)</h3>
-                  <div className="st-chart" aria-label="Долгионы дүрслэл">
+                  <div
+                    className="grid grid-cols-7 gap-2.5 h-[180px] items-end border border-line rounded-[13px] p-[18px_18px_12px] bg-[rgba(20,28,27,.4)]"
+                    aria-label="Долгионы дүрслэл"
+                  >
                     {song.waveformPeaks.map((p, i) => (
-                      <div className="st-col" key={i}>
-                        <i style={{ height: `${Math.max(3, (p / maxPeak) * 100)}%` }}></i>
+                      <div className="flex flex-col items-center gap-[7px] h-full justify-end" key={i}>
+                        <i
+                          className="w-full max-w-[44px] bg-[linear-gradient(180deg,rgba(56,232,206,.75),rgba(56,232,206,.2))] rounded-[6px_6px_2px_2px] transition-[height] duration-[600ms] ease-[cubic-bezier(.16,.8,.24,1)]"
+                          style={{ height: `${Math.max(3, (p / maxPeak) * 100)}%` }}
+                        ></i>
                       </div>
                     ))}
                   </div>

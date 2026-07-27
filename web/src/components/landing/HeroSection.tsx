@@ -1,4 +1,4 @@
-export default function Hero() {
+export default function HeroSection() {
   return (
     <header className="hero" id="hero">
       <canvas id="stage"></canvas>

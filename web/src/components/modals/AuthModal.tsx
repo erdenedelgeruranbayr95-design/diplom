@@ -8,11 +8,11 @@ import type { SessionUser } from "@/types/auth";
 function PassInput({ name, autoComplete, invalid }: { name: string; autoComplete: string; invalid?: boolean }) {
   const [show, setShow] = useState(false);
   return (
-    <span className="pass-wrap">
+    <span className="relative flex [&>input]:w-full [&>input]:pr-11">
       <input name={name} type={show ? "text" : "password"} placeholder="••••••••" autoComplete={autoComplete} aria-invalid={invalid || undefined} />
       <button
         type="button"
-        className="pass-eye"
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 text-faint flex items-center transition-colors duration-250 hover:text-aqua"
         onClick={() => setShow(!show)}
         aria-label={show ? "Нууц үг нуух" : "Нууц үг харах"}
         title={show ? "Нуух" : "Харах"}
@@ -121,12 +121,26 @@ export default function AuthModal({
 
   return (
     <div
-      className={"auth-ov" + (closing ? " closing" : "")}
+      className={
+        "fixed inset-0 z-[10000] bg-[rgba(4,7,7,.72)] backdrop-blur-lg flex items-center justify-center p-6 " +
+        (closing ? "[animation:aov-out_.2s_ease_forwards]" : "[animation:aov_.3s_ease]")
+      }
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
     >
-      <div className="auth-box" role="dialog" aria-modal="true" aria-label="Нэвтрэх / Бүртгүүлэх">
+      <div
+        className={
+          "relative w-full max-w-[400px] bg-[rgba(9,14,14,.96)] border border-white/[.13] p-[30px_30px_24px] [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)] " +
+          "[&_form]:flex [&_form]:flex-col [&_form]:gap-4 [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] " +
+          "[&_input]:bg-white/[.04] [&_input]:border [&_input]:border-line [&_input]:text-ink [&_input]:font-body [&_input]:text-[14.5px] [&_input]:p-[12px_14px] [&_input]:cursor-none [&_input]:rounded-sm [&_input]:transition-[border-color,background,box-shadow] [&_input]:duration-300 " +
+          "[&_input:focus]:border-aqua [&_input:focus]:bg-[rgba(56,232,206,.05)] [&_input:focus-visible]:shadow-glow-aqua [&_input::placeholder]:text-faint " +
+          "[&_input[aria-invalid=true]]:border-[#E88A9B] [&_input[aria-invalid=true]]:bg-[rgba(232,138,155,.06)] [&_input[aria-invalid=true]]:[animation:auth-shake_.3s] [&_input[aria-invalid=true]:focus-visible]:shadow-[0_0_0_3px_rgba(232,138,155,.3)]"
+        }
+        role="dialog"
+        aria-modal="true"
+        aria-label="Нэвтрэх / Бүртгүүлэх"
+      >
         <button className="auth-x" onClick={handleClose} aria-label="Хаах">
           ✕
         </button>

@@ -28,23 +28,30 @@ export default function BillingView({
   return (
     <>
       <BackBar title="Захиалгын удирдлага" onBack={onBack} />
-      <div className={'bil-plan' + (active || isAdmin ? ' pro' : '')}>
+      <div
+        className={
+          "flex justify-between items-center gap-[22px] flex-wrap border border-line rounded-[13px] p-[22px_24px] transition-[border-color,background] duration-300 " +
+          (active || isAdmin ? "border-[rgba(56,232,206,.35)] bg-[rgba(56,232,206,.05)]" : "")
+        }
+      >
         <div>
           <span className="mono">Идэвхтэй план</span>
-          <b>{isAdmin ? 'Админ — бүх эрх' : active ? 'МЭДРЭХ PRO' : user?.sub ? 'PRO (цуцлагдсан)' : 'Үнэгүй горим'}</b>
-          <p>
+          <b className={"font-display text-[19px] block m-[6px_0_8px] tracking-[-.03em] " + (active || isAdmin ? "text-aqua" : "")}>
+            {isAdmin ? 'Админ — бүх эрх' : active ? 'МЭДРЭХ PRO' : user?.sub ? 'PRO (цуцлагдсан)' : 'Үнэгүй горим'}
+          </b>
+          <p className="text-dim text-[13.5px] max-w-[52ch]">
             {isAdmin ? 'Админ эрхтэй тул төлбөр шаардлагагүй.'
               : active ? `Дараагийн төлбөр: ${renewDate} — ${daysLeft} хоногийн дараа · 9'900₮`
                 : user?.sub ? `${renewDate} хүртэл эрх хадгалагдана, дараа нь үнэгүй горимд шилжинэ.`
                   : `Дуу тус бүрээс ${PREVIEW_SEC} секунд сонсох эрхтэй.`}
           </p>
           {active && !isAdmin && (
-            <div className="bil-count" aria-label="Дараагийн төлбөр хүртэл">
-              <i style={{ width: Math.min(100, ((30 - daysLeft) / 30) * 100) + '%' }}></i>
+            <div className="mt-3 h-[5px] rounded-[10px] bg-white/10" aria-label="Дараагийн төлбөр хүртэл">
+              <i className="block h-full bg-aqua rounded-[10px]" style={{ width: Math.min(100, ((30 - daysLeft) / 30) * 100) + '%' }}></i>
             </div>
           )}
         </div>
-        <div className="bil-actions">
+        <div className="flex flex-col gap-[9px] min-w-[210px]">
           {!isAdmin && active && (
             <button className="sp-prof-btn danger" onClick={() => {
               if (confirm('PRO захиалгаа цуцлах уу? ' + renewDate + ' хүртэл эрх чинь хадгалагдана.')) onCancelSub()
@@ -59,35 +66,70 @@ export default function BillingView({
       </div>
 
       <h3 className="st-h">Планаа харьцуулах</h3>
-      <div className="bil-compare">
-        <div className={'bil-ccard' + (!active && !isAdmin ? ' current' : '')}>
-          {!active && !isAdmin && <span className="bil-badge">Таны план</span>}
+      <div className="grid grid-cols-2 max-[640px]:grid-cols-1 gap-3.5">
+        <div className={"relative border border-line rounded-[14px] p-[22px] " + (!active && !isAdmin ? "border-[rgba(56,232,206,.5)] shadow-[0_0_0_1px_rgba(56,232,206,.2)]" : "")}>
+          {!active && !isAdmin && (
+            <span className="absolute top-4 right-4 font-mono text-[8.5px]">Таны план</span>
+          )}
           <span className="mono">Үнэгүй</span>
-          <b className="bil-price">0₮<i>/сар</i></b>
-          <ul className="bil-feats">
-            <li>Дуу тус бүрээс {PREVIEW_SEC} секунд</li>
-            <li>Чичиргээ + гэрэл + визуал</li>
-            <li>Мэдрэхүйн калибровк</li>
-            <li>Дуртай / Хадгалах / Playlist</li>
-            <li className="off">Бүтэн дуу — хаалттай</li>
-            <li className="off">Олон төхөөрөмж — хаалттай</li>
+          <b className="font-display text-[26px] tracking-[-.03em] block my-1.5">
+            0₮<i className="font-body text-[13px] text-dim not-italic font-normal">/сар</i>
+          </b>
+          <ul className="list-none flex flex-col gap-[9px] flex-1">
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
+              Дуу тус бүрээс {PREVIEW_SEC} секунд
+            </li>
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
+              Чичиргээ + гэрэл + визуал
+            </li>
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
+              Мэдрэхүйн калибровк
+            </li>
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
+              Дуртай / Хадгалах / Playlist
+            </li>
+            <li className="relative pl-6 text-[13px] text-faint leading-[1.45] before:content-['✕'] before:absolute before:left-0 before:top-0 before:text-faint before:font-bold">
+              Бүтэн дуу — хаалттай
+            </li>
+            <li className="relative pl-6 text-[13px] text-faint leading-[1.45] before:content-['✕'] before:absolute before:left-0 before:top-0 before:text-faint before:font-bold">
+              Олон төхөөрөмж — хаалттай
+            </li>
           </ul>
         </div>
 
-        <div className={'bil-ccard pro' + (active || isAdmin ? ' current' : '')}>
-          {(active || isAdmin) && <span className="bil-badge">Идэвхтэй</span>}
+        <div
+          className={
+            "relative border rounded-[14px] p-[22px] border-[rgba(56,232,206,.28)] bg-[rgba(56,232,206,.04)] " +
+            (active || isAdmin ? "border-[rgba(56,232,206,.5)] shadow-[0_0_0_1px_rgba(56,232,206,.2)]" : "")
+          }
+        >
+          {(active || isAdmin) && <span className="absolute top-4 right-4 font-mono text-[8.5px]">Идэвхтэй</span>}
           <span className="mono">МЭДРЭХ PRO</span>
-          <b className="bil-price">9'900₮<i>/сар</i></b>
-          <ul className="bil-feats">
-            <li>Бүх дуу бүрэн, хязгааргүй</li>
-            <li>Олон төхөөрөмж (gamepad, хантааз)</li>
-            <li>Өндөр нарийвчлалтай хаптик</li>
-            <li>Шинэ дуунд эрт хандах</li>
-            <li>Реклам-гүй туршлага</li>
-            <li>Мэдрэх горим бүрэн нээлттэй</li>
+          <b className="font-display text-[26px] tracking-[-.03em] block my-1.5 text-aqua">
+            9&apos;900₮<i className="font-body text-[13px] text-dim not-italic font-normal">/сар</i>
+          </b>
+          <ul className="list-none flex flex-col gap-[9px] flex-1">
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
+              Бүх дуу бүрэн, хязгааргүй
+            </li>
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
+              Олон төхөөрөмж (gamepad, хантааз)
+            </li>
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
+              Өндөр нарийвчлалтай хаптик
+            </li>
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
+              Шинэ дуунд эрт хандах
+            </li>
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
+              Реклам-гүй туршлага
+            </li>
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
+              Мэдрэх горим бүрэн нээлттэй
+            </li>
           </ul>
           {!isAdmin && !active && (
-            <button className="bt bt-a bil-ccta" onClick={onSubscribe}>
+            <button className="bt bt-a mt-[18px] w-full text-center" onClick={onSubscribe}>
               {user?.sub ? 'Сэргээх →' : 'PRO болох →'}
             </button>
           )}

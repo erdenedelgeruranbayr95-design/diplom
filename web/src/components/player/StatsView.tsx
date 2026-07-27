@@ -38,7 +38,7 @@ export default function StatsView({
   return (
     <>
       <BackBar title="Миний статистик" onBack={onBack} />
-      <div className="st-cards">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
         <StatCard icon={ICONS.phones} color="c-aqua" value={fmtDur(s.total)} label="Нийт сонссон" />
         <StatCard icon={ICONS.vibrate} color="c-gold" value={s.vib.toLocaleString()} label="Мэдэрсэн чичиргээ" />
         <StatCard icon={ICONS.music} color="c-purple" value={Object.keys(s.byTrack).length} label="Сонссон дуу" />
@@ -46,12 +46,20 @@ export default function StatsView({
       </div>
 
       <h3 className="st-h">Сүүлийн 7 хоног</h3>
-      <div className="st-chart">
+      <div className="grid grid-cols-7 gap-2.5 h-[180px] items-end border border-line rounded-[13px] p-[18px_18px_12px] bg-[rgba(20,28,27,.4)]">
         {days.map((d, i) => (
-          <div className="st-col" key={i}>
-            <span className="st-val mono">{d.sec ? fmtDur(d.sec) : ''}</span>
-            <i className={d.today ? 'today' : ''} style={{ height: Math.max(3, (d.sec / maxDay) * 100) + '%' }}></i>
-            <span className={'mono' + (d.today ? ' st-today' : '')}>{d.label}</span>
+          <div className="flex flex-col items-center gap-[7px] h-full justify-end" key={i}>
+            <span className="mono !text-[9px]">{d.sec ? fmtDur(d.sec) : ""}</span>
+            <i
+              className={
+                "w-full max-w-[44px] rounded-[6px_6px_2px_2px] transition-[height] duration-[600ms] ease-[cubic-bezier(.16,.8,.24,1)] " +
+                (d.today
+                  ? "bg-[linear-gradient(180deg,var(--aqua),rgba(56,232,206,.4))] shadow-[0_0_14px_rgba(56,232,206,.3)]"
+                  : "bg-[linear-gradient(180deg,rgba(56,232,206,.75),rgba(56,232,206,.2))]")
+              }
+              style={{ height: Math.max(3, (d.sec / maxDay) * 100) + "%" }}
+            ></i>
+            <span className={"mono" + (d.today ? " !text-aqua" : "")}>{d.label}</span>
           </div>
         ))}
       </div>
@@ -59,14 +67,21 @@ export default function StatsView({
       {topTracks.length > 0 && (
         <>
           <h3 className="st-h">Хамгийн их сонссон</h3>
-          <div className="sp-list">
+          <div className="flex flex-col">
             {topTracks.map(({ t, sec }, i) => (
-              <button key={t.id} className="sp-lrow st-toprow" onClick={() => onPlay(t)}>
-                <span className="sp-lno mono">{'0' + (i + 1)}</span>
-                <img className="sp-lthumb" src={t.cover} alt="" />
-                <span className="sp-lmeta"><b>{t.title}</b><i>{t.artist}</i></span>
-                <span className="sp-lgenre mono">{fmtDur(sec)}</span>
-                <span className="sp-lact" aria-hidden="true">▶</span>
+              <button
+                key={t.id}
+                className="grid grid-cols-[34px_44px_1fr_auto_30px] gap-3 items-center py-2.5 px-3.5 mb-0.5 rounded-[11px] text-ink text-left transition-colors duration-250 hover:bg-white/5"
+                onClick={() => onPlay(t)}
+              >
+                <span className="mono !text-[10px]">{'0' + (i + 1)}</span>
+                <img className="w-11 h-11 rounded-lg object-cover shadow-[0_4px_12px_rgba(0,0,0,.3)]" src={t.cover} alt="" />
+                <span className="flex flex-col min-w-0">
+                  <b className="font-semibold text-sm whitespace-nowrap overflow-hidden text-ellipsis">{t.title}</b>
+                  <i className="not-italic text-xs text-dim">{t.artist}</i>
+                </span>
+                <span className="mono !text-[9.5px] max-nav:hidden">{fmtDur(sec)}</span>
+                <span className="text-dim text-xs flex justify-center" aria-hidden="true">▶</span>
               </button>
             ))}
           </div>

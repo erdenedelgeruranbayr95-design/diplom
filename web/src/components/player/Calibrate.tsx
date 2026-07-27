@@ -119,27 +119,32 @@ export default function Calibrate({
   const stepTitles = ["", "Чичиргээ", "Гэрэл", "Давтамж", "Дүгнэлт"];
 
   return (
-    <div className="cal-ov" role="dialog" aria-modal="true" aria-label="Мэдрэхүйн калибровк">
-      <div className="cal-box">
+    <div
+      className="fixed inset-0 z-[9700] bg-[rgba(4,7,7,.92)] backdrop-blur-2xl flex items-center justify-center p-[22px] [animation:aov_.35s_ease]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Мэдрэхүйн калибровк"
+    >
+      <div className="w-full max-w-[520px] bg-[#0C1313] border border-white/[.12] rounded-2xl p-[34px_34px_30px] [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)]">
         {step > 0 && (
-          <div className="cal-prog" aria-hidden="true">
+          <div className="flex gap-[7px] mb-[26px]" aria-hidden="true">
             {[1, 2, 3, 4].map((s) => (
-              <i key={s} className={step >= s ? "on" : ""}></i>
+              <i key={s} className={"flex-1 h-[3px] rounded-[10px] transition-colors duration-[400ms] " + (step >= s ? "bg-aqua" : "bg-white/[.12]")}></i>
             ))}
           </div>
         )}
 
         {step === 0 && (
-          <div className="cal-step">
-            <span className="cal-big" aria-hidden="true">
+          <div className="flex flex-col gap-4">
+            <span className="text-[44px] leading-none" aria-hidden="true">
               🎛
             </span>
-            <h2>Мэдрэхүйн калибровк</h2>
-            <p>
-              Сонсголын мэдрэмж хүн бүрд өөр. Богино тестээр таны <b>мэдрэх босгыг</b> тодорхойлж, чичиргээ болон
+            <h2 className="text-[clamp(20px,2.6vw,27px)] font-extrabold tracking-[-.035em]">Мэдрэхүйн калибровк</h2>
+            <p className="text-dim text-sm leading-[1.6]">
+              Сонсголын мэдрэмж хүн бүрд өөр. Богино тестээр таны <b className="text-ink">мэдрэх босгыг</b> тодорхойлж, чичиргээ болон
               гэрлийн тохиргоог танд яг тааруулж өгье. Ердөө 1 минут зарцуулна.
             </p>
-            <div className="cal-row">
+            <div className="flex gap-3 flex-wrap mt-1.5">
               <button className="bt bt-a" onClick={() => setStep(1)}>
                 Эхлэх →
               </button>
@@ -151,30 +156,39 @@ export default function Calibrate({
         )}
 
         {step === 1 && (
-          <div className="cal-step">
+          <div className="flex flex-col gap-4">
             <span className="mono">1 / 4 · {stepTitles[1]}</span>
-            <h2>Чичиргээг мэдэрч үзье</h2>
+            <h2 className="text-[clamp(20px,2.6vw,27px)] font-extrabold tracking-[-.035em]">Чичиргээг мэдэрч үзье</h2>
             {canVibrate ? (
-              <p>Утсаа гартаа барьж байгаад доорх товчийг дараарай — 0.3 секундын чичиргээ өгнө.</p>
+              <p className="text-dim text-sm leading-[1.6]">Утсаа гартаа барьж байгаад доорх товчийг дараарай — 0.3 секундын чичиргээ өгнө.</p>
             ) : (
-              <p>Энэ төхөөрөмж чичиргээгүй тул дууны туршилт хийнэ. Утсан дээр дахин калибровк хийхэд чичиргээ нэмэгдэнэ.</p>
+              <p className="text-dim text-sm leading-[1.6]">Энэ төхөөрөмж чичиргээгүй тул дууны туршилт хийнэ. Утсан дээр дахин калибровк хийхэд чичиргээ нэмэгдэнэ.</p>
             )}
-            <button className={"cal-test" + (tried ? " done" : "")} onClick={tryVib}>
+            <button
+              className={
+                "p-4 border rounded-xl text-aqua text-[15px] transition-[background,border-style] duration-250 hover:bg-[rgba(56,232,206,.06)] " +
+                (tried ? "border-solid border-[rgba(56,232,206,.4)]" : "border-dashed border-[rgba(56,232,206,.4)]")
+              }
+              onClick={tryVib}
+            >
               📳 {tried ? "Дахин туршиж үзэх" : "Туршиж үзэх"}
             </button>
-            <div className="cal-ans">
+            <div className="grid grid-cols-3 max-[560px]:grid-cols-1 gap-[9px]">
               {VIB_ANS.map((a) => (
                 <button
                   key={a.val}
-                  className={vibChoice === a.val && tried ? "on" : ""}
+                  className={
+                    "flex flex-col gap-1 py-[13px] px-2.5 border rounded-[11px] text-center items-center transition-[border-color,background] duration-250 disabled:opacity-40 enabled:hover:border-[rgba(56,232,206,.5)] enabled:hover:bg-[rgba(56,232,206,.05)] " +
+                    (vibChoice === a.val && tried ? "border-aqua bg-[rgba(56,232,206,.08)]" : "border-line")
+                  }
                   disabled={!tried}
                   onClick={() => {
                     setVibChoice(a.val);
                     setStep(2);
                   }}
                 >
-                  <b>{a.label}</b>
-                  <span>{a.hint}</span>
+                  <b className="text-[13.5px] font-semibold text-ink">{a.label}</b>
+                  <span className="text-[10.5px] text-faint">{a.hint}</span>
                 </button>
               ))}
             </div>
@@ -182,23 +196,24 @@ export default function Calibrate({
         )}
 
         {step === 2 && (
-          <div className="cal-step">
+          <div className="flex flex-col gap-4">
             <span className="mono">2 / 4 · {stepTitles[2]}</span>
-            <h2>Гэрлийн пульс хэр харагдаж байна?</h2>
-            <div className="cal-pulse-wrap" aria-hidden="true">
-              <span className="cal-pulse"></span>
+            <h2 className="text-[clamp(20px,2.6vw,27px)] font-extrabold tracking-[-.035em]">Гэрлийн пульс хэр харагдаж байна?</h2>
+            <div className="flex justify-center py-[18px]" aria-hidden="true">
+              <span className="w-[110px] h-[110px] rounded-full bg-[radial-gradient(circle,rgba(56,232,206,.6),rgba(56,232,206,.06)_70%)] [animation:calp_1.1s_ease-in-out_infinite]"></span>
             </div>
-            <div className="cal-ans">
+            <div className="grid grid-cols-3 max-[560px]:grid-cols-1 gap-[9px]">
               {LIGHT_ANS.map((a) => (
                 <button
                   key={a.val}
+                  className="flex flex-col gap-1 py-[13px] px-2.5 border border-line rounded-[11px] text-center items-center transition-[border-color,background] duration-250 hover:border-[rgba(56,232,206,.5)] hover:bg-[rgba(56,232,206,.05)]"
                   onClick={() => {
                     setLightChoice(a.val);
                     setStep(3);
                   }}
                 >
-                  <b>{a.label}</b>
-                  <span>{a.hint}</span>
+                  <b className="text-[13.5px] font-semibold text-ink">{a.label}</b>
+                  <span className="text-[10.5px] text-faint">{a.hint}</span>
                 </button>
               ))}
             </div>
@@ -206,27 +221,44 @@ export default function Calibrate({
         )}
 
         {step === 3 && (
-          <div className="cal-step">
+          <div className="flex flex-col gap-4">
             <span className="mono">3 / 4 · {stepTitles[3]}</span>
-            <h2>Аль давтамжийг мэдэрдэг вэ?</h2>
-            <p>Тус бүрийг туршаад, мэдэрсэн бүсүүдээ идэвхтэй үлдээгээрэй. Идэвхгүй бүс чичиргээ өгөхгүй.</p>
-            <div className="cal-bands">
+            <h2 className="text-[clamp(20px,2.6vw,27px)] font-extrabold tracking-[-.035em]">Аль давтамжийг мэдэрдэг вэ?</h2>
+            <p className="text-dim text-sm leading-[1.6]">Тус бүрийг туршаад, мэдэрсэн бүсүүдээ идэвхтэй үлдээгээрэй. Идэвхгүй бүс чичиргээ өгөхгүй.</p>
+            <div className="flex flex-col gap-[9px]">
               {BAND_SAMPLES.map((s) => (
-                <div key={s.key} className={"cal-band" + (bandsSel[s.key] ? " on" : "")}>
-                  <button className="cal-band-play" onClick={() => trySample(s)} aria-label={s.label + " туршиж үзэх"}>
+                <div
+                  key={s.key}
+                  className={
+                    "flex items-center gap-3.5 border rounded-xl py-[11px] px-3.5 transition-[border-color,background] duration-250 " +
+                    (bandsSel[s.key] ? "border-[rgba(56,232,206,.45)] bg-[rgba(56,232,206,.05)]" : "border-line")
+                  }
+                >
+                  <button
+                    className="w-10 h-10 flex-none rounded-full bg-aqua text-[#04100E] text-sm flex items-center justify-center hover:bg-[#6FF3DE]"
+                    onClick={() => trySample(s)}
+                    aria-label={s.label + " туршиж үзэх"}
+                  >
                     ▶
                   </button>
-                  <div className="cal-band-meta">
-                    <b>{s.label}</b>
-                    <span className="mono">{s.hz}</span>
+                  <div className="flex-1">
+                    <b className="block text-[14.5px] font-semibold">{s.label}</b>
+                    <span className="mono !text-[9px]">{s.hz}</span>
                   </div>
-                  <button className="cal-band-tgl" onClick={() => toggleBand(s.key)} aria-pressed={bandsSel[s.key]}>
+                  <button
+                    className={
+                      "text-[12.5px] py-2 px-3.5 border rounded-full transition-colors duration-250 " +
+                      (bandsSel[s.key] ? "text-aqua border-[rgba(56,232,206,.5)]" : "text-dim border-line")
+                    }
+                    onClick={() => toggleBand(s.key)}
+                    aria-pressed={bandsSel[s.key]}
+                  >
                     {bandsSel[s.key] ? "✓ Мэдэрсэн" : "Мэдрээгүй"}
                   </button>
                 </div>
               ))}
             </div>
-            <div className="cal-row">
+            <div className="flex gap-3 flex-wrap mt-1.5">
               <button className="bt bt-a" onClick={() => setStep(4)}>
                 Үргэлжлүүлэх →
               </button>
@@ -235,28 +267,28 @@ export default function Calibrate({
         )}
 
         {step === 4 && (
-          <div className="cal-step">
+          <div className="flex flex-col gap-4">
             <span className="mono">4 / 4 · {stepTitles[4]}</span>
-            <span className="cal-big" aria-hidden="true">
+            <span className="text-[44px] leading-none" aria-hidden="true">
               ✓
             </span>
-            <h2>Таны мэдрэхүйн профайл</h2>
-            <div className="cal-sum">
-              <div>
+            <h2 className="text-[clamp(20px,2.6vw,27px)] font-extrabold tracking-[-.035em]">Таны мэдрэхүйн профайл</h2>
+            <div className="grid grid-cols-3 max-[560px]:grid-cols-1 gap-2.5">
+              <div className="border border-[rgba(56,232,206,.3)] bg-[rgba(56,232,206,.05)] rounded-[11px] p-[13px] flex flex-col gap-[5px]">
                 <span className="mono">Чичиргээ</span>
-                <b>{["Сул", "Дунд", "Хүчтэй"][vibChoice]}</b>
+                <b className="text-sm text-aqua">{["Сул", "Дунд", "Хүчтэй"][vibChoice]}</b>
               </div>
-              <div>
+              <div className="border border-[rgba(56,232,206,.3)] bg-[rgba(56,232,206,.05)] rounded-[11px] p-[13px] flex flex-col gap-[5px]">
                 <span className="mono">Гэрэл</span>
-                <b>{["Бүдэг", "Дунд", "Тод"][lightChoice]}</b>
+                <b className="text-sm text-aqua">{["Бүдэг", "Дунд", "Тод"][lightChoice]}</b>
               </div>
-              <div>
+              <div className="border border-[rgba(56,232,206,.3)] bg-[rgba(56,232,206,.05)] rounded-[11px] p-[13px] flex flex-col gap-[5px]">
                 <span className="mono">Бүс</span>
-                <b>{[bandsSel.bass && "Бас", bandsSel.mid && "Дунд", bandsSel.high && "Өндөр"].filter(Boolean).join(" · ")}</b>
+                <b className="text-sm text-aqua">{[bandsSel.bass && "Бас", bandsSel.mid && "Дунд", bandsSel.high && "Өндөр"].filter(Boolean).join(" · ")}</b>
               </div>
             </div>
-            <p className="cal-note">Тохиргоог хүссэн үедээ ⚙️ цэснээс өөрчилж, дахин калибровк хийж болно.</p>
-            <div className="cal-row">
+            <p className="text-faint text-xs">Тохиргоог хүссэн үедээ ⚙️ цэснээс өөрчилж, дахин калибровк хийж болно.</p>
+            <div className="flex gap-3 flex-wrap mt-1.5">
               <button className="bt bt-a" onClick={finish}>
                 Хадгалаад эхлэх →
               </button>

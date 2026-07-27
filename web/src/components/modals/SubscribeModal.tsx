@@ -111,33 +111,46 @@ export default function SubscribeModal({
 
   return (
     <div
-      className={"auth-ov" + (closing ? " closing" : "")}
+      className={
+        "fixed inset-0 z-[10000] bg-[rgba(4,7,7,.72)] backdrop-blur-lg flex items-center justify-center p-6 " +
+        (closing ? "[animation:aov-out_.2s_ease_forwards]" : "[animation:aov_.3s_ease]")
+      }
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !busy) handleClose();
       }}
     >
-      <div className="auth-box sub-box" role="dialog" aria-modal="true" aria-label="Сарын захиалга">
+      <div
+        className={
+          "relative w-full max-w-[430px] bg-[rgba(9,14,14,.96)] border border-white/[.13] p-[30px_30px_24px] [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)] " +
+          "[&_form]:flex [&_form]:flex-col [&_form]:gap-4 [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] " +
+          "[&_input]:bg-white/[.04] [&_input]:border [&_input]:border-line [&_input]:text-ink [&_input]:font-body [&_input]:text-[14.5px] [&_input]:p-[12px_14px] [&_input]:cursor-none [&_input]:rounded-sm [&_input]:transition-[border-color,background,box-shadow] [&_input]:duration-300 " +
+          "[&_input:focus]:border-aqua [&_input:focus]:bg-[rgba(56,232,206,.05)] [&_input:focus-visible]:shadow-glow-aqua [&_input::placeholder]:text-faint"
+        }
+        role="dialog"
+        aria-modal="true"
+        aria-label="Сарын захиалга"
+      >
         <button className="auth-x" onClick={handleClose} aria-label="Хаах">
           ✕
         </button>
 
         <span className="mono">МЭДРЭХ® / Захиалга</span>
 
-        <div className="sub-plan">
+        <div className="flex justify-between gap-4 border border-[rgba(56,232,206,.3)] bg-[rgba(56,232,206,.04)] p-[16px_18px] my-5 mb-[22px]">
           <div>
-            <b>{PLAN.name}</b>
-            <span>Бүх дууг бүрэн сонсох · чичиргээ + гэрлийн горим · шинэ дуу нэмэгдэх бүрд</span>
+            <b className="font-display text-[15px] block">{PLAN.name}</b>
+            <span className="block text-dim text-xs mt-1.5 max-w-[26ch]">Бүх дууг бүрэн сонсох · чичиргээ + гэрлийн горим · шинэ дуу нэмэгдэх бүрд</span>
           </div>
-          <div className="sub-price">
-            <b>{PLAN.price}</b>
+          <div className="text-right flex-none">
+            <b className="text-[21px]">{PLAN.price}</b>
             <span className="mono">{PLAN.period}</span>
           </div>
         </div>
 
         {done ? (
-          <div className="sub-done">
-            <b>✓ Захиалга идэвхжлээ!</b>
-            <p>Дараагийн төлбөр: {new Date(Date.now() + 2592000000).toLocaleDateString("mn-MN")}</p>
+          <div className="text-center p-[26px_0_14px]">
+            <b className="font-display text-[19px] text-aqua block mb-2.5">✓ Захиалга идэвхжлээ!</b>
+            <p className="text-dim text-[13.5px]">Дараагийн төлбөр: {new Date(Date.now() + 2592000000).toLocaleDateString("mn-MN")}</p>
           </div>
         ) : (
           <form onSubmit={submit}>
@@ -145,7 +158,7 @@ export default function SubscribeModal({
               <span className="mono">Картын дугаар</span>
               <input name="card" inputMode="numeric" placeholder="4242 4242 4242 4242" autoComplete="cc-number" />
             </label>
-            <div className="sub-row2">
+            <div className="grid grid-cols-2 gap-3.5">
               <label>
                 <span className="mono">Дуусах хугацаа</span>
                 <input name="exp" inputMode="numeric" placeholder="MM/YY" autoComplete="cc-exp" />

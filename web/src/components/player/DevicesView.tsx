@@ -125,29 +125,56 @@ export default function DevicesView({
 
       <p className="dv-lead">Хөгжмийг илүү хүчтэй мэдрэхийн тулд төхөөрөмж холбоно. Утас хамгийн энгийн нь — хантааз хамгийн гүн мэдрэмж өгнө.</p>
 
-      <div className="dv-grid">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-3.5 mb-3">
         {devices.map((d) => (
-          <div className={'dv-card' + (d.ok ? ' ok' : '')} key={d.key}>
-            <span className="dv-ic" aria-hidden="true">{d.icon}</span>
-            <b>{d.name}</b>
-            <p>{d.desc}</p>
-            <span className={'dv-status' + (d.ok ? ' on' : '')}>
-              <i className="dv-dot" aria-hidden="true"></i>{d.status}
+          <div
+            key={d.key}
+            className={
+              "flex flex-col items-start gap-2 bg-white/[.03] border rounded-xl p-5 transition-[border-color,box-shadow,transform] duration-250 hover:-translate-y-0.5 hover:shadow-sm " +
+              (d.ok ? "border-[rgba(56,232,206,.35)]" : "border-line")
+            }
+          >
+            <span className="text-[30px] leading-none" aria-hidden="true">{d.icon}</span>
+            <b className="font-display font-normal text-[15px] text-ink">{d.name}</b>
+            <p className="flex-1 m-0 text-dim text-[12.5px] leading-[1.5]">{d.desc}</p>
+            <span className={"inline-flex items-center gap-[7px] font-mono text-[10.5px] transition-colors duration-300 " + (d.ok ? "text-aqua" : "text-dim")}>
+              <i
+                className={
+                  "w-[7px] h-[7px] rounded-full transition-[background,box-shadow] duration-300 " +
+                  (d.ok ? "bg-aqua shadow-[0_0_8px_var(--aqua)]" : "bg-faint")
+                }
+                aria-hidden="true"
+              ></i>
+              {d.status}
             </span>
-            <button className="bt bt-a dv-btn" onClick={d.action}>{d.actionLabel}</button>
+            <button className="bt bt-a !p-[12px_20px] !text-[13px] !min-h-11" onClick={d.action}>{d.actionLabel}</button>
           </div>
         ))}
       </div>
 
       {(deviceSync.qrState === 'waiting' || deviceSync.qrState === 'connected') && deviceSync.qrToken && (
-        <div className={'sp-banner dv-note dv-qr-banner' + (justConnected ? ' just-connected' : '')} style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div
+          className={
+            "sp-banner !mt-1 " +
+            (justConnected ? "!border-[rgba(56,232,206,.45)] !shadow-glow-aqua transition-[border-color,box-shadow] duration-300" : "")
+          }
+          style={{ display: 'flex', alignItems: 'center', gap: 20 }}
+        >
           {deviceSync.qrState === 'waiting' && (
-            <span className="dv-qr-card">
+            <span className="bg-white p-3 rounded-xl inline-flex shadow-md border border-white/[.08] [animation:dv-qr-in_.3s_cubic-bezier(.2,.8,.2,1)]">
               <QRCodeSVG value={`${window.location.origin}/mobile/${deviceSync.qrToken}`} size={128} />
             </span>
           )}
           {deviceSync.qrState === 'connected' && (
-            <span className={'dv-qr-check' + (justConnected ? ' pop' : '')} aria-hidden="true">✓</span>
+            <span
+              className={
+                "w-14 h-14 flex-none rounded-full flex items-center justify-center bg-[rgba(56,232,206,.15)] text-aqua text-2xl font-bold " +
+                (justConnected ? "[animation:dv-qr-pop_.5s_cubic-bezier(.2,.8,.2,1)]" : "")
+              }
+              aria-hidden="true"
+            >
+              ✓
+            </span>
           )}
           <div>
             <b>{deviceSync.qrState === 'connected' ? '✓ Утас холбогдлоо' : 'Утсаараа QR кодыг уншуулна уу'}</b>
@@ -159,20 +186,31 @@ export default function DevicesView({
       <h3 className="st-h">Давтамж → биеийн байрлал</h3>
       <p className="dv-lead">Олон моторт төхөөрөмж дээр давтамжийн бүс бүрийг биеийн өөр цэгт оноож болно (чихний дун шиг — «tonotopic»). Дараад туршиж үзээрэй.</p>
 
-      <div className="dv-map">
+      <div className="flex flex-col gap-3 mb-5">
         {['bass', 'mid', 'high'].map((band) => (
           <div className="dv-maprow" key={band}>
-            <button className="dv-testz" onClick={() => testZone(band)} aria-label={BAND_LABEL[band] + ' туршиж үзэх'}>▶</button>
-            <span className="dv-band">{BAND_LABEL[band]}</span>
-            <span className="dv-arrow" aria-hidden="true">→</span>
-            <select className="dv-select" value={map[band]} onChange={(e) => setZone(band, e.target.value)} aria-label={BAND_LABEL[band] + ' байрлал'}>
+            <button
+              className="w-11 h-11 flex-[0_0_44px] rounded-full border border-line bg-[rgba(56,232,206,.1)] text-aqua cursor-pointer transition-[background,transform,box-shadow] duration-200 hover:bg-[rgba(56,232,206,.18)] active:scale-[.92] focus-visible:shadow-glow-aqua"
+              onClick={() => testZone(band)}
+              aria-label={BAND_LABEL[band] + ' туршиж үзэх'}
+            >
+              ▶
+            </button>
+            <span className="flex-1 text-sm text-ink">{BAND_LABEL[band]}</span>
+            <span className="text-faint" aria-hidden="true">→</span>
+            <select
+              className="!w-auto !min-w-[120px] !min-h-11 p-[12px_14px] rounded-sm bg-white/[.04] border border-line text-ink text-[14.5px] font-[inherit] transition-[border-color,box-shadow] duration-300 focus:border-aqua focus-visible:outline-none focus-visible:shadow-glow-aqua"
+              value={map[band]}
+              onChange={(e) => setZone(band, e.target.value)}
+              aria-label={BAND_LABEL[band] + ' байрлал'}
+            >
               {ZONES.map((z) => <option key={z.v} value={z.v}>{z.label}</option>)}
             </select>
           </div>
         ))}
       </div>
 
-      <div className="sp-banner dv-note">
+      <div className="sp-banner !mt-1">
         <div>
           <b>Санамж</b>
           <p>Компьютер дээр жинхэнэ чичиргээ гарахгүй — зөвхөн гэрлийн пульс. Бүрэн туршихын тулд Android утас эсвэл gamepad холбоно уу.</p>

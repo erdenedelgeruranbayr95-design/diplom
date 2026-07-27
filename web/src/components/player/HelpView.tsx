@@ -25,22 +25,35 @@ export default function HelpView({ onOpenCalibrate, onBack }: { onOpenCalibrate:
   return (
     <>
       <BackBar title="Тусламж — Хэрхэн ашиглах вэ?" onBack={onBack} />
-      <div className="hlp-grid">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3.5">
         {ITEMS.map((x) => (
-          <div className="hlp-card" key={x.t}>
-            <span className="hlp-ic" aria-hidden="true">{x.ic}</span>
-            <b>{x.t}</b>
-            <p>{x.d}</p>
+          <div
+            className="border border-line rounded-[13px] p-[22px] bg-[rgba(20,28,27,.4)] flex flex-col gap-[9px] transition-[border-color,transform] duration-300 hover:border-[rgba(56,232,206,.35)] hover:-translate-y-[3px]"
+            key={x.t}
+          >
+            <span className="text-[26px]" aria-hidden="true">
+              {x.ic}
+            </span>
+            <b className="text-[15.5px] font-semibold">{x.t}</b>
+            <p className="text-dim text-[13px] leading-[1.55]">{x.d}</p>
           </div>
         ))}
       </div>
 
       <h3 className="st-h">Түгээмэл асуулт</h3>
-      <div className="hlp-faq">
+      <div className="flex flex-col gap-[9px]">
         {FAQ.map((x) => (
-          <details className="hlp-faq-item" key={x.q}>
-            <summary>{x.q}<span className="hlp-faq-ic" aria-hidden="true">+</span></summary>
-            <p>{x.a}</p>
+          <details
+            className="border border-line rounded-[11px] bg-[rgba(20,28,27,.4)] overflow-hidden [&[open]>summary]:border-b [&[open]>summary]:border-line [&[open]_.hlp-faq-ic]:rotate-45"
+            key={x.q}
+          >
+            <summary className="flex items-center justify-between gap-3 cursor-pointer p-[15px_18px] text-sm font-semibold text-ink list-none [&::-webkit-details-marker]:hidden">
+              {x.q}
+              <span className="hlp-faq-ic flex-none text-lg text-aqua transition-transform duration-200 leading-none" aria-hidden="true">
+                +
+              </span>
+            </summary>
+            <p className="text-dim text-[13px] leading-[1.6] p-[14px_18px_16px]">{x.a}</p>
           </details>
         ))}
       </div>

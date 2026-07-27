@@ -5,6 +5,8 @@ import BackBar from "./BackBar";
 import { Loading, ErrorState } from "@/components/ui/States";
 import { listProgress } from "@/lib/api/client";
 import { computeAchievements } from "@/lib/player/achievements";
+import AchievementSummary from "@/components/achievements/AchievementSummary";
+import AchievementGrid from "@/components/achievements/AchievementGrid";
 import type { ListeningStats } from "@/types/track";
 
 const EMPTY_STATS: ListeningStats = { total: 0, vib: 0, byGenre: {}, byTrack: {}, days: {} };
@@ -41,21 +43,8 @@ export default function AchievementsView({ stats, onBack }: { stats: ListeningSt
 
       {!loading && !err && (
         <>
-          <p className="dv-lead">
-            {unlockedCount} / {achievements.length} амжилт нээгдсэн
-          </p>
-          <div className="ach-grid">
-            {achievements.map((a) => (
-              <div className={"ach-card" + (a.unlocked ? " on" : "")} key={a.id}>
-                <span className="ach-ic" aria-hidden="true">
-                  {a.icon}
-                </span>
-                <b>{a.title}</b>
-                <p>{a.hint}</p>
-                <span className="ach-progress mono">{a.progressLabel}</span>
-              </div>
-            ))}
-          </div>
+          <AchievementSummary unlockedCount={unlockedCount} totalCount={achievements.length} />
+          <AchievementGrid achievements={achievements} />
         </>
       )}
     </>

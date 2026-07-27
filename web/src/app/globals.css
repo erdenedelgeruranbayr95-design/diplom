@@ -1,7 +1,62 @@
 /* Эх сурвалж (React+Vite) CSS-ийг өөрчлөлтгүй импортолсон. Tailwind preflight
    одоогийн handwritten reset (*{box-sizing:border-box;margin:0;padding:0} гэх мэт)-тэй
-   мөргөлддөг тул энэ migration-д Tailwind-ийн @import-ийг зориудаар оруулаагүй —
-   UI-г "яг хэвээр" байлгах шаардлагыг эрхэмлэв. Tailwind package hэвээр суусан,
-   ирээдүйд шинэ widget-д scoped ашиглаж болно. */
+   мөргөлддөг тул preflight.css-г зориудаар импортлоогүй (зөвхөн theme + utilities) —
+   UI-г "яг хэвээр" байлгах шаардлагыг эрхэмлэв. Энэ бол зөвхөн тохиргоо: доорх
+   @theme нь одоо байгаа --bg, --aqua, --radius-md, --shadow-sm, --sp-4 гэх мэт custom
+   property-уудыг Tailwind-ийн theme рүү mapping хийнэ (medreh.css:2-20-тэй ижил утгууд, шинээр
+   зохиогоогүй) — component-үүд Tailwind класс ашиглаж эхлээгүй байгаа тул
+   визуал өөрчлөлт байхгүй. */
+@import "tailwindcss/theme.css";
+@import "tailwindcss/utilities.css";
+@config "../../tailwind.config.ts";
+
+@theme {
+  --color-bg: #070a0a;
+  --color-ink: #f2f5f4;
+  --color-dim: #778583;
+  --color-faint: #4e5b59;
+  --color-aqua: #38e8ce;
+  --color-warm: #d9a54c;
+  --color-purple: #b49cff;
+  --color-rose: #f08ca5;
+  --color-line: rgba(242, 245, 244, 0.1);
+
+  --radius-sm: 8px;
+  --radius-md: 13px;
+  --radius-lg: 18px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.55);
+  --shadow-glow-aqua: 0 0 0 3px rgba(56, 232, 206, 0.25);
+  --shadow-glow-warm: 0 0 0 3px rgba(217, 165, 76, 0.3);
+
+  --blur-xs: 4px;
+  --blur-sm: 6px;
+  --blur-md: 12px;
+  --blur-lg: 14px;
+  --blur-xl: 18px;
+  --blur-2xl: 20px;
+  --blur-3xl: 22px;
+  --blur-4xl: 24px;
+  --blur-5xl: 60px;
+  --blur-6xl: 150px;
+
+  --spacing-sp-1: 4px;
+  --spacing-sp-2: 8px;
+  --spacing-sp-3: 12px;
+  --spacing-sp-4: 16px;
+  --spacing-sp-5: 20px;
+  --spacing-sp-6: 24px;
+  --spacing-sp-8: 32px;
+
+  --max-width-wrap: 1340px;
+
+  --font-display: "Unbounded", sans-serif;
+  --font-body: "Golos Text", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
 @import "./medreh.css";
 @import "./ui.css";

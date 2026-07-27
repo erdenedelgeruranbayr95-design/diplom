@@ -5,10 +5,10 @@ import { TRACKS } from "@/lib/data/tracks";
 import { idbGet } from "@/lib/data/idb";
 import { loadCustomMeta, loadFeed, getReadTs, markFeedRead, loadStats, saveStats, todayKey } from "@/lib/data/library";
 import Calibrate from "./Calibrate";
+import TopBar from "@/components/layout/TopBar";
+import Sidebar from "@/components/layout/Sidebar";
+import PageContainer from "@/components/layout/PageContainer";
 import { PREVIEW_SEC, VIB_LEVELS, LIGHT_LEVELS, DEFAULT_PREFS, FEEL, FEEL_DEFAULT } from "@/lib/player/constants";
-import { fmt, relTime } from "@/lib/player/format";
-import BackBar from "./BackBar";
-import SideList from "./SideList";
 import ProfileView from "./ProfileView";
 import DevicesView from "./DevicesView";
 import PlaylistsView from "./PlaylistsView";
@@ -29,14 +29,17 @@ import LibraryView from "./LibraryView";
 import NowPlayingPanel from "./NowPlayingPanel";
 import AnalysisView from "./AnalysisView";
 import HistoryView from "./HistoryView";
+import PlayerHeader from "./PlayerHeader";
+import PlaybackControls from "./PlaybackControls";
+import ActionToolbar from "./ActionToolbar";
 import * as songsApi from "@/lib/api/client";
 import { useDeviceSync } from "@/lib/socket/useDeviceSync";
 import { BeatScheduler } from "@/lib/audio/beat-scheduler";
 import type { SessionUser } from "@/types/auth";
 import type { ListeningStats, Track } from "@/types/track";
 
-type PlayerTrack = Track & { custom?: boolean; songId?: string };
-type ViewName =
+export type PlayerTrack = Track & { custom?: boolean; songId?: string };
+export type ViewName =
   | "home"
   | "stats"
   | "billing"
@@ -57,7 +60,7 @@ type ViewName =
   | "parent"
   | "upload";
 
-interface Prefs {
+export interface Prefs {
   vib: number;
   light: number;
   bands: Record<string, boolean>;
@@ -114,9 +117,6 @@ export default function Player({
   const [limitHit, setLimitHit] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [prefsReady, setPrefsReady] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
   const [feed, setFeed] = useState<ReturnType<typeof loadFeed>>([]);
   const [readTs, setReadTs] = useState(0);
   const [immersive, setImmersive] = useState(false);
@@ -253,16 +253,12 @@ export default function Player({
       removeEventListener("storage", onFeed);
     };
   }, [open]);
-  const unread = feed.filter((f) => f.date > readTs).length;
-  function openNotifs() {
-    const next = !notifOpen;
-    setNotifOpen(next);
-    setSettingsOpen(false);
-    setProfileOpen(false);
-    if (next && email) {
-      markFeedRead(email);
-      setTimeout(() => setReadTs(Date.now()), 600);
-    }
+  /* TopBar өөрөө notifOpen төлвийг удирддаг тул энд зөвхөн "нээгдэх мөч"-ийн side effect
+     (feed read tracking) л үлдэнэ — TopBar dropdown нээгдэхдээ л дуудна. */
+  function onOpenNotifs() {
+    if (!email) return;
+    markFeedRead(email);
+    setTimeout(() => setReadTs(Date.now()), 600);
   }
 
   function toggleLike(id: number | string) {
@@ -517,12 +513,6 @@ export default function Player({
         setNpOpen(false);
         return;
       }
-      if (settingsOpen || profileOpen || notifOpen) {
-        setSettingsOpen(false);
-        setProfileOpen(false);
-        setNotifOpen(false);
-        return;
-      }
       if (calibOpen) return; // калибровк өөрөө удирдана
       if (view !== "home") {
         setView("home");
@@ -535,7 +525,7 @@ export default function Player({
       removeEventListener("keydown", onKey);
       document.body.classList.remove("native-cursor");
     };
-  }, [open, onClose, immersive, npOpen, settingsOpen, profileOpen, notifOpen, view, calibOpen]);
+  }, [open, onClose, immersive, npOpen, view, calibOpen]);
 
   useEffect(
     () => () => {
@@ -668,527 +658,56 @@ export default function Player({
 
   const pct = dur ? (time / dur) * 100 : 0;
   const previewPct = dur && !subscribed ? Math.min(100, (PREVIEW_SEC / dur) * 100) : 100;
-  const initial = (user?.name || "?").trim().charAt(0).toUpperCase();
   const renewDate = user?.sub?.renews ? new Date(user.sub.renews).toLocaleDateString("mn-MN") : "";
 
   return (
-    <div className="pl-ov sp">
+    <div
+      className="fixed inset-0 z-[9000] flex flex-col p-0 overflow-hidden [animation:aov_.35s_ease] [backdrop-filter:blur(24px)] [background:radial-gradient(1100px_560px_at_80%_-10%,rgba(56,232,206,.06),transparent_58%),linear-gradient(180deg,#0b0e0e,#070909_62%)]"
+    >
       <audio ref={audioRef} crossOrigin="anonymous" />
-      <div className="pl-glow" ref={pulseRef} aria-hidden="true"></div>
+      <div
+        className="fixed left-1/2 top-[58%] w-[860px] h-[860px] rounded-full pointer-events-none [background:radial-gradient(circle,rgba(56,232,206,.3),transparent_62%)] -translate-x-1/2 -translate-y-1/2 opacity-10 transition-[opacity,transform] duration-[130ms] ease-linear z-0"
+        ref={pulseRef}
+        aria-hidden="true"
+      ></div>
 
-      {/* дээд баар */}
-      <header className="sp-top">
-        <span className="sp-logo">
-          МЭДРЭХ<sup>®</sup>
-          {isAdmin && <em className="sp-admchip">АДМИН</em>}
-        </span>
-
-        <div className="sp-center">
-          <button className={"sp-icbtn" + (view === "home" ? " on" : "")} onClick={() => setView("home")} aria-label="Нүүр" title="Нүүр">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 10.5 12 3l9 7.5" />
-              <path d="M5 9.5V21h14V9.5" />
-            </svg>
-          </button>
-          <div className="sp-search">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.5" y2="16.5" />
-            </svg>
-            <input
-              type="search"
-              placeholder="Юу сонсмоор байна?"
-              value={query}
-              onFocus={() => setView("home")}
-              onChange={(e) => setQuery(e.target.value)}
-              aria-label="Дуу хайх"
-            />
-          </div>
-          <div className="sp-viz" aria-hidden="true">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <i
-                key={i}
-                ref={(el) => {
-                  vizRef.current[i] = el;
-                }}
-              ></i>
-            ))}
-          </div>
-        </div>
-
-        <div className="sp-right">
-          {!subscribed && (
-            <button className="bt bt-a sp-subbtn" onClick={onSubscribe}>
-              Захиалга авах
-            </button>
-          )}
-
-          {/* админы хяналтын самбар руу */}
-          {isAdmin && (
-            <button
-              className={"sp-icbtn sp-admbtn" + (view === "admin" ? " on" : "")}
-              onClick={() => setView("admin")}
-              aria-label="Хяналтын самбар"
-              title="Хяналтын самбар"
-            >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="9" rx="1.5" />
-                <rect x="14" y="3" width="7" height="5" rx="1.5" />
-                <rect x="14" y="12" width="7" height="9" rx="1.5" />
-                <rect x="3" y="16" width="7" height="5" rx="1.5" />
-              </svg>
-            </button>
-          )}
-
-          {/* эмчийн самбар руу */}
-          {isTherapist && (
-            <button
-              className={"sp-icbtn sp-admbtn" + (view === "therapist" ? " on" : "")}
-              onClick={() => setView("therapist")}
-              aria-label="Эмчийн самбар"
-              title="Эмчийн самбар"
-            >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </button>
-          )}
-
-          {/* эцэг эхийн самбар руу */}
-          {isParent && (
-            <button
-              className={"sp-icbtn sp-admbtn" + (view === "parent" ? " on" : "")}
-              onClick={() => setView("parent")}
-              aria-label="Эцэг эхийн самбар"
-              title="Эцэг эхийн самбар"
-            >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20.5s-7-4.35-9.5-8.5C.5 8.5 2.5 5 6 5c2 0 3.5 1 4 2 .5-1 2-2 4-2 3.5 0 5.5 3.5 3.5 7-2.5 4.15-9.5 8.5-9.5 8.5z" />
-              </svg>
-            </button>
-          )}
-
-          {/* мэдэгдэл */}
-          <div className="sp-dd-wrap">
-            <button
-              className={"sp-icbtn sp-bell" + (notifOpen ? " on" : "")}
-              onClick={openNotifs}
-              aria-label={"Мэдэгдэл" + (unread ? " — " + unread + " шинэ" : "")}
-              aria-expanded={notifOpen}
-              title="Мэдэгдэл"
-            >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-              </svg>
-              {unread > 0 && <span className="sp-bell-n">{unread > 9 ? "9+" : unread}</span>}
-            </button>
-            {notifOpen && (
-              <div className="sp-dd sp-notifs" role="dialog" aria-label="Мэдэгдлүүд">
-                <span className="mono">Мэдэгдэл</span>
-                {feed.length === 0 && <p className="sp-side-empty">Мэдэгдэл алга</p>}
-                {feed.map((f) => (
-                  <div className={"sp-notif" + (f.date > readTs ? " new" : "")} key={f.id}>
-                    <span className="sp-notif-ic" aria-hidden="true">
-                      {f.icon}
-                    </span>
-                    <div>
-                      <p>{f.text}</p>
-                      <span className="mono">{relTime(f.date)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* мэдрэхүйн тохиргоо */}
-          <div className="sp-dd-wrap">
-            <button
-              className={"sp-icbtn" + (settingsOpen ? " on" : "")}
-              onClick={() => {
-                setSettingsOpen(!settingsOpen);
-                setProfileOpen(false);
-                setNotifOpen(false);
-              }}
-              aria-label="Мэдрэхүйн тохиргоо"
-              aria-expanded={settingsOpen}
-              title="Мэдрэхүйн тохиргоо"
-            >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z" />
-              </svg>
-            </button>
-            {settingsOpen && (
-              <div className="sp-dd sp-settings" role="dialog" aria-label="Мэдрэхүйн тохиргоо">
-                <span className="mono">Мэдрэхүйн тохиргоо</span>
-
-                <label className="sp-set-l">📳 Чичиргээний хүч</label>
-                <div className="sp-seg">
-                  {VIB_LEVELS.map((v, i) => (
-                    <button key={v.label} className={prefs.vib === i ? "on" : ""} onClick={() => updatePrefs({ vib: i })}>
-                      {v.label}
-                    </button>
-                  ))}
-                </div>
-
-                <label className="sp-set-l">💡 Гэрлийн эрчим</label>
-                <div className="sp-seg">
-                  {LIGHT_LEVELS.map((v, i) => (
-                    <button key={v.label} className={prefs.light === i ? "on" : ""} onClick={() => updatePrefs({ light: i })}>
-                      {v.label}
-                    </button>
-                  ))}
-                </div>
-
-                <label className="sp-set-l">🎚 Мэдрэх давтамжийн бүс</label>
-                <div className="sp-bands">
-                  {(
-                    [
-                      ["bass", "Бас"],
-                      ["mid", "Дунд"],
-                      ["high", "Өндөр"],
-                    ] as [string, string][]
-                  ).map(([k, lbl]) => (
-                    <button
-                      key={k}
-                      className={prefs.bands[k] ? "on" : ""}
-                      onClick={() => updatePrefs({ bands: { [k]: !prefs.bands[k] } })}
-                      aria-pressed={prefs.bands[k]}
-                    >
-                      {prefs.bands[k] ? "✓ " : ""}
-                      {lbl}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  className="sp-prof-btn"
-                  onClick={() => {
-                    setSettingsOpen(false);
-                    setCalibOpen(true);
-                  }}
-                >
-                  🎛 Калибровк дахин хийх
-                </button>
-                <p className="sp-set-note">Сонсголын мэдрэмж хүн бүрд өөр — тохиргоо автоматаар хадгалагдана.</p>
-              </div>
-            )}
-          </div>
-
-          {/* профайл */}
-          <div className="sp-dd-wrap">
-            <button
-              className={"sp-avatar" + (isAdmin ? " adm" : "") + (profileOpen ? " on" : "")}
-              onClick={() => {
-                setProfileOpen(!profileOpen);
-                setSettingsOpen(false);
-                setNotifOpen(false);
-              }}
-              aria-label="Профайл цэс"
-              aria-expanded={profileOpen}
-              title={user?.name}
-            >
-              {initial}
-            </button>
-            {profileOpen && (
-              <div className="sp-dd sp-profile" role="dialog" aria-label="Профайл">
-                <div className="sp-prof-top">
-                  <span className="sp-avatar sp-avatar-lg" aria-hidden="true">
-                    {initial}
-                  </span>
-                  <div>
-                    <b>{user?.name}</b>
-                    <i>{user?.email}</i>
-                  </div>
-                </div>
-                <div className={"sp-prof-sub" + (subscribed ? " pro" : "")}>
-                  {isAdmin ? (
-                    <>
-                      <b>Админ эрх</b>
-                      <span>Бүх боломж нээлттэй</span>
-                    </>
-                  ) : subscribed ? (
-                    <>
-                      <b>PRO идэвхтэй</b>
-                      <span>Дараагийн төлбөр: {renewDate}</span>
-                    </>
-                  ) : (
-                    <>
-                      <b>Үнэгүй горим</b>
-                      <span>Дуу тус бүрээс {PREVIEW_SEC} сек</span>
-                    </>
-                  )}
-                </div>
-                <button
-                  className="sp-prof-btn"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    setView("profile");
-                  }}
-                >
-                  👤 Профайл засах
-                </button>
-                <button
-                  className="sp-prof-btn"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    setView("playlists");
-                  }}
-                >
-                  🎧 Миний жагсаалт
-                </button>
-                {subscribed && !isAdmin && (
-                  <button
-                    className="sp-prof-btn"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      setView("upload");
-                    }}
-                  >
-                    ⬆️ Дуу нэмэх
-                  </button>
-                )}
-                <button
-                  className="sp-prof-btn"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    setView("devices");
-                  }}
-                >
-                  📱 Төхөөрөмж холбох
-                </button>
-                <button
-                  className="sp-prof-btn"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    setView("stats");
-                  }}
-                >
-                  📊 Миний статистик
-                </button>
-                <button
-                  className="sp-prof-btn"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    setView("history");
-                  }}
-                >
-                  🕐 Сонссон түүх
-                </button>
-                <button
-                  className="sp-prof-btn"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    setView("progress");
-                  }}
-                >
-                  📈 Миний ахиц
-                </button>
-                <button
-                  className="sp-prof-btn"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    setView("achievements");
-                  }}
-                >
-                  🏆 Амжилтууд
-                </button>
-                <button
-                  className="sp-prof-btn"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    setView("billing");
-                  }}
-                >
-                  💳 Захиалга удирдах
-                </button>
-                <button
-                  className="sp-prof-btn"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    setView("help");
-                  }}
-                >
-                  ❓ Тусламж
-                </button>
-                {isAdmin && (
-                  <button
-                    className="sp-prof-btn"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      setView("admin");
-                    }}
-                  >
-                    🛠 Хяналтын самбар
-                  </button>
-                )}
-                {isTherapist && (
-                  <button
-                    className="sp-prof-btn"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      setView("therapist");
-                    }}
-                  >
-                    🧑‍⚕️ Эмчийн самбар
-                  </button>
-                )}
-                {isParent && (
-                  <button
-                    className="sp-prof-btn"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      setView("parent");
-                    }}
-                  >
-                    👨‍👩‍👧 Эцэг эхийн самбар
-                  </button>
-                )}
-                <button className="sp-prof-btn danger" onClick={onLogout}>
-                  Гарах
-                </button>
-              </div>
-            )}
-          </div>
-
-          <button className="auth-x pl-x" onClick={onClose} aria-label="Хаах">
-            ✕
-          </button>
-        </div>
-      </header>
-
-      {(settingsOpen || profileOpen || notifOpen) && (
-        <div
-          className="sp-dd-veil"
-          onClick={() => {
-            setSettingsOpen(false);
-            setProfileOpen(false);
-            setNotifOpen(false);
-          }}
-        ></div>
-      )}
+      <TopBar
+        view={view}
+        setView={setView}
+        query={query}
+        setQuery={setQuery}
+        vizRef={vizRef}
+        user={user}
+        isAdmin={isAdmin}
+        isTherapist={isTherapist}
+        isParent={isParent}
+        subscribed={subscribed}
+        onSubscribe={onSubscribe}
+        onLogout={onLogout}
+        onClose={onClose}
+        feed={feed}
+        readTs={readTs}
+        onOpenNotifs={onOpenNotifs}
+        prefs={prefs}
+        updatePrefs={updatePrefs}
+        setCalibOpen={setCalibOpen}
+        renewDate={renewDate}
+      />
 
       {/* их бие */}
-      <div className="sp-shell">
-        <aside className="sp-side">
-          <nav className="sp-navcol" aria-label="Үндсэн цэс">
-            <button className={"sp-navitem" + (view === "home" ? " on" : "")} onClick={() => setView("home")}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 10.5 12 3l9 7.5" />
-                <path d="M5 9.5V21h14V9.5" />
-              </svg>
-              Нүүр
-            </button>
-            <button className={"sp-navitem" + (view === "playlists" ? " on" : "")} onClick={() => setView("playlists")}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 14v-2a9 9 0 0 1 18 0v2" />
-                <rect x="3" y="14" width="4" height="6" rx="2" />
-                <rect x="17" y="14" width="4" height="6" rx="2" />
-              </svg>
-              Жагсаалт
-            </button>
-            <button className={"sp-navitem" + (view === "stats" ? " on" : "")} onClick={() => setView("stats")}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 3v18h18" />
-                <path d="M8 17v-5M13 17V9M18 17v-8" />
-              </svg>
-              Статистик
-            </button>
-            <button className={"sp-navitem" + (view === "billing" ? " on" : "")} onClick={() => setView("billing")}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="5" width="20" height="14" rx="2" />
-                <path d="M2 10h20" />
-              </svg>
-              Захиалга
-            </button>
-          </nav>
-          <div className="sp-navdiv" aria-hidden="true"></div>
+      <div className="relative z-[2] flex flex-1 min-h-0 w-full max-nav:flex-col">
+        <Sidebar
+          view={view}
+          setView={setView}
+          likedTracks={likedTracks}
+          savedTracks={savedTracks}
+          recentTracks={recentTracks}
+          curId={cur?.id ?? null}
+          playing={playing}
+          onPlay={playTrack}
+        />
 
-          <button className="mono sp-side-h sp-side-hbtn" onClick={() => setView("liked")}>
-            <svg className="sp-side-ic ic-love" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 21s-7.5-4.9-10-9.2C.3 8.6 2 5 5.5 5c2 0 3.4 1.1 4.2 2.3L12 9.6l2.3-2.3C15.1 6.1 16.5 5 18.5 5 22 5 23.7 8.6 22 11.8 19.5 16.1 12 21 12 21z" />
-            </svg>
-            Дуртай дуунууд
-            <span className="sp-side-more" aria-hidden="true">
-              →
-            </span>
-          </button>
-          {likedTracks.length === 0 ? (
-            <div className="sp-empty-tile">
-              <span className="sp-empty-ic" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 21s-7.5-4.9-10-9.2C.3 8.6 2 5 5.5 5c2 0 3.4 1.1 4.2 2.3L12 9.6l2.3-2.3C15.1 6.1 16.5 5 18.5 5 22 5 23.7 8.6 22 11.8 19.5 16.1 12 21 12 21z" />
-                </svg>
-              </span>
-              <p>
-                Дууны{" "}
-                <b>
-                  <svg className="sp-inl-ic ic-love" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M12 21s-7.5-4.9-10-9.2C.3 8.6 2 5 5.5 5c2 0 3.4 1.1 4.2 2.3L12 9.6l2.3-2.3C15.1 6.1 16.5 5 18.5 5 22 5 23.7 8.6 22 11.8 19.5 16.1 12 21 12 21z" />
-                  </svg>{" "}
-                  зүрхэн
-                </b>{" "}
-                дээр дарахад дуртай дуу чинь энд цуглана
-              </p>
-            </div>
-          ) : (
-            <SideList tracks={likedTracks} curId={cur?.id ?? null} playing={playing} onPlay={playTrack} />
-          )}
-
-          <button className="mono sp-side-h sp-side-hbtn" onClick={() => setView("saved")}>
-            <svg className="sp-side-ic ic-save" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M6 3h12v18l-6-3.6L6 21V3z" />
-            </svg>
-            Хадгалсан
-            <span className="sp-side-more" aria-hidden="true">
-              →
-            </span>
-          </button>
-          {savedTracks.length === 0 ? (
-            <div className="sp-empty-tile">
-              <span className="sp-empty-ic sp-empty-warm" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6 2h12a1 1 0 0 1 1 1v19l-7-4.2L5 22V3a1 1 0 0 1 1-1z" />
-                </svg>
-              </span>
-              <p>
-                Дууг{" "}
-                <b>
-                  <svg className="sp-inl-ic ic-save" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M6 3h12v18l-6-3.6L6 21V3z" />
-                  </svg>{" "}
-                  хадгалах
-                </b>{" "}
-                товчоор тэмдэглээд дараа нь сонсоорой
-              </p>
-            </div>
-          ) : (
-            <SideList tracks={savedTracks} curId={cur?.id ?? null} playing={playing} onPlay={playTrack} />
-          )}
-
-          {recentTracks.length > 0 && (
-            <>
-              <button className="mono sp-side-h sp-side-hbtn" onClick={() => setView("recent")}>
-                <svg className="sp-side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 7.5V12l3 1.8" />
-                </svg>
-                Саяхан сонссон
-                <span className="sp-side-more" aria-hidden="true">
-                  →
-                </span>
-              </button>
-              <SideList tracks={recentTracks} curId={cur?.id ?? null} playing={playing} onPlay={playTrack} />
-            </>
-          )}
-        </aside>
-
-        <main className="sp-main">
+        <PageContainer>
           {view === "home" && (
             <HomeView
               genres={GENRES}
@@ -1304,11 +823,11 @@ export default function Player({
           )}
           {view === "history" && <HistoryView onBack={() => setView("home")} onOpenAnalysis={openAnalysis} />}
           {view === "analysis" && <AnalysisView songId={analysisSongId} onBack={() => setView("history")} />}
-        </main>
+        </PageContainer>
       </div>
 
       {limitHit && !subscribed && (
-        <div className="sp-limit">
+        <div className="absolute left-1/2 bottom-[108px] -translate-x-1/2 z-[5] flex items-center gap-4 flex-wrap justify-center border border-[rgba(217,165,76,.45)] bg-[rgba(20,16,7,.95)] rounded-xl p-[14px_20px] text-[13.5px] max-w-[min(92vw,560px)] [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)]">
           <p>Урьдчилан сонсголт дууслаа — бүтэн дуу сонсохын тулд PRO захиалга аваарай.</p>
           <button className="bt bt-a" onClick={onSubscribe}>
             Захиалга авах →
@@ -1333,96 +852,31 @@ export default function Player({
       />
 
       {/* доод баар */}
-      <footer className="sp-bar">
-        <div className="sp-bar-l">
-          {cur ? (
-            <>
-              <button
-                className={"sp-np-toggle" + (npOpen ? " on" : "")}
-                onClick={() => setNpOpen((o) => !o)}
-                aria-expanded={npOpen}
-                aria-label="Мэдрэх самбар"
-                title="Мэдрэх самбар"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 15l6-6 6 6" />
-                </svg>
-              </button>
-              <img className="sp-thumb" src={cur.cover} alt="" />
-              <button className="sp-bar-meta sp-bar-metabtn" onClick={() => setNpOpen((o) => !o)}>
-                <b>{cur.title}</b>
-                <i>{cur.artist}</i>
-              </button>
-            </>
-          ) : (
-            <span className="sp-bar-hint">Дуу сонгоогүй байна</span>
-          )}
-        </div>
+      <footer
+        className="relative z-[3] grid grid-cols-[1fr_auto_1fr] max-nav:grid-cols-[auto_1fr] items-center gap-[18px] p-[12px_22px] min-h-[92px] bg-[rgba(9,12,12,.82)] backdrop-blur-3xl [backdrop-filter:blur(26px)_saturate(1.3)] border-t border-[rgba(255,255,255,.07)]"
+      >
+        <PlayerHeader track={cur} npOpen={npOpen} onToggleNowPlaying={() => setNpOpen((o) => !o)} />
 
-        <div className="sp-bar-c">
-          <div className="sp-ctl">
-            <button onClick={() => step(-1)} aria-label="Өмнөх дуу">
-              ⏮
-            </button>
-            <button onClick={() => seek(-10)} aria-label="10 секунд ухраах" className="sp-skip">
-              −10с
-            </button>
-            <button className="sp-play" onClick={togglePlay} aria-label={playing ? "Зогсоох" : "Тоглуулах"}>
-              {playing ? "⏸" : "▶"}
-            </button>
-            <button onClick={() => seek(10)} aria-label="10 секунд урагшлуулах" className="sp-skip">
-              +10с
-            </button>
-            <button onClick={() => step(1)} aria-label="Дараагийн дуу">
-              ⏭
-            </button>
-          </div>
-          <div className="sp-seek">
-            <span className="mono">{fmt(time)}</span>
-            <div
-              className="pl-bar"
-              onClick={seekTo}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowRight") seek(5);
-                else if (e.key === "ArrowLeft") seek(-5);
-                else return;
-                e.preventDefault();
-              }}
-              role="slider"
-              tabIndex={0}
-              aria-label="Гүйлгэх"
-              aria-valuemin={0}
-              aria-valuemax={Math.round(dur)}
-              aria-valuenow={Math.round(time)}
-            >
-              {!subscribed && <i className="pl-lock" style={{ left: previewPct + "%" }}></i>}
-              <i className="pl-fill" style={{ width: pct + "%" }}></i>
-            </div>
-            <span className="mono">{fmt(dur)}</span>
-          </div>
-        </div>
+        <PlaybackControls
+          playing={playing}
+          time={time}
+          dur={dur}
+          pct={pct}
+          previewPct={previewPct}
+          subscribed={subscribed}
+          onTogglePlay={togglePlay}
+          onStep={step}
+          onSeek={seek}
+          onSeekTo={seekTo}
+        />
 
-        <div className="sp-bar-r">
-          <button
-            className={"sp-vibro" + (vibro ? " on" : "")}
-            onClick={() => setVibro(!vibro)}
-            aria-pressed={vibro}
-            title={canVibrate ? "Чичиргээ горим" : "Утсан дээр чичиргээ ажиллана — энд гэрлийн пульс"}
-          >
-            📳 {vibro ? "Асаалттай" : "Унтраалттай"}
-          </button>
-          <button
-            className="sp-icbtn sp-immbtn"
-            onClick={() => setImmersive(true)}
-            disabled={!cur}
-            aria-label="Мэдрэх горим — бүтэн дэлгэц"
-            title={cur ? "Мэдрэх горим" : "Эхлээд дуу сонгоорой"}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
-            </svg>
-          </button>
-        </div>
+        <ActionToolbar
+          vibro={vibro}
+          onToggleVibro={() => setVibro(!vibro)}
+          canVibrate={canVibrate}
+          hasTrack={!!cur}
+          onImmersive={() => setImmersive(true)}
+        />
       </footer>
 
       {/* мэдрэх горим */}

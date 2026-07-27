@@ -47,33 +47,45 @@ export default function NowPlayingPanel({
   const tot = f.pattern.reduce((a, b) => a + b, 0);
 
   return (
-    <div className="sp-np" role="dialog" aria-label="Мэдрэх самбар">
-      <div className="sp-np-inner">
-        <div className="sp-np-head">
+    <div
+      className="fixed left-0 right-0 bottom-[86px] max-nav:bottom-[70px] z-[4] bg-[rgba(10,16,15,.97)] backdrop-blur-3xl border-t border-[rgba(56,232,206,.18)] shadow-[0_-18px_50px_rgba(0,0,0,.5)] [animation:npup_.28s_cubic-bezier(.16,.8,.24,1)]"
+      role="dialog"
+      aria-label="Мэдрэх самбар"
+    >
+      <div className="max-w-[1100px] mx-auto p-[15px_24px_18px]">
+        <div className="flex items-center justify-between mb-3">
           <span className="mono">Мэдрэх самбар — амьд</span>
-          <button className="sp-np-x" onClick={onClose} aria-label="Самбар хаах">
+          <button
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-dim border border-line bg-transparent cursor-pointer transition-[color,border-color] duration-150 hover:text-ink hover:border-[rgba(242,245,244,.24)]"
+            onClick={onClose}
+            aria-label="Самбар хаах"
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 9l6 6 6-6" />
             </svg>
           </button>
         </div>
 
-        <div className="sp-np-body">
-          <div className="sp-np-track">
-            <img src={track.cover} alt="" />
+        <div className="grid grid-cols-[1.25fr_1fr] max-nav:grid-cols-1 gap-6 items-stretch">
+          <div className="col-span-full flex items-center gap-3">
+            <img src={track.cover} alt="" className="w-[46px] h-[46px] rounded-lg object-cover flex-none" />
             <div>
-              <b>{track.title}</b>
-              <i>
+              <b className="text-[15px] font-semibold block">{track.title}</b>
+              <i className="text-[12.5px] text-dim not-italic">
                 {track.artist} · {track.genre}
               </i>
             </div>
           </div>
 
           {/* амьд 8 бүсийн meter — RAF loop-оос удирдагдана */}
-          <div className="sp-np-meter" aria-label="Амьд давтамжийн спектр">
+          <div
+            className="flex items-end gap-2 h-[104px] border border-line rounded-xl p-3.5 bg-black/[.28]"
+            aria-label="Амьд давтамжийн спектр"
+          >
             {Array.from({ length: 8 }).map((_, i) => (
               <span
                 key={i}
+                className="flex-1 min-h-[5px] h-[5px] rounded-t-[4px] bg-[linear-gradient(180deg,var(--aqua),rgba(56,232,206,.08))] transition-[height] duration-[90ms] ease-linear"
                 ref={(el) => {
                   barsRef.current[i] = el;
                 }}
@@ -81,20 +93,20 @@ export default function NowPlayingPanel({
             ))}
           </div>
 
-          <div className="sp-np-side">
-            <span className="mono">Чичиргээний хэв маяг</span>
-            <div className="dt-hap sp-np-hap" aria-hidden="true">
+          <div className="flex flex-col gap-[7px] justify-center">
+            <span className="mono !text-[9px]">Чичиргээний хэв маяг</span>
+            <div className="flex items-center h-[26px] border border-line rounded-[9px] px-2.5 bg-[rgba(20,28,27,.4)] mb-1" aria-hidden="true">
               {f.pattern.map((ms, i) =>
                 i % 2 === 0 ? (
-                  <i key={i} style={{ flex: ms / tot + " 0 0" }}></i>
+                  <i key={i} className="block h-3 rounded-[3px] bg-aqua shadow-[0_0_8px_rgba(56,232,206,.4)]" style={{ flex: ms / tot + " 0 0" }}></i>
                 ) : (
-                  <u key={i} style={{ flex: ms / tot + " 0 0" }}></u>
+                  <u key={i} className="block h-0.5 bg-[rgba(242,245,244,.18)]" style={{ flex: ms / tot + " 0 0" }}></u>
                 ),
               )}
             </div>
 
-            <span className="mono">Мэдрэх бүс</span>
-            <div className="sp-bands sp-np-bands">
+            <span className="mono !text-[9px]">Мэдрэх бүс</span>
+            <div className="sp-bands mb-1.5">
               {BANDS.map(([k, lbl]) => (
                 <button key={k} className={prefs.bands[k] ? "on" : ""} onClick={() => onToggleBand(k)} aria-pressed={prefs.bands[k]}>
                   {prefs.bands[k] ? "✓ " : ""}
@@ -103,8 +115,15 @@ export default function NowPlayingPanel({
               ))}
             </div>
 
-            <div className="sp-np-actions">
-              <button className={"sp-vibro" + (vibro ? " on" : "")} onClick={onToggleVibro} aria-pressed={vibro}>
+            <div className="flex gap-2.5 flex-wrap [&>button]:flex-1 [&>button]:text-center">
+              <button
+                className={
+                  "text-[12.5px] rounded-full border py-[9px] px-[15px] whitespace-nowrap transition-[border-color,color,background] duration-300 " +
+                  (vibro ? "border-[rgba(56,232,206,.45)] text-aqua bg-[rgba(56,232,206,.06)]" : "border-line text-dim")
+                }
+                onClick={onToggleVibro}
+                aria-pressed={vibro}
+              >
                 📳 {vibro ? "Асаалттай" : "Унтраалттай"}
               </button>
               <button className="bt bt-a" onClick={onImmersive}>

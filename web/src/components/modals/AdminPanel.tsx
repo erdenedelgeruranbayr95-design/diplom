@@ -3,18 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import * as api from "@/lib/api/client";
 import { analyzeAudioFile } from "@/lib/audio/analyze";
-import { Loading, Skeleton, Empty, ErrorState } from "@/components/ui/States";
 import { useClosingTransition } from "@/lib/ui/useClosingTransition";
+import AdminHeader from "@/components/admin/AdminHeader";
+import type { AdminTab } from "@/components/admin/AdminHeader";
+import AdminStats from "@/components/admin/AdminStats";
+import UsersTable from "@/components/admin/UsersTable";
+import StaffCreationForm from "@/components/admin/StaffCreationForm";
+import AssignmentsPanel from "@/components/admin/AssignmentsPanel";
+import SongLibraryPanel from "@/components/admin/SongLibraryPanel";
 import type { AdminUserRow, SessionUser } from "@/types/auth";
 import type { Song } from "@/types/song";
 import type { TherapistAssignmentRow } from "@/types/therapy";
-
-const ROLE_LABEL: Record<AdminUserRow["role"], string> = {
-  USER: "Хэрэглэгч",
-  THERAPIST: "Эмч",
-  PARENT: "Эцэг эх",
-  ADMIN: "Админ",
-};
 
 export default function AdminPanel({
   open,
@@ -28,7 +27,7 @@ export default function AdminPanel({
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
   const [assignments, setAssignments] = useState<TherapistAssignmentRow[]>([]);
-  const [tab, setTab] = useState<"users" | "tracks" | "assign">("users");
+  const [tab, setTab] = useState<AdminTab>("users");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [userErr, setUserErr] = useState("");
@@ -231,265 +230,56 @@ export default function AdminPanel({
 
   return (
     <div
-      className={"auth-ov" + (closing ? " closing" : "")}
+      className={
+        "fixed inset-0 z-[10000] bg-[rgba(4,7,7,.72)] backdrop-blur-lg flex items-center justify-center p-6 " +
+        (closing ? "[animation:aov-out_.2s_ease_forwards]" : "[animation:aov_.3s_ease]")
+      }
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
     >
-      <div className="auth-box admin-box" role="dialog" aria-modal="true" aria-label="Админ самбар">
-        <button className="auth-x" onClick={handleClose} aria-label="Хаах">
-          ✕
-        </button>
-
-        <span className="mono">МЭДРЭХ® / Админ самбар</span>
-
-        <div className="auth-tabs" style={{ marginBottom: 0 }}>
-          <button className={tab === "users" ? "on" : ""} onClick={() => setTab("users")}>
-            Хэрэглэгчид
-          </button>
-          <button className={tab === "assign" ? "on" : ""} onClick={() => setTab("assign")}>
-            Эмч томилолт
-          </button>
-          <button className={tab === "tracks" ? "on" : ""} onClick={() => setTab("tracks")}>
-            Дууны сан
-          </button>
-        </div>
+      <div
+        className={
+          "relative w-full max-w-[560px] bg-[rgba(9,14,14,.96)] border border-white/[.13] p-[30px_30px_24px] [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)] " +
+          "[&_form]:flex [&_form]:flex-col [&_form]:gap-4 [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] " +
+          "[&_input]:bg-white/[.04] [&_input]:border [&_input]:border-line [&_input]:text-ink [&_input]:font-body [&_input]:text-[14.5px] [&_input]:p-[12px_14px] [&_input]:cursor-none [&_input]:rounded-sm [&_input]:transition-[border-color,background,box-shadow] [&_input]:duration-300 " +
+          "[&_input:focus]:border-aqua [&_input:focus]:bg-[rgba(56,232,206,.05)] [&_input:focus-visible]:shadow-glow-aqua [&_input::placeholder]:text-faint " +
+          "[&_input[aria-invalid=true]]:border-[#E88A9B] [&_input[aria-invalid=true]]:bg-[rgba(232,138,155,.06)] [&_input[aria-invalid=true]]:[animation:auth-shake_.3s] [&_input[aria-invalid=true]:focus-visible]:shadow-[0_0_0_3px_rgba(232,138,155,.3)]"
+        }
+        role="dialog"
+        aria-modal="true"
+        aria-label="Админ самбар"
+      >
+        <AdminHeader tab={tab} setTab={setTab} onClose={handleClose} />
 
         {tab === "users" && (
           <>
-            <div className="adm-stats">
-              <div>
-                <span className="mono">Нийт бүртгэл</span>
-                <b>{regular.length}</b>
-              </div>
-              <div>
-                <span className="mono">PRO захиалагч</span>
-                <b>{regular.filter((u) => u.subActive).length}</b>
-              </div>
-            </div>
+            <AdminStats total={regular.length} proCount={regular.filter((u) => u.subActive).length} />
 
-            <form className="adm-form" onSubmit={createStaff}>
-              <span className="mono" style={{ fontSize: 9.5 }}>
-                Ажилтан бүртгэх (Админ/Эмч)
-              </span>
-              <div className="adm-form-row">
-                <label>
-                  <span className="mono">Нэр *</span>
-                  <input name="name" type="text" placeholder="ж: Б.Оюунаа" />
-                </label>
-                <label>
-                  <span className="mono">Имэйл *</span>
-                  <input name="email" type="email" placeholder="name@example.com" />
-                </label>
-              </div>
-              <div className="adm-form-row">
-                <label>
-                  <span className="mono">Нууц үг *</span>
-                  <input name="password" type="password" placeholder="••••••••" autoComplete="new-password" />
-                </label>
-                <label>
-                  <span className="mono">Эрх</span>
-                  <select value={newRole} onChange={(e) => setNewRole(e.target.value as "THERAPIST" | "ADMIN")}>
-                    <option value="THERAPIST">Эмч</option>
-                    <option value="ADMIN">Админ</option>
-                  </select>
-                </label>
-              </div>
-              {createMsg && (
-                <p className={createMsg.startsWith("✅") ? "auth-ok" : "auth-err"} style={{ fontSize: 13 }}>
-                  {createMsg}
-                </p>
-              )}
-              <button type="submit" className="bt bt-a auth-sub" disabled={creating}>
-                {creating ? "Бүртгэж байна…" : "+ Ажилтан бүртгэх"}
-              </button>
-            </form>
+            <StaffCreationForm newRole={newRole} setNewRole={setNewRole} createMsg={createMsg} creating={creating} onSubmit={createStaff} />
 
-            {usersLoading && <Skeleton variant="row" rows={5} />}
-            {!usersLoading && userErr && <ErrorState title="Ачаалагдсангүй" hint={userErr} onRetry={loadUsers} />}
-
-            {!usersLoading && !userErr && (
-              <>
-                <form className="plv-create" onSubmit={(e) => e.preventDefault()} style={{ marginBottom: 14 }}>
-                  <input className="plv-search" placeholder="Нэр эсвэл имэйлээр хайх…" value={q} onChange={(e) => setQ(e.target.value)} />
-                </form>
-
-                {filteredUsers.length === 0 ? (
-                  <Empty icon="👥" title="Хэрэглэгч олдсонгүй" hint={q ? "Хайлтад тохирох хэрэглэгч алга" : "Одоогоор бүртгүүлсэн хэрэглэгч алга"} />
-                ) : (
-                  <div className="adm-list">
-                    <div className="adm-row adm-head adm-row-u">
-                      <span className="mono">Нэр</span>
-                      <span className="mono">Имэйл</span>
-                      <span className="mono">Эрх</span>
-                      <span className="mono">Огноо</span>
-                      <span className="mono">Захиалга</span>
-                      <span></span>
-                    </div>
-                    {filteredUsers.map((u) => (
-                      <div className="adm-row adm-row-u" key={u.id}>
-                        <span>{u.name}</span>
-                        <span className="adm-mail">{u.email}</span>
-                        <span>{ROLE_LABEL[u.role]}</span>
-                        <span className="adm-date">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("mn-MN") : "—"}</span>
-                        <span className={"adm-sub" + (u.subActive ? " on" : "")}>{u.subActive ? "PRO" : "—"}</span>
-                        <button className="adm-del" onClick={() => removeUser(u)} aria-label={u.email + " устгах"}>
-                          Устгах
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
+            <UsersTable loading={usersLoading} error={userErr} onRetry={loadUsers} q={q} setQ={setQ} users={filteredUsers} onDelete={removeUser} />
           </>
         )}
 
         {tab === "assign" && (
-          <>
-            <form className="adm-form" onSubmit={createAssignment}>
-              <span className="mono" style={{ fontSize: 9.5 }}>
-                Эмчид хэрэглэгч томилох
-              </span>
-              <div className="adm-form-row">
-                <label>
-                  <span className="mono">Эмч *</span>
-                  <select value={assignTherapistId} onChange={(e) => setAssignTherapistId(e.target.value)}>
-                    <option value="">— сонгох —</option>
-                    {therapists.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name} ({t.email})
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  <span className="mono">Хэрэглэгч *</span>
-                  <select value={assignUserId} onChange={(e) => setAssignUserId(e.target.value)}>
-                    <option value="">— сонгох —</option>
-                    {patients.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({p.email})
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              {assignMsg && (
-                <p className={assignMsg.startsWith("✅") ? "auth-ok" : "auth-err"} style={{ fontSize: 13 }}>
-                  {assignMsg}
-                </p>
-              )}
-              <button type="submit" className="bt bt-a auth-sub" disabled={assigning}>
-                {assigning ? "Томилж байна…" : "+ Томилох"}
-              </button>
-            </form>
-
-            {assignLoading && <Loading label="Томилолт ачааллаж байна…" />}
-            {!assignLoading && assignments.length === 0 && (
-              <Empty icon="🧑‍⚕️" title="Одоогоор томилолт алга" hint="Дээрх формоор эмч-хэрэглэгч холбоос үүсгээрэй" />
-            )}
-            {!assignLoading && assignments.length > 0 && (
-              <div className="adm-list">
-                <div className="adm-row adm-head adm-arow">
-                  <span className="mono">Эмч</span>
-                  <span className="mono">Хэрэглэгч</span>
-                  <span></span>
-                </div>
-                {assignments.map((a) => (
-                  <div className="adm-row adm-arow" key={a.id}>
-                    <span>
-                      {a.therapist.name} <i className="adm-artist">— {a.therapist.email}</i>
-                    </span>
-                    <span>
-                      {a.patient.name} <i className="adm-artist">— {a.patient.email}</i>
-                    </span>
-                    <button className="adm-del" onClick={() => removeAssignment(a.id)} aria-label="Томилолт цуцлах">
-                      Цуцлах
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+          <AssignmentsPanel
+            therapists={therapists}
+            patients={patients}
+            assignTherapistId={assignTherapistId}
+            setAssignTherapistId={setAssignTherapistId}
+            assignUserId={assignUserId}
+            setAssignUserId={setAssignUserId}
+            assignMsg={assignMsg}
+            assigning={assigning}
+            onSubmit={createAssignment}
+            loading={assignLoading}
+            assignments={assignments}
+            onRemove={removeAssignment}
+          />
         )}
 
-        {tab === "tracks" && (
-          <>
-            <form className="adm-form" onSubmit={addTrack}>
-              <span className="mono" style={{ fontSize: 9.5 }}>
-                Шинэ дуу нэмэх
-              </span>
-              <div className="adm-form-row">
-                <label>
-                  <span className="mono">Дууны нэр *</span>
-                  <input name="title" type="text" placeholder="ж: Хөх тэнгэр" />
-                </label>
-                <label>
-                  <span className="mono">Дуучин *</span>
-                  <input name="singer" type="text" placeholder="ж: Батаа" />
-                </label>
-              </div>
-              <div className="adm-form-row">
-                <label>
-                  <span className="mono">Зохиолч (заавал биш)</span>
-                  <input name="composer" type="text" placeholder="ж: Д.Дорж" />
-                </label>
-                <label>
-                  <span className="mono">Төрөл (заавал биш)</span>
-                  <input name="genre" type="text" placeholder="ж: Поп" list="genres" />
-                  <datalist id="genres">
-                    <option value="Поп" />
-                    <option value="Рок" />
-                    <option value="Хип хоп" />
-                    <option value="Электрон" />
-                    <option value="Ардын" />
-                    <option value="Чилл" />
-                  </datalist>
-                </label>
-              </div>
-
-              <label>
-                <span className="mono">🎵 Дууны файл (mp3) *</span>
-                <input name="audio" type="file" accept="audio/*" className="adm-file" />
-              </label>
-
-              {msg && (
-                <p className={msg.startsWith("✅") ? "auth-ok" : "auth-err"} style={{ fontSize: 13 }}>
-                  {msg}
-                </p>
-              )}
-              <button type="submit" className="bt bt-a auth-sub" disabled={busy}>
-                {busy ? "Хадгалж, анализ хийж байна…" : "+ Дуу нэмэх"}
-              </button>
-            </form>
-
-            {songsLoading && <Loading label="Дуунууд ачааллаж байна…" />}
-            {!songsLoading && songs.length === 0 && (
-              <Empty icon="🎵" title="Backend-д нэмсэн дуу алга" hint="Дээрх формоор шинэ дуу нэмээрэй" />
-            )}
-            {!songsLoading && songs.length > 0 && (
-              <div className="adm-list">
-                <div className="adm-row adm-head adm-row-t">
-                  <span className="mono">Нэр</span>
-                  <span className="mono">Төрөл</span>
-                  <span className="mono">BPM</span>
-                  <span></span>
-                </div>
-                {songs.map((s) => (
-                  <div className="adm-row adm-row-t" key={s.id}>
-                    <span>
-                      {s.title} <i className="adm-artist">— {s.artist}</i>
-                    </span>
-                    <span className="adm-date">{s.genre || "—"}</span>
-                    <span className="adm-date">{s.analyzedBpm ?? s.bpm ?? "—"}</span>
-                    <span></span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
+        {tab === "tracks" && <SongLibraryPanel msg={msg} busy={busy} onSubmit={addTrack} loading={songsLoading} songs={songs} />}
 
         <p className="auth-note mono">Нэвтэрсэн: {currentUser?.email}</p>
       </div>

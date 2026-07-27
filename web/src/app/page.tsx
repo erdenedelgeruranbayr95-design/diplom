@@ -8,14 +8,15 @@ import Player from "@/components/player/Player";
 import SubscribeModal from "@/components/modals/SubscribeModal";
 import { useAuth } from "@/components/providers/AuthProvider";
 import Preloader from "@/components/landing/Preloader";
-import Hero from "@/components/landing/Hero";
+import BackgroundEffects from "@/components/landing/BackgroundEffects";
+import HeroSection from "@/components/landing/HeroSection";
 import Dock from "@/components/landing/Dock";
 import Marquee from "@/components/landing/Marquee";
 import Feel from "@/components/landing/Feel";
 import Gallery from "@/components/landing/Gallery";
-import How from "@/components/landing/How";
-import Cta from "@/components/landing/Cta";
-import Footer from "@/components/landing/Footer";
+import HowItWorksSection from "@/components/landing/HowItWorksSection";
+import CallToActionSection from "@/components/landing/CallToActionSection";
+import FooterSection from "@/components/landing/FooterSection";
 import type { UserSub } from "@/types/auth";
 
 export default function Page() {
@@ -60,20 +61,16 @@ export default function Page() {
   return (
     <>
       <Preloader />
-      <div className="cr" id="cr"></div>
-      <div className="cd" id="cd"></div>
-      <div className="grid-bg"></div>
-      <div className="glow g1"></div>
-      <div className="glow g2"></div>
+      <BackgroundEffects />
 
-      <Hero />
+      <HeroSection />
       <Dock user={user} isAdmin={isAdmin} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} onPlayer={openPlayer} />
       <Marquee />
       <Feel />
       <Gallery />
-      <How />
-      <Cta />
-      <Footer />
+      <HowItWorksSection />
+      <CallToActionSection />
+      <FooterSection />
 
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuth={handleAuth} />
       <AdminPanel open={adminOpen} onClose={() => setAdminOpen(false)} currentUser={user} />

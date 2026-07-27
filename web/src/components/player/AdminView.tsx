@@ -67,7 +67,7 @@ export default function AdminView({
 
   return (
     <>
-      <div className="ab-head">
+      <div className="flex justify-between items-end gap-5 flex-wrap mb-6">
         <div>
           <span className="mono">Хяналтын самбар</span>
           <h2 className="sp-h" style={{ margin: "8px 0 0" }}>
@@ -84,37 +84,42 @@ export default function AdminView({
 
       {!loading && !err && (
         <>
-          <div className="st-cards">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
             <StatCard icon={ICONS.users} color="c-aqua" value={regular.length} label="Нийт хэрэглэгч" />
             <StatCard icon={ICONS.phones} color="c-purple" value={therapistCount} label="Эмч" />
             <StatCard icon={ICONS.gem} color="c-gold" value={parentCount} label="Эцэг эх" />
             <StatCard icon={ICONS.music} color="c-rose" value={allTracksCount} label="Дууны сан" />
           </div>
-          <div className="st-cards" style={{ marginTop: 14 }}>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5" style={{ marginTop: 14 }}>
             <StatCard icon={ICONS.star} color="c-aqua" value={proCount} label="PRO захиалагч" />
           </div>
         </>
       )}
 
-      <div className="ab-card">
-        <div className="ab-card-h">
-          <span className="st-ico c-gold" aria-hidden="true">
+      <div className="border border-line rounded-md bg-[rgba(20,28,27,.4)] p-[22px_24px] mt-[26px] flex flex-col gap-4 transition-[box-shadow,border-color] duration-250 hover:shadow-sm hover:border-white/[.16]">
+        <div className="flex gap-4 items-start">
+          {/* .st-ico + .c-gold эх CSS-д source order-ийн улмаас .st-ico-ийн саарал өнгө gold-ийг бүрэн дарж,
+              gold tint харагдахгүй болсон бодит үзэгдэл — энэ visual bug-ийг яг хэвээр хадгалав (шинээр засаагүй) */}
+          <span className="w-11 h-11 rounded-sm text-[#9FB0AC] bg-white/5 flex items-center justify-center flex-none" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
               {ICONS.horn}
             </svg>
           </span>
           <div>
-            <b>Бүх хэрэглэгчид зарлал илгээх</b>
-            <p>Зарлал хэрэглэгч бүрийн хонхонд шууд очно. Дуу нэмэхэд мэдэгдэл автоматаар илгээгддэг.</p>
+            <b className="text-base font-semibold block mb-1">Бүх хэрэглэгчид зарлал илгээх</b>
+            <p className="text-dim text-[13px] leading-[1.5] max-w-[60ch]">
+              Зарлал хэрэглэгч бүрийн хонхонд шууд очно. Дуу нэмэхэд мэдэгдэл автоматаар илгээгддэг.
+            </p>
           </div>
         </div>
-        <form className="ab-bcast" onSubmit={sendBcast}>
+        <form className="flex gap-3 max-[640px]:flex-col" onSubmit={sendBcast}>
           <input
             type="text"
             value={bcast}
             onChange={(e) => setBcast(e.target.value)}
             placeholder="ж: Маргааш 20:00 цагт шинэ цомог нэмэгдэнэ!"
             aria-label="Зарлалын текст"
+            className="flex-1 bg-white/[.04] border border-line text-ink font-body text-sm p-[13px_16px] rounded-sm transition-[border-color,box-shadow] duration-300 placeholder:text-faint focus:border-aqua focus-visible:shadow-glow-aqua"
           />
           <button type="submit" className="bt bt-a">
             Илгээх
@@ -134,7 +139,7 @@ export default function AdminView({
             <Empty icon="👥" title="Бүртгүүлсэн хэрэглэгч алга" hint="Шинэ хэрэглэгч бүртгүүлэхэд энд харагдана" />
           ) : (
             <div className="bil-table">
-              <div className="bil-row bil-head ab-urow2">
+              <div className="bil-row bil-head !grid-cols-[1fr_1.4fr_.7fr_.8fr_.8fr] max-[760px]:!grid-cols-[1fr_1fr_.7fr]">
                 <span className="mono">Хэрэглэгч</span>
                 <span className="mono">Имэйл</span>
                 <span className="mono">Эрх</span>
@@ -142,7 +147,7 @@ export default function AdminView({
                 <span className="mono">Статус</span>
               </div>
               {recentUsers.map((u) => (
-                <div className="bil-row ab-urow2" key={u.id}>
+                <div className="bil-row !grid-cols-[1fr_1.4fr_.7fr_.8fr_.8fr] max-[760px]:!grid-cols-[1fr_1fr_.7fr]" key={u.id}>
                   <span className="ab-uname">
                     <i className="ab-uav" aria-hidden="true">
                       {(u.name || "?").charAt(0).toUpperCase()}
