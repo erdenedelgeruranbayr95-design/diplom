@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Track } from "@/types/track";
 import BackBar from "./BackBar";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -28,13 +28,13 @@ export default function PlaylistsView({
   const [adding, setAdding] = useState(false)
   const [q, setQ] = useState('')
 
-  const refresh = () => setLists(loadPlaylists(email))
+  const refresh = useCallback(() => setLists(loadPlaylists(email)), [email])
   useEffect(() => {
     refresh()
     const on = () => refresh()
     addEventListener('medreh:playlists-changed', on)
     return () => removeEventListener('medreh:playlists-changed', on)
-  }, [email])
+  }, [refresh])
 
   const byId = (id: number | string) => tracks.find((t) => t.id === id)
   const open = lists.find((p) => p.id === openId)

@@ -14,7 +14,7 @@ import {
 import TherapistHeader from "@/components/therapist/TherapistHeader";
 import PatientList from "@/components/therapist/PatientList";
 import PatientProfileCard from "@/components/therapist/PatientProfileCard";
-import ProgressChartCard from "@/components/therapist/ProgressChartCard";
+import ProgressChartCard from "@/components/ui/ProgressChartCard";
 import SessionTimeline from "@/components/therapist/SessionTimeline";
 import TherapySessionForm from "@/components/therapist/TherapySessionForm";
 import ProgressEntryForm from "@/components/therapist/ProgressEntryForm";
@@ -175,7 +175,7 @@ function PatientDetail({ patient, onBack }: { patient: AssignedPatient; onBack: 
 
       {!loading && !err && (
         <>
-          <ProgressChartCard data={chartData} />
+          <ProgressChartCard data={chartData} height={240} marginTopClass="mt-[26px]" hideWhenEmpty />
 
           <TherapySessionForm
             notes={notes}

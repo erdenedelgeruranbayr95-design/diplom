@@ -53,7 +53,8 @@ export default function Page() {
     setSubOpen(false);
   };
   const openPlayer = () => {
-    user ? setPlayerOpen(true) : setAuthOpen(true);
+    if (user) setPlayerOpen(true);
+    else setAuthOpen(true);
   };
   const handleSubscribed = (sub: UserSub) => setSub(sub);
   const handleCancelSub = () => cancelSub();

@@ -8,10 +8,10 @@ type Track = BaseTrack & { custom?: boolean };
 /* Нүүр — Player.jsx-аас тусад нь гаргасан (хамгийн олон prop-той view).
    LikeBtn/SaveBtn/InfoBtn-г шууд импортлов (Player-ийн closure-оор биш).
    Props: genres, genre, onGenre, list, query, curId, playing, onPlay,
-          likes, saves, onToggleLike, onToggleSave, onInfo, subscribed, onSubscribe */
+          likes, saves, onToggleLike, onToggleSave, onInfo */
 export default function HomeView({
   genres, genre, onGenre, list, query, curId, playing, onPlay,
-  likes, saves, onToggleLike, onToggleSave, onInfo, subscribed, onSubscribe,
+  likes, saves, onToggleLike, onToggleSave, onInfo,
 }: {
   genres: string[];
   genre: string;
@@ -26,8 +26,6 @@ export default function HomeView({
   onToggleLike: (id: number | string) => void;
   onToggleSave: (id: number | string) => void;
   onInfo: (t: Track) => void;
-  subscribed?: boolean;
-  onSubscribe?: () => void;
 }) {
   return (
     <>

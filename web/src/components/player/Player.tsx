@@ -525,6 +525,9 @@ export default function Player({
       removeEventListener("keydown", onKey);
       document.body.classList.remove("native-cursor");
     };
+    // deviceSync intentionally omitted: useDeviceSync() returns a new object every render,
+    // so including it would re-attach the keydown listener on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, onClose, immersive, npOpen, view, calibOpen]);
 
   useEffect(
@@ -564,7 +567,8 @@ export default function Player({
     ensureCtx();
     setLimitHit(false);
     if (cur?.id === t.id) {
-      playing ? el.pause() : el.play();
+      if (playing) el.pause();
+      else el.play();
       return;
     }
     logCurrentToHistory();
@@ -723,8 +727,6 @@ export default function Player({
               onToggleLike={toggleLike}
               onToggleSave={toggleSave}
               onInfo={openDetail}
-              subscribed={subscribed}
-              onSubscribe={onSubscribe}
             />
           )}
           {view === "stats" && statsRef.current && <StatsView stats={statsRef.current} byId={byId} onPlay={playTrack} onBack={() => setView("home")} />}
@@ -733,7 +735,6 @@ export default function Player({
               email={email}
               user={user}
               isAdmin={isAdmin}
-              subscribed={subscribed}
               renewDate={renewDate}
               onSubscribe={onSubscribe}
               onCancelSub={onCancelSub}

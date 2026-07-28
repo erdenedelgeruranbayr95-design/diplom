@@ -10,7 +10,7 @@ import { listMyChildren, listTherapySessions, listProgress } from "@/lib/api/cli
 import ParentHeader from "@/components/parent/ParentHeader";
 import ChildOverviewCard from "@/components/parent/ChildOverviewCard";
 import StatisticsCards from "@/components/parent/StatisticsCards";
-import ProgressChartCard from "@/components/parent/ProgressChartCard";
+import ProgressChartCard from "@/components/ui/ProgressChartCard";
 import RecommendationPanel from "@/components/parent/RecommendationPanel";
 import SessionHistoryTable from "@/components/parent/SessionHistoryTable";
 import type { LinkedChild, TherapySession, Progress } from "@/types/therapy";
@@ -140,7 +140,7 @@ function ChildDetail({ child, onBack, onGoHome }: { child: LinkedChild; onBack?:
 
       {!loading && !err && (
         <>
-          <ProgressChartCard data={chartData} />
+          <ProgressChartCard data={chartData} height={240} marginTopClass="mt-[26px]" hideWhenEmpty />
 
           <RecommendationPanel recommendations={recommendations} />
 

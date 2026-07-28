@@ -1,8 +1,9 @@
 "use client";
 
-/* ParentView.tsx-ийн ахицын график (.ab-card, Recharts LineChart) — тусад нь гаргасан.
-   TherapistView-ийн ижил нэртэй компонентын chart логиктой бүрэн ижил (эх кодод хоёулаа адил
-   хуулбарласан байсан) — өөрчлөлгүйгээр тусгаарлав. CSS/behavior бүгд өөрчлөгдөөгүй. */
+/* Ахицын график (.ab-card, Recharts LineChart) — parent/progress/therapist гурван View-д
+   давхардаж байсан ижил компонентуудыг нэгтгэв (эх код бүгд ижил байсан тул
+   CSS/behavior өөрчлөгдөөгүй, зөвхөн ялгаатай байсан хэсгүүдийг (өндөр, margin,
+   хоосон үеийн зан төлөв) props болгосон). */
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export interface ProgressChartPoint {
@@ -11,17 +12,29 @@ export interface ProgressChartPoint {
   engagementScore: number | null;
 }
 
-export default function ProgressChartCard({ data }: { data: ProgressChartPoint[] }) {
-  if (data.length === 0) return null;
+export default function ProgressChartCard({
+  data,
+  height = 240,
+  marginTopClass = "mt-[26px]",
+  hideWhenEmpty = false,
+}: {
+  data: ProgressChartPoint[];
+  height?: number;
+  marginTopClass?: string;
+  hideWhenEmpty?: boolean;
+}) {
+  if (hideWhenEmpty && data.length === 0) return null;
   return (
-    <div className="border border-line rounded-md bg-[rgba(20,28,27,.4)] p-[22px_24px] mt-[26px] flex flex-col gap-4 transition-[box-shadow,border-color] duration-250 hover:shadow-sm hover:border-white/[.16] [animation:chart-in_.4s_cubic-bezier(.2,.8,.2,1)_backwards]">
+    <div
+      className={`border border-line rounded-md bg-[rgba(20,28,27,.4)] p-[22px_24px] ${marginTopClass} flex flex-col gap-4 transition-[box-shadow,border-color] duration-250 hover:shadow-sm hover:border-white/[.16] [animation:chart-in_.4s_cubic-bezier(.2,.8,.2,1)_backwards]`}
+    >
       <div className="flex gap-4 items-start">
         <div>
           <b className="text-base font-semibold block mb-1">Ахицын график</b>
           <p className="text-dim text-[13px] leading-[1.5] max-w-[60ch]">Гүйцэтгэл (%) болон оролцооны онооны цаг хугацааны хандлага.</p>
         </div>
       </div>
-      <div style={{ width: "100%", height: 240, marginTop: 16 }}>
+      <div style={{ width: "100%", height, marginTop: 16 }}>
         <ResponsiveContainer>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.08)" />

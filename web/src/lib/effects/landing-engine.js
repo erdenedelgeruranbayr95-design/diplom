@@ -107,7 +107,7 @@ export function initMedreh() {
       const id = c.getImageData(0, 0, cv.width, cv.height), d = id.data
       for (let p = 0; p < d.length; p += 4) { const n = (r() - .5) * 24; d[p] += n; d[p + 1] += n; d[p + 2] += n }
       c.putImageData(id, 0, 0)
-    } catch (e) { /* taint / security errors — үл тоомсорлоно */ }
+    } catch { /* taint / security errors — үл тоомсорлоно */ }
   }
   function drawPhotos() {
     document.querySelectorAll('canvas[data-shot]').forEach((cv) => photo(cv, +cv.dataset.seed, cv.dataset.shot))
@@ -254,7 +254,7 @@ export function initMedreh() {
       if (s.band === 'bass') y = h / 2 + Math.sin(x * .035 + t * 2.1) * A
       else if (s.band === 'mid') y = h / 2 + (Math.sin(x * .12 + t * 3) * .65 + Math.sin(x * .31 - t * 2) * .35) * A
       else y = h / 2 + Math.sin(x * .55 + t * 6) * A * (.55 + .45 * Math.abs(Math.sin(x * .05 + t)))
-      x === 0 ? c.moveTo(x, y) : c.lineTo(x, y)
+      if (x === 0) c.moveTo(x, y); else c.lineTo(x, y)
     }
     c.stroke(); s.boost *= .94
   }
@@ -272,7 +272,7 @@ export function initMedreh() {
       for (let x = 0; x <= w; x += 2) {
         const env = Math.sin(Math.PI * x / w)
         const y = h / 2 + Math.sin(x * .012 + t * 1.4 + L * 1.2) * h * .3 * env + Math.sin(x * .05 - t * 2.2) * h * .1 * env
-        x === 0 ? c.moveTo(x, y) : c.lineTo(x, y)
+        if (x === 0) c.moveTo(x, y); else c.lineTo(x, y)
       }
       c.stroke()
     }
@@ -321,7 +321,7 @@ export function initMedreh() {
     const g = ctx.createGain(); g.gain.value = vol || .2
     s.connect(f); f.connect(g); g.connect(master); s.start()
   }
-  function buzz(p) { if (navigator.vibrate && !reduced) { try { navigator.vibrate(p) } catch (e) { /* noop */ } } }
+  function buzz(p) { if (navigator.vibrate && !reduced) { try { navigator.vibrate(p) } catch { /* noop */ } } }
   const mel = [0, 3, 7, 10, 7, 3, 5, 10]
   function loop() {
     const b = step % 8
@@ -337,10 +337,10 @@ export function initMedreh() {
     if (ctx.state === 'suspended') ctx.resume()
     if (playing) {
       clearInterval(timer); playing = false
-      disc.classList.remove('spin'); monEl && monEl.classList.remove('live')
+      disc.classList.remove('spin'); if (monEl) monEl.classList.remove('live')
     } else {
       loop(); timer = setInterval(loop, 300); playing = true
-      disc.classList.add('spin'); monEl && monEl.classList.add('live')
+      disc.classList.add('spin'); if (monEl) monEl.classList.add('live')
     }
   }
   on(disc, 'click', toggle)

@@ -43,7 +43,6 @@ export default function DevicesView({
     setJustConnected(true)
     const t = setTimeout(() => setJustConnected(false), 1600)
     return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceSync.qrState])
 
   /* gamepad холболтыг ажиглах */

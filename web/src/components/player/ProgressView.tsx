@@ -7,7 +7,7 @@ import BackBar from "./BackBar";
 import { Loading, ErrorState } from "@/components/ui/States";
 import { listProgress } from "@/lib/api/client";
 import StatisticsCards from "@/components/progress/StatisticsCards";
-import ProgressChartCard from "@/components/progress/ProgressChartCard";
+import ProgressChartCard from "@/components/ui/ProgressChartCard";
 import ProgressSummary from "@/components/progress/ProgressSummary";
 import type { Progress } from "@/types/therapy";
 
@@ -60,7 +60,7 @@ export default function ProgressView({ onBack }: { onBack: () => void }) {
       {!loading && !err && progress.length > 0 && (
         <>
           <StatisticsCards avgCompletion={avgCompletion} avgEngagement={avgEngagement} totalEntries={progress.length} />
-          <ProgressChartCard data={chartData} />
+          <ProgressChartCard data={chartData} height={260} marginTopClass="mt-4" />
         </>
       )}
     </>

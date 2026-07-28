@@ -7,14 +7,13 @@ import { PREVIEW_SEC } from "@/lib/player/constants";
 
 /* Захиалгын удирдлага — Player.jsx-аас тусад нь гаргасан.
    loadPayments(email) нь read-only тул дотор нь дуудсан хэвээр.
-   Props: email, user, isAdmin, subscribed, renewDate, onSubscribe(), onCancelSub(), onBack() */
+   Props: email, user, isAdmin, renewDate, onSubscribe(), onCancelSub(), onBack() */
 export default function BillingView({
-  email, user, isAdmin, subscribed, renewDate, onSubscribe, onCancelSub, onBack,
+  email, user, isAdmin, renewDate, onSubscribe, onCancelSub, onBack,
 }: {
   email: string;
   user: SessionUser | null;
   isAdmin: boolean;
-  subscribed?: boolean;
   renewDate: string;
   onSubscribe: () => void;
   onCancelSub: () => void;
