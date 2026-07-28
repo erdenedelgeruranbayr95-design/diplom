@@ -1,7 +1,10 @@
 "use client";
 
 /* Хувийн ахиц — TherapistView.tsx-ийн chart хэсгийн яг ижил хэв маягийг дагана,
-   зөвхөн listProgress()-г параметргүй дуудаж өөрийн бичлэгээ авна (backend аль хэдийн scope хийдэг). */
+   зөвхөн listProgress()-г параметргүй дуудаж өөрийн бичлэгээ авна (backend аль хэдийн scope хийдэг).
+   Дашбоард маягийн header/зай нэмж шинэчлэв — listProgress()/chartData/avgCompletion/
+   avgEngagement тооцоолол бүхэлдээ хэвээр. StatisticsCards/ProgressChartCard/ProgressSummary
+   (тусдаа файлууд, энэ даалгаврын хамрах хүрээнд ороогүй тул) өөрчлөгдөөгүй. */
 import { useEffect, useMemo, useState } from "react";
 import BackBar from "./BackBar";
 import { Loading, ErrorState } from "@/components/ui/States";
@@ -50,7 +53,14 @@ export default function ProgressView({ onBack }: { onBack: () => void }) {
 
   return (
     <>
-      <BackBar title="Миний ахиц" onBack={onBack} />
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
+        <BackBar title="Миний ахиц" onBack={onBack} />
+        {!loading && !err && progress.length > 0 && (
+          <span className="mono !text-[10px] py-2 px-3.5 rounded-full border border-white/[.08] bg-white/[.03] whitespace-nowrap">
+            {progress.length.toLocaleString()} бичлэг
+          </span>
+        )}
+      </div>
 
       {loading && <Loading label="Ачааллаж байна…" />}
       {!loading && err && <ErrorState title="Ачаалагдсангүй" hint={err} onRetry={load} />}
@@ -60,7 +70,7 @@ export default function ProgressView({ onBack }: { onBack: () => void }) {
       {!loading && !err && progress.length > 0 && (
         <>
           <StatisticsCards avgCompletion={avgCompletion} avgEngagement={avgEngagement} totalEntries={progress.length} />
-          <ProgressChartCard data={chartData} height={260} marginTopClass="mt-4" />
+          <ProgressChartCard data={chartData} height={280} marginTopClass="mt-6" />
         </>
       )}
     </>

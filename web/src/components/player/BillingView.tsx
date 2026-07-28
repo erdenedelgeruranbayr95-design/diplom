@@ -2,6 +2,10 @@
 
 import type { SessionUser } from "@/types/auth";
 import BackBar from "./BackBar";
+import { SectionTitle } from "@/components/ui/PageHeader";
+import { Empty } from "@/components/ui/States";
+import StatusBadge from "@/components/ui/StatusBadge";
+import { ActionButton } from "@/components/ui/ActionGroup";
 import { loadPayments } from "@/lib/data/library";
 import { PREVIEW_SEC } from "@/lib/player/constants";
 
@@ -52,19 +56,21 @@ export default function BillingView({
         </div>
         <div className="flex flex-col gap-[9px] min-w-[210px]">
           {!isAdmin && active && (
-            <button className="sp-prof-btn danger" onClick={() => {
+            <button className="sp-prof-btn danger focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(232,138,155,.3)]" onClick={() => {
               if (confirm('PRO захиалгаа цуцлах уу? ' + renewDate + ' хүртэл эрх чинь хадгалагдана.')) onCancelSub()
             }}>Захиалга цуцлах</button>
           )}
           {!isAdmin && !active && (
-            <button className="sp-prof-btn accent" onClick={onSubscribe}>
+            <button className="sp-prof-btn accent focus-visible:outline-none focus-visible:shadow-glow-aqua" onClick={onSubscribe}>
               {user?.sub ? 'Сэргээх — 9\'900₮/сар' : 'PRO болох — 9\'900₮/сар'}
             </button>
           )}
         </div>
       </div>
 
-      <h3 className="st-h">Планаа харьцуулах</h3>
+      <div className="mt-8">
+        <SectionTitle title="Планаа харьцуулах" />
+      </div>
       <div className="grid grid-cols-2 max-[640px]:grid-cols-1 gap-3.5">
         <div className={"relative border border-line rounded-[14px] p-[22px] " + (!active && !isAdmin ? "border-[rgba(56,232,206,.5)] shadow-[0_0_0_1px_rgba(56,232,206,.2)]" : "")}>
           {!active && !isAdmin && (
@@ -128,34 +134,42 @@ export default function BillingView({
             </li>
           </ul>
           {!isAdmin && !active && (
-            <button className="bt bt-a mt-[18px] w-full text-center" onClick={onSubscribe}>
+            <ActionButton variant="primary" className="mt-[18px] w-full text-center" onClick={onSubscribe}>
               {user?.sub ? 'Сэргээх →' : 'PRO болох →'}
-            </button>
+            </ActionButton>
           )}
         </div>
       </div>
 
-      <h3 className="st-h">Төлбөрийн түүх</h3>
+      <div className="mt-8">
+        <SectionTitle title="Төлбөрийн түүх" />
+      </div>
       {payments.length === 0 ? (
-        <p className="adm-empty">Төлбөрийн түүх хоосон байна</p>
+        <Empty icon="💳" title="Төлбөрийн түүх хоосон байна" />
       ) : (
-        <div className="bil-table">
-          <div className="bil-row bil-head">
-            <span className="mono">Огноо</span><span className="mono">План</span>
-            <span className="mono">Төлбөрийн хэрэгсэл</span><span className="mono">Дүн</span><span className="mono">Төлөв</span>
+        <div className="border border-white/[.08] rounded-2xl overflow-hidden bg-white/[.015]">
+          <div className="grid grid-cols-[1fr_1fr_1.2fr_.8fr_1fr] max-nav:grid-cols-[1fr_1fr_1fr] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-white/[.02]">
+            <span className="mono">Огноо</span>
+            <span className="mono">План</span>
+            <span className="mono max-nav:hidden">Төлбөрийн хэрэгсэл</span>
+            <span className="mono">Дүн</span>
+            <span className="mono">Төлөв</span>
           </div>
           {payments.map((p) => (
-            <div className="bil-row" key={p.id}>
-              <span>{new Date(p.date).toLocaleDateString('mn-MN')}</span>
+            <div
+              className="grid grid-cols-[1fr_1fr_1.2fr_.8fr_1fr] max-nav:grid-cols-[1fr_1fr_1fr] gap-3 items-center py-3 px-5 border-b border-white/[.06] last:border-b-0 text-[13.5px] transition-colors duration-150 hover:bg-white/[.03]"
+              key={p.id}
+            >
+              <span className="text-dim">{new Date(p.date).toLocaleDateString('mn-MN')}</span>
               <span>{p.plan}</span>
-              <span className="bil-mth">{p.method}</span>
-              <span><b>{p.amount}</b></span>
-              <span className="bil-ok">✓ {p.status}</span>
+              <span className="text-dim max-nav:hidden">{p.method}</span>
+              <b>{p.amount}</b>
+              <StatusBadge label={"✓ " + p.status} tone="aqua" />
             </div>
           ))}
         </div>
       )}
-      <p className="auth-note mono" style={{ textAlign: 'left' }}>Демо горим — Stripe test. Жинхэнэ мөнгө шилжээгүй.</p>
+      <p className="mono !text-[9px] mt-6 text-left">Демо горим — Stripe test. Жинхэнэ мөнгө шилжээгүй.</p>
     </>
   )
 }

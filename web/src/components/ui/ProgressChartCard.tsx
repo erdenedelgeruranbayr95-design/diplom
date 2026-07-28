@@ -26,7 +26,7 @@ export default function ProgressChartCard({
   if (hideWhenEmpty && data.length === 0) return null;
   return (
     <div
-      className={`border border-line rounded-md bg-[rgba(20,28,27,.4)] p-[22px_24px] ${marginTopClass} flex flex-col gap-4 transition-[box-shadow,border-color] duration-250 hover:shadow-sm hover:border-white/[.16] [animation:chart-in_.4s_cubic-bezier(.2,.8,.2,1)_backwards]`}
+      className={`border border-white/[.08] rounded-2xl bg-white/[.02] p-6 ${marginTopClass} flex flex-col gap-4 transition-[border-color,box-shadow] duration-250 hover:border-white/[.14] [animation:chart-in_.4s_cubic-bezier(.2,.8,.2,1)_backwards]`}
     >
       <div className="flex gap-4 items-start">
         <div>

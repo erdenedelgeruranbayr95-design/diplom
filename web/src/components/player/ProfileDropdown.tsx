@@ -1,10 +1,30 @@
 "use client";
 
-/* TopBar.tsx-ийн профайл dropdown (.sp-dd.sp-profile) — тусад нь гаргасан. CSS/behavior
-   бүгд өөрчлөгдөөгүй, зөвхөн component boundary шилжсэн. */
+/* TopBar-ийн профайл dropdown — премиум dropdown каркас (DropdownPanel) руу шинэчлэв.
+   go(v)/onLogout/toggle логик бүхэлдээ хэвээр, ямар ч цэсний зорилтот заалт (setView) хасагдаагүй,
+   нэмэгдээгүй — зөвхөн визуал давхарга шинэчлэгдсэн (icon-той мөрүүд, groups, илүү зай). */
 import { PREVIEW_SEC } from "@/lib/player/constants";
 import type { SessionUser } from "@/types/auth";
 import type { ViewName } from "@/components/player/Player";
+import DropdownPanel from "@/components/ui/DropdownPanel";
+import UserAvatar from "@/components/ui/UserAvatar";
+
+function MenuItem({ icon, label, onClick, danger }: { icon: string; label: string; onClick: () => void; danger?: boolean }) {
+  return (
+    <button
+      className={
+        "flex items-center gap-2.5 w-full text-left py-2.5 px-2.5 rounded-lg text-[13.5px] font-medium transition-colors duration-150 " +
+        (danger ? "text-[#E88A9B] hover:bg-[rgba(232,138,155,.09)]" : "text-ink hover:bg-white/[.06]")
+      }
+      onClick={onClick}
+    >
+      <span className="w-4 text-center flex-none" aria-hidden="true">
+        {icon}
+      </span>
+      {label}
+    </button>
+  );
+}
 
 export default function ProfileDropdown({
   open,
@@ -37,7 +57,7 @@ export default function ProfileDropdown({
   }
 
   return (
-    <div className="sp-dd-wrap">
+    <div className="relative">
       <button
         className={
           "w-[42px] h-[42px] flex-none rounded-full flex items-center justify-center font-display font-bold text-[15px] transition-[box-shadow,transform] duration-250 " +
@@ -55,23 +75,19 @@ export default function ProfileDropdown({
         {initial}
       </button>
       {open && (
-        <div className="sp-dd" role="dialog" aria-label="Профайл">
-          <div className="flex items-center gap-[13px]">
-            <span
-              className="w-[50px] h-[50px] flex-none rounded-full flex items-center justify-center font-display font-bold text-lg bg-[linear-gradient(135deg,var(--aqua),#1FA893)] text-[#04100E]"
-              aria-hidden="true"
-            >
-              {initial}
-            </span>
-            <div>
-              <b className="block text-[15px] font-semibold">{user?.name}</b>
+        <DropdownPanel label="Профайл" width={300}>
+          <div className="flex items-center gap-3 px-1.5 py-1.5">
+            <UserAvatar name={user?.name || "?"} size="md" tone={isAdmin ? "warm" : "aqua"} />
+            <div className="min-w-0">
+              <b className="block text-[15px] font-semibold truncate">{user?.name}</b>
               <i className="not-italic text-xs text-dim break-all">{user?.email}</i>
             </div>
           </div>
+
           <div
             className={
-              "border border-line rounded-[10px] p-[11px_13px] flex flex-col gap-0.5 " +
-              (subscribed ? "border-[rgba(56,232,206,.35)] bg-[rgba(56,232,206,.05)]" : "")
+              "border border-line rounded-xl p-3 flex flex-col gap-0.5 mx-1 mb-1 " +
+              (subscribed ? "border-aqua/35 bg-aqua/[.05]" : "")
             }
           >
             {isAdmin ? (
@@ -91,57 +107,28 @@ export default function ProfileDropdown({
               </>
             )}
           </div>
-          <button className="sp-prof-btn" onClick={() => go("profile")}>
-            👤 Профайл засах
-          </button>
-          <button className="sp-prof-btn" onClick={() => go("playlists")}>
-            🎧 Миний жагсаалт
-          </button>
-          {subscribed && !isAdmin && (
-            <button className="sp-prof-btn" onClick={() => go("upload")}>
-              ⬆️ Дуу нэмэх
-            </button>
-          )}
-          <button className="sp-prof-btn" onClick={() => go("devices")}>
-            📱 Төхөөрөмж холбох
-          </button>
-          <button className="sp-prof-btn" onClick={() => go("stats")}>
-            📊 Миний статистик
-          </button>
-          <button className="sp-prof-btn" onClick={() => go("history")}>
-            🕐 Сонссон түүх
-          </button>
-          <button className="sp-prof-btn" onClick={() => go("progress")}>
-            📈 Миний ахиц
-          </button>
-          <button className="sp-prof-btn" onClick={() => go("achievements")}>
-            🏆 Амжилтууд
-          </button>
-          <button className="sp-prof-btn" onClick={() => go("billing")}>
-            💳 Захиалга удирдах
-          </button>
-          <button className="sp-prof-btn" onClick={() => go("help")}>
-            ❓ Тусламж
-          </button>
-          {isAdmin && (
-            <button className="sp-prof-btn" onClick={() => go("admin")}>
-              🛠 Хяналтын самбар
-            </button>
-          )}
-          {isTherapist && (
-            <button className="sp-prof-btn" onClick={() => go("therapist")}>
-              🧑‍⚕️ Эмчийн самбар
-            </button>
-          )}
-          {isParent && (
-            <button className="sp-prof-btn" onClick={() => go("parent")}>
-              👨‍👩‍👧 Эцэг эхийн самбар
-            </button>
-          )}
-          <button className="sp-prof-btn danger" onClick={onLogout}>
-            Гарах
-          </button>
-        </div>
+
+          <div className="h-px bg-white/[.06] my-1 mx-1" aria-hidden="true"></div>
+
+          <MenuItem icon="👤" label="Профайл засах" onClick={() => go("profile")} />
+          <MenuItem icon="🎧" label="Миний жагсаалт" onClick={() => go("playlists")} />
+          {subscribed && !isAdmin && <MenuItem icon="⬆️" label="Дуу нэмэх" onClick={() => go("upload")} />}
+          <MenuItem icon="📱" label="Төхөөрөмж холбох" onClick={() => go("devices")} />
+          <MenuItem icon="📊" label="Миний статистик" onClick={() => go("stats")} />
+          <MenuItem icon="🕐" label="Сонссон түүх" onClick={() => go("history")} />
+          <MenuItem icon="📈" label="Миний ахиц" onClick={() => go("progress")} />
+          <MenuItem icon="🏆" label="Амжилтууд" onClick={() => go("achievements")} />
+          <MenuItem icon="💳" label="Захиалга удирдах" onClick={() => go("billing")} />
+          <MenuItem icon="❓" label="Тусламж" onClick={() => go("help")} />
+
+          {(isAdmin || isTherapist || isParent) && <div className="h-px bg-white/[.06] my-1 mx-1" aria-hidden="true"></div>}
+          {isAdmin && <MenuItem icon="🛠" label="Хяналтын самбар" onClick={() => go("admin")} />}
+          {isTherapist && <MenuItem icon="🧑‍⚕️" label="Эмчийн самбар" onClick={() => go("therapist")} />}
+          {isParent && <MenuItem icon="👨‍👩‍👧" label="Эцэг эхийн самбар" onClick={() => go("parent")} />}
+
+          <div className="h-px bg-white/[.06] my-1 mx-1" aria-hidden="true"></div>
+          <MenuItem icon="↩" label="Гарах" onClick={onLogout} danger />
+        </DropdownPanel>
       )}
     </div>
   );

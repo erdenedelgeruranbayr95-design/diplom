@@ -3,11 +3,16 @@
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import BackBar from "./BackBar";
+import { SectionTitle } from "@/components/ui/PageHeader";
+import { ActionButton } from "@/components/ui/ActionGroup";
 import { useToast } from "@/components/providers/ToastProvider";
 import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
 
 /* Төхөөрөмж холбох — утас / gamepad / BLE хантааз + тест + давтамж→байрлал оноолт.
-   Дизайн баримт §12-ийн device abstraction-ий UI хувилбар. */
+   Дизайн баримт §12-ийн device abstraction-ий UI хувилбар. Премиум dashboard дизайн руу
+   шинэчлэв (.dv-lead/.st-h/.dv-maprow/.sp-banner legacy CSS-ийг Tailwind болгов, .bt товчийг
+   ActionButton болгов) — testPhone/testGamepad/connectBLE/connectQr/setZone/testZone логик
+   бүхэлдээ хэвээр, зөвхөн визуал давхарга шинэчлэгдсэн. */
 
 const ZONES = [
   { v: 'chest', label: 'Цээж' },
@@ -122,15 +127,15 @@ export default function DevicesView({
     <>
       <BackBar title="Төхөөрөмж холбох" onBack={onBack} />
 
-      <p className="dv-lead">Хөгжмийг илүү хүчтэй мэдрэхийн тулд төхөөрөмж холбоно. Утас хамгийн энгийн нь — хантааз хамгийн гүн мэдрэмж өгнө.</p>
+      <p className="text-dim text-sm leading-[1.55] mb-5 max-w-[640px]">Хөгжмийг илүү хүчтэй мэдрэхийн тулд төхөөрөмж холбоно. Утас хамгийн энгийн нь — хантааз хамгийн гүн мэдрэмж өгнө.</p>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-3.5 mb-3">
         {devices.map((d) => (
           <div
             key={d.key}
             className={
-              "flex flex-col items-start gap-2 bg-white/[.03] border rounded-xl p-5 transition-[border-color,box-shadow,transform] duration-250 hover:-translate-y-0.5 hover:shadow-sm " +
-              (d.ok ? "border-[rgba(56,232,206,.35)]" : "border-line")
+              "flex flex-col items-start gap-2 bg-white/[.03] border rounded-2xl p-5 transition-[border-color,box-shadow,transform] duration-250 hover:-translate-y-0.5 hover:shadow-sm " +
+              (d.ok ? "border-aqua/35" : "border-white/[.08]")
             }
           >
             <span className="text-[30px] leading-none" aria-hidden="true">{d.icon}</span>
@@ -146,7 +151,7 @@ export default function DevicesView({
               ></i>
               {d.status}
             </span>
-            <button className="bt bt-a !p-[12px_20px] !text-[13px] !min-h-11" onClick={d.action}>{d.actionLabel}</button>
+            <ActionButton variant="primary" size="sm" onClick={d.action}>{d.actionLabel}</ActionButton>
           </div>
         ))}
       </div>
@@ -154,10 +159,9 @@ export default function DevicesView({
       {(deviceSync.qrState === 'waiting' || deviceSync.qrState === 'connected') && deviceSync.qrToken && (
         <div
           className={
-            "sp-banner !mt-1 " +
-            (justConnected ? "!border-[rgba(56,232,206,.45)] !shadow-glow-aqua transition-[border-color,box-shadow] duration-300" : "")
+            "rounded-2xl p-6 flex items-center gap-5 transition-[border-color,box-shadow] duration-300 [background:linear-gradient(120deg,rgba(56,232,206,.14),rgba(14,92,83,.25)_55%,rgba(9,14,14,.4))] " +
+            (justConnected ? "shadow-glow-aqua" : "")
           }
-          style={{ display: 'flex', alignItems: 'center', gap: 20 }}
         >
           {deviceSync.qrState === 'waiting' && (
             <span className="bg-white p-3 rounded-xl inline-flex shadow-md border border-white/[.08] [animation:dv-qr-in_.3s_cubic-bezier(.2,.8,.2,1)]">
@@ -167,7 +171,7 @@ export default function DevicesView({
           {deviceSync.qrState === 'connected' && (
             <span
               className={
-                "w-14 h-14 flex-none rounded-full flex items-center justify-center bg-[rgba(56,232,206,.15)] text-aqua text-2xl font-bold " +
+                "w-14 h-14 flex-none rounded-full flex items-center justify-center bg-aqua/[.15] text-aqua text-2xl font-bold " +
                 (justConnected ? "[animation:dv-qr-pop_.5s_cubic-bezier(.2,.8,.2,1)]" : "")
               }
               aria-hidden="true"
@@ -176,20 +180,21 @@ export default function DevicesView({
             </span>
           )}
           <div>
-            <b>{deviceSync.qrState === 'connected' ? '✓ Утас холбогдлоо' : 'Утсаараа QR кодыг уншуулна уу'}</b>
-            <p>{deviceSync.qrState === 'connected' ? 'Тоглуулж буй дуутай синхроноор чичирнэ.' : 'Камер апп нээгээд кодыг чиглүүлнэ үү — линк автоматаар нээгдэнэ.'}</p>
+            <b className="block font-display font-semibold text-[15px] mb-1">{deviceSync.qrState === 'connected' ? '✓ Утас холбогдлоо' : 'Утсаараа QR кодыг уншуулна уу'}</b>
+            <p className="text-dim text-[13px] leading-[1.5]">{deviceSync.qrState === 'connected' ? 'Тоглуулж буй дуутай синхроноор чичирнэ.' : 'Камер апп нээгээд кодыг чиглүүлнэ үү — линк автоматаар нээгдэнэ.'}</p>
           </div>
         </div>
       )}
 
-      <h3 className="st-h">Давтамж → биеийн байрлал</h3>
-      <p className="dv-lead">Олон моторт төхөөрөмж дээр давтамжийн бүс бүрийг биеийн өөр цэгт оноож болно (чихний дун шиг — «tonotopic»). Дараад туршиж үзээрэй.</p>
+      <div className="mt-8">
+        <SectionTitle title="Давтамж → биеийн байрлал" description="Олон моторт төхөөрөмж дээр давтамжийн бүс бүрийг биеийн өөр цэгт оноож болно (чихний дун шиг — «tonotopic»). Дараад туршиж үзээрэй." />
+      </div>
 
       <div className="flex flex-col gap-3 mb-5">
         {['bass', 'mid', 'high'].map((band) => (
-          <div className="dv-maprow" key={band}>
+          <div className="flex items-center gap-3 bg-white/[.03] border border-white/[.08] rounded-xl py-2.5 px-3.5" key={band}>
             <button
-              className="w-11 h-11 flex-[0_0_44px] rounded-full border border-line bg-[rgba(56,232,206,.1)] text-aqua cursor-pointer transition-[background,transform,box-shadow] duration-200 hover:bg-[rgba(56,232,206,.18)] active:scale-[.92] focus-visible:shadow-glow-aqua"
+              className="w-11 h-11 flex-none rounded-full border border-white/[.1] bg-aqua/[.1] text-aqua cursor-pointer transition-[background,transform,box-shadow] duration-200 hover:bg-aqua/[.18] active:scale-[.92] focus-visible:outline-none focus-visible:shadow-glow-aqua"
               onClick={() => testZone(band)}
               aria-label={BAND_LABEL[band] + ' туршиж үзэх'}
             >
@@ -198,21 +203,21 @@ export default function DevicesView({
             <span className="flex-1 text-sm text-ink">{BAND_LABEL[band]}</span>
             <span className="text-faint" aria-hidden="true">→</span>
             <select
-              className="!w-auto !min-w-[120px] !min-h-11 p-[12px_14px] rounded-sm bg-white/[.04] border border-line text-ink text-[14.5px] font-[inherit] transition-[border-color,box-shadow] duration-300 focus:border-aqua focus-visible:outline-none focus-visible:shadow-glow-aqua"
+              className="min-w-[130px] min-h-11 p-[12px_14px] rounded-lg bg-white/[.04] border border-white/[.08] text-ink text-[14.5px] font-[inherit] transition-[border-color,box-shadow] duration-300 focus:border-aqua focus-visible:outline-none focus-visible:shadow-glow-aqua"
               value={map[band]}
               onChange={(e) => setZone(band, e.target.value)}
               aria-label={BAND_LABEL[band] + ' байрлал'}
             >
-              {ZONES.map((z) => <option key={z.v} value={z.v}>{z.label}</option>)}
+              {ZONES.map((z) => <option className="bg-[#0D1414] text-ink" key={z.v} value={z.v}>{z.label}</option>)}
             </select>
           </div>
         ))}
       </div>
 
-      <div className="sp-banner !mt-1">
+      <div className="rounded-2xl p-6 flex gap-4 items-start [background:linear-gradient(120deg,rgba(56,232,206,.14),rgba(14,92,83,.25)_55%,rgba(9,14,14,.4))]">
         <div>
-          <b>Санамж</b>
-          <p>Компьютер дээр жинхэнэ чичиргээ гарахгүй — зөвхөн гэрлийн пульс. Бүрэн туршихын тулд Android утас эсвэл gamepad холбоно уу.</p>
+          <b className="block font-display font-semibold text-[15px] mb-1">Санамж</b>
+          <p className="text-dim text-[13px] leading-[1.5]">Компьютер дээр жинхэнэ чичиргээ гарахгүй — зөвхөн гэрлийн пульс. Бүрэн туршихын тулд Android утас эсвэл gamepad холбоно уу.</p>
         </div>
       </div>
     </>

@@ -1,5 +1,10 @@
 "use client";
 
+/* Профайл ба тохиргоо — премиум account-center (Apple ID/Google Account/Notion Settings
+   pattern) руу шинэчлэв: PageHeader-той нэгдсэн толгой хэсэг, дэд карт компонентуудыг
+   (ProfileHeader/ProfileSettings/PreferenceSettings/SecuritySettings) тус тусад нь
+   шинэчилсэн. saveProfile()/changePass() болон бүх state (name/color/hearing/oldPass/
+   newPass/newPass2) хэвээр — зөвхөн визуал давхарга шинэчлэгдсэн. */
 import { useState } from "react";
 import BackBar from "./BackBar";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -71,7 +76,7 @@ export default function ProfileView({
 
   return (
     <>
-      <BackBar title="Профайл засах" onBack={onBack} />
+      <BackBar title="Профайл ба тохиргоо" onBack={onBack} />
 
       <ProfileHeader
         initial={initial}
@@ -81,19 +86,21 @@ export default function ProfileView({
         roleLabel={isAdmin ? "Админ эрх" : user?.sub?.active ? "PRO хэрэглэгч" : "Үнэгүй горим"}
       />
 
-      <ProfileSettings name={name} setName={setName} email={user?.email || ""} color={color} setColor={setColor} hearing={hearing} setHearing={setHearing} onSubmit={saveProfile} />
+      <div className="max-w-[640px]">
+        <ProfileSettings name={name} setName={setName} email={user?.email || ""} color={color} setColor={setColor} hearing={hearing} setHearing={setHearing} onSubmit={saveProfile} />
 
-      <PreferenceSettings prefs={prefs} viz={viz} onUpdatePrefs={onUpdatePrefs} />
+        <PreferenceSettings prefs={prefs} viz={viz} onUpdatePrefs={onUpdatePrefs} />
 
-      <SecuritySettings
-        oldPass={oldPass}
-        setOldPass={setOldPass}
-        newPass={newPass}
-        setNewPass={setNewPass}
-        newPass2={newPass2}
-        setNewPass2={setNewPass2}
-        onSubmit={changePass}
-      />
+        <SecuritySettings
+          oldPass={oldPass}
+          setOldPass={setOldPass}
+          newPass={newPass}
+          setNewPass={setNewPass}
+          newPass2={newPass2}
+          setNewPass2={setNewPass2}
+          onSubmit={changePass}
+        />
+      </div>
     </>
   )
 }

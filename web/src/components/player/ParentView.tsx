@@ -1,11 +1,16 @@
 "use client";
 
-/* Эцэг эхийн (PARENT) самбар — TherapistView.tsx-ийн list→detail хэв маягийг дагана,
-   гэхдээ бүрэн зөвхөн унших: session/progress бичих ямар ч форм байхгүй.
-   "Эмчийн зөвлөмж" гэдэг нь дууссан сессүүдийн therapist-ийн бичсэн notes талбарыг харуулна
-   (тусдаа recommendation загвар backend-д байхгүй тул шинээр нэмэхгүй). */
+/* Эцэг эхийн (PARENT) самбар — TherapistView.tsx-ийн list→detail хэв маяг, премиум dashboard
+   дизайныг (Admin/Therapist/Home-той ижил визуал хэл) дагана, гэхдээ бүрэн зөвхөн унших:
+   session/progress бичих ямар ч форм байхгүй. "Эмчийн зөвлөмж" гэдэг нь дууссан сессүүдийн
+   therapist-ийн бичсэн notes талбарыг харуулна (тусдаа recommendation загвар backend-д байхгүй
+   тул шинээр нэмэхгүй). Ачаалах/сонголт логик бүхэлдээ хэвээр — зөвхөн визуал давхарга
+   шинэчлэгдсэн. */
 import { useEffect, useMemo, useState } from "react";
 import { Loading, Empty, ErrorState } from "@/components/ui/States";
+import UserAvatar from "@/components/ui/UserAvatar";
+import { ActionButton } from "@/components/ui/ActionGroup";
+import PromoBanner from "@/components/ui/PromoBanner";
 import { listMyChildren, listTherapySessions, listProgress } from "@/lib/api/client";
 import ParentHeader from "@/components/parent/ParentHeader";
 import ChildOverviewCard from "@/components/parent/ChildOverviewCard";
@@ -52,40 +57,38 @@ export default function ParentView({ onGoHome }: { onGoHome: () => void }) {
       )}
 
       {!loading && !err && children.length > 0 && (
-        <div className="bil-table">
-          <div className="bil-row bil-head !grid-cols-[1.2fr_1.5fr_.9fr_.7fr] max-[760px]:!grid-cols-[1fr_1fr_.8fr]">
+        <div className="border border-white/[.08] rounded-2xl overflow-hidden bg-white/[.015]">
+          <div className="grid grid-cols-[1.2fr_1.5fr_.9fr_.7fr] max-[760px]:grid-cols-[1fr_1fr_.8fr] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-white/[.02]">
             <span className="mono">Хүүхэд</span>
-            <span className="mono">Имэйл</span>
+            <span className="mono max-[760px]:hidden">Имэйл</span>
             <span className="mono">Холбогдсон</span>
             <span></span>
           </div>
           {children.map((c) => (
-            <div className="bil-row !grid-cols-[1.2fr_1.5fr_.9fr_.7fr] max-[760px]:!grid-cols-[1fr_1fr_.8fr]" key={c.id}>
-              <span className="ab-uname">
-                <i className="ab-uav" aria-hidden="true">
-                  {(c.child.name || "?").charAt(0).toUpperCase()}
-                </i>
-                {c.child.name}
+            <div
+              className="grid grid-cols-[1.2fr_1.5fr_.9fr_.7fr] max-[760px]:grid-cols-[1fr_1fr_.8fr] gap-3 items-center py-3 px-5 border-b border-white/[.06] last:border-b-0 text-[13.5px] transition-colors duration-150 hover:bg-white/[.03]"
+              key={c.id}
+            >
+              <span className="flex items-center gap-2.5 min-w-0">
+                <UserAvatar name={c.child.name} size="sm" />
+                <span className="whitespace-nowrap overflow-hidden text-ellipsis">{c.child.name}</span>
               </span>
-              <span className="bil-mth">{c.child.email}</span>
-              <span>{new Date(c.createdAt).toLocaleDateString("mn-MN")}</span>
-              <button className="bt bt-a" onClick={() => setSelected(c)}>
+              <span className="text-dim whitespace-nowrap overflow-hidden text-ellipsis max-[760px]:hidden">{c.child.email}</span>
+              <span className="text-faint font-mono text-[11px]">{new Date(c.createdAt).toLocaleDateString("mn-MN")}</span>
+              <ActionButton variant="primary" size="sm" className="justify-self-end" onClick={() => setSelected(c)}>
                 Нээх →
-              </button>
+              </ActionButton>
             </div>
           ))}
         </div>
       )}
 
-      <div className="sp-banner" style={{ marginTop: 30 }}>
-        <div>
-          <b>Тоглуулагч руу шилжих</b>
-          <p>Аппын бусад боломжуудыг үзээрэй.</p>
-        </div>
-        <button className="bt" onClick={onGoHome}>
-          🎧 Тоглуулагч нээх
-        </button>
-      </div>
+      <PromoBanner
+        title="Тоглуулагч руу шилжих"
+        description="Аппын бусад боломжуудыг үзээрэй."
+        actionLabel="🎧 Тоглуулагч нээх"
+        onAction={onGoHome}
+      />
     </>
   );
 }

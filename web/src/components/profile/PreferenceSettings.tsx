@@ -1,8 +1,11 @@
 "use client";
 
 /* ProfileView.tsx-ийн "Харагдац" + "Мэдрэх горим — үндсэн тохиргоо" + "Мэдэгдэл ба хандалт"
-   гурван карт — тусад нь гаргасан. CSS/behavior бүгд өөрчлөгдөөгүй, зөвхөн component boundary
-   шилжсэн. */
+   гурван карт — премиум preferences dashboard (Linear/Notion settings pattern) руу шинэчлэв:
+   .sp-seg legacy CSS-ийг Tailwind segmented control, plain checkbox-уудыг modern toggle
+   switch болгов. onUpdatePrefs дуудлага бүхэлдээ хэвээр (аль ч patch shape өөрчлөгдөөгүй) —
+   зөвхөн визуал давхарга шинэчлэгдсэн. */
+import SectionCard from "@/components/ui/SectionCard";
 import { VIB_LEVELS, LIGHT_LEVELS } from "@/lib/player/constants";
 import type { VizMode } from "@/lib/player/visualizer-modes";
 
@@ -27,6 +30,68 @@ interface SettingsPrefs {
   largeText?: boolean;
 }
 
+const fieldLabelCls = "block text-[12px] font-medium text-dim mb-1.5";
+
+function Segmented<T extends string | number>({
+  options,
+  value,
+  onChange,
+  ariaLabel,
+  wrap,
+}: {
+  options: { v: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+  ariaLabel: string;
+  wrap?: boolean;
+}) {
+  return (
+    <div className={"flex gap-1.5 " + (wrap ? "flex-wrap" : "")} role="group" aria-label={ariaLabel}>
+      {options.map((o) => (
+        <button
+          type="button"
+          key={o.v}
+          className={
+            "py-2 px-3.5 rounded-full text-[12.5px] font-medium border transition-colors duration-150 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+            (value === o.v ? "bg-aqua text-[#04100E] border-aqua font-semibold" : "text-dim border-white/[.08] hover:border-white/20 hover:text-ink")
+          }
+          onClick={() => onChange(o.v)}
+          aria-pressed={value === o.v}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ToggleRow({ checked, onChange, label, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string }) {
+  return (
+    <label className="flex items-center justify-between gap-4 py-2.5 cursor-pointer">
+      <span>
+        <span className="block text-[13.5px] text-ink">{label}</span>
+        {hint && <span className="block text-[11.5px] text-faint mt-0.5">{hint}</span>}
+      </span>
+      <span className="relative flex-none">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="peer sr-only"
+        />
+        <span
+          className="block w-11 h-6 rounded-full bg-white/[.12] transition-colors duration-200 peer-checked:bg-aqua peer-focus-visible:outline-none peer-focus-visible:shadow-glow-aqua"
+          aria-hidden="true"
+        ></span>
+        <span
+          className="absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,.3)] transition-transform duration-200 peer-checked:translate-x-5"
+          aria-hidden="true"
+        ></span>
+      </span>
+    </label>
+  );
+}
+
 export default function PreferenceSettings({
   prefs,
   viz,
@@ -38,100 +103,75 @@ export default function PreferenceSettings({
 }) {
   return (
     <>
-      <div className="bg-white/[.03] border border-line rounded-lg p-5 mb-[18px] transition-[border-color,box-shadow] duration-250 hover:border-white/[.16] hover:shadow-sm">
-        <h3 className="st-h" style={{ marginTop: 0 }}>
-          Харагдац
-        </h3>
-
-        <div className="block mb-3.5">
-          <span className="mono !block !mb-1.5 !text-dim">Загвар (Theme)</span>
-          <div className="sp-seg">
-            <button type="button" className={(prefs.theme || "dark") === "dark" ? "on" : ""} onClick={() => onUpdatePrefs({ theme: "dark" })}>
-              Харанхуй
-            </button>
-            <button type="button" className={prefs.theme === "light" ? "on" : ""} onClick={() => onUpdatePrefs({ theme: "light" })}>
-              Цайвар
-            </button>
-          </div>
+      <SectionCard title="Харагдац" description="Аппын өнгө болон хэлний тохиргоо" className="mb-5">
+        <div className="block mb-4">
+          <span className={fieldLabelCls}>Загвар (Theme)</span>
+          <Segmented
+            ariaLabel="Загвар"
+            value={prefs.theme || "dark"}
+            onChange={(v) => onUpdatePrefs({ theme: v })}
+            options={[
+              { v: "dark", label: "Харанхуй" },
+              { v: "light", label: "Цайвар" },
+            ]}
+          />
         </div>
 
-        <div className="block mb-3.5">
-          <span className="mono !block !mb-1.5 !text-dim">Хэл (Language)</span>
-          <div className="sp-seg">
-            <button type="button" className={(prefs.language || "mn") === "mn" ? "on" : ""} onClick={() => onUpdatePrefs({ language: "mn" })}>
-              Монгол
-            </button>
-            <button type="button" className={prefs.language === "en" ? "on" : ""} onClick={() => onUpdatePrefs({ language: "en" })}>
-              English
-            </button>
-          </div>
+        <div className="block">
+          <span className={fieldLabelCls}>Хэл (Language)</span>
+          <Segmented
+            ariaLabel="Хэл"
+            value={prefs.language || "mn"}
+            onChange={(v) => onUpdatePrefs({ language: v })}
+            options={[
+              { v: "mn", label: "Монгол" },
+              { v: "en", label: "English" },
+            ]}
+          />
         </div>
-      </div>
+      </SectionCard>
 
-      <div className="bg-white/[.03] border border-line rounded-lg p-5 mb-[18px] transition-[border-color,box-shadow] duration-250 hover:border-white/[.16] hover:shadow-sm">
-        <h3 className="st-h" style={{ marginTop: 0 }}>
-          Мэдрэх горим — үндсэн тохиргоо
-        </h3>
-
-        <div className="block mb-3.5">
-          <span className="mono !block !mb-1.5 !text-dim">Чичиргээний хүч</span>
-          <div className="sp-seg">
-            {VIB_LEVELS.map((v, i) => (
-              <button type="button" key={v.label} className={prefs.vib === i ? "on" : ""} onClick={() => onUpdatePrefs({ vib: i })}>
-                {v.label}
-              </button>
-            ))}
-          </div>
+      <SectionCard title="Мэдрэх горим — үндсэн тохиргоо" description="Чичиргээ, гэрэл, визуалайзерын үндсэн тохиргоо" className="mb-5">
+        <div className="block mb-4">
+          <span className={fieldLabelCls}>Чичиргээний хүч</span>
+          <Segmented
+            ariaLabel="Чичиргээний хүч"
+            value={prefs.vib}
+            onChange={(v) => onUpdatePrefs({ vib: v })}
+            options={VIB_LEVELS.map((v, i) => ({ v: i, label: v.label }))}
+          />
         </div>
 
-        <div className="block mb-3.5">
-          <span className="mono !block !mb-1.5 !text-dim">Гэрлийн эрч</span>
-          <div className="sp-seg">
-            {LIGHT_LEVELS.map((v, i) => (
-              <button type="button" key={v.label} className={prefs.light === i ? "on" : ""} onClick={() => onUpdatePrefs({ light: i })}>
-                {v.label}
-              </button>
-            ))}
-          </div>
+        <div className="block mb-4">
+          <span className={fieldLabelCls}>Гэрлийн эрч</span>
+          <Segmented
+            ariaLabel="Гэрлийн эрч"
+            value={prefs.light}
+            onChange={(v) => onUpdatePrefs({ light: v })}
+            options={LIGHT_LEVELS.map((v, i) => ({ v: i, label: v.label }))}
+          />
         </div>
 
-        <div className="block mb-3.5">
-          <span className="mono !block !mb-1.5 !text-dim">Визуалайзерийн үндсэн горим</span>
-          <div className="sp-seg flex-wrap">
-            {VIZ_MODES.map((m) => (
-              <button type="button" key={m.v} className={viz.mode === m.v ? "on" : ""} onClick={() => onUpdatePrefs({ viz: { ...viz, mode: m.v } })}>
-                {m.label}
-              </button>
-            ))}
-          </div>
+        <div className="block mb-5">
+          <span className={fieldLabelCls}>Визуалайзерийн үндсэн горим</span>
+          <Segmented ariaLabel="Визуалайзерийн үндсэн горим" wrap value={viz.mode} onChange={(v) => onUpdatePrefs({ viz: { ...viz, mode: v } })} options={VIZ_MODES} />
         </div>
 
-        <label className="flex items-center gap-2.5 mb-3 cursor-pointer text-[13.5px] last:mb-0 [&>input]:w-[17px] [&>input]:h-[17px] [&>input]:accent-aqua [&>input]:cursor-pointer">
-          <input type="checkbox" checked={viz.particles} onChange={(e) => onUpdatePrefs({ viz: { ...viz, particles: e.target.checked } })} />
-          <span>Тоосонцор эффект идэвхжүүлэх</span>
-        </label>
-      </div>
+        <ToggleRow checked={viz.particles} onChange={(v) => onUpdatePrefs({ viz: { ...viz, particles: v } })} label="Тоосонцор эффект идэвхжүүлэх" />
+      </SectionCard>
 
-      <div className="bg-white/[.03] border border-line rounded-lg p-5 mb-[18px] transition-[border-color,box-shadow] duration-250 hover:border-white/[.16] hover:shadow-sm">
-        <h3 className="st-h" style={{ marginTop: 0 }}>
-          Мэдэгдэл ба хандалт
-        </h3>
-
-        <label className="flex items-center gap-2.5 mb-3 cursor-pointer text-[13.5px] last:mb-0 [&>input]:w-[17px] [&>input]:h-[17px] [&>input]:accent-aqua [&>input]:cursor-pointer">
-          <input type="checkbox" checked={prefs.notifyFeed ?? true} onChange={(e) => onUpdatePrefs({ notifyFeed: e.target.checked })} />
-          <span>Зарлал/мэдэгдэл хүлээн авах</span>
-        </label>
-
-        <label className="flex items-center gap-2.5 mb-3 cursor-pointer text-[13.5px] last:mb-0 [&>input]:w-[17px] [&>input]:h-[17px] [&>input]:accent-aqua [&>input]:cursor-pointer">
-          <input type="checkbox" checked={prefs.reducedMotion ?? false} onChange={(e) => onUpdatePrefs({ reducedMotion: e.target.checked })} />
-          <span>Хөдөлгөөн багасгах (визуалайзер/анимаци эрчмийг бууруулна)</span>
-        </label>
-
-        <label className="flex items-center gap-2.5 mb-3 cursor-pointer text-[13.5px] last:mb-0 [&>input]:w-[17px] [&>input]:h-[17px] [&>input]:accent-aqua [&>input]:cursor-pointer">
-          <input type="checkbox" checked={prefs.largeText ?? false} onChange={(e) => onUpdatePrefs({ largeText: e.target.checked })} />
-          <span>Том фонт ашиглах</span>
-        </label>
-      </div>
+      <SectionCard title="Мэдэгдэл ба хандалт" description="Мэдэгдэл болон хандалтын тохиргоо">
+        <div className="flex flex-col divide-y divide-white/[.06]">
+          <ToggleRow checked={prefs.notifyFeed ?? true} onChange={(v) => onUpdatePrefs({ notifyFeed: v })} label="Зарлал/мэдэгдэл хүлээн авах" />
+          <ToggleRow
+            checked={prefs.reducedMotion ?? false}
+            onChange={(v) => onUpdatePrefs({ reducedMotion: v })}
+            label="Хөдөлгөөн багасгах"
+            hint="Визуалайзер/анимаци эрчмийг бууруулна"
+          />
+          <ToggleRow checked={prefs.largeText ?? false} onChange={(v) => onUpdatePrefs({ largeText: v })} label="Том фонт ашиглах" />
+        </div>
+      </SectionCard>
     </>
   );
 }

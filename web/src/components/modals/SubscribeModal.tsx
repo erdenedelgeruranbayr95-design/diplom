@@ -1,17 +1,24 @@
 "use client";
 
+/* Stripe загварын сарын захиалга — ДЕМО горим (AuthModal.tsx-тэй ижил дизайн хэл).
+   Туршилтын карт: 4242 4242 4242 4242, ирээдүйн дуусах хугацаа, дурын CVC.
+   Жинхэнэ Stripe холбохдоо энд Stripe.js + backend endpoint залгана.
+   .auth-x/.auth-err/.auth-sub/.auth-note legacy CSS-ийг Tailwind болгож, .bt bt-a-г
+   ActionButton болгов. submit() validation/pushPayment() логик бүхэлдээ хэвээр. */
 import { useEffect, useState } from "react";
 import { loadUsers, saveUsers } from "@/lib/auth/auth-storage";
 import { pushPayment } from "@/lib/data/library";
 import { useClosingTransition } from "@/lib/ui/useClosingTransition";
+import { ActionButton } from "@/components/ui/ActionGroup";
 import type { SessionUser, UserSub } from "@/types/auth";
-
-/* Stripe загварын сарын захиалга — ДЕМО горим.
-   Туршилтын карт: 4242 4242 4242 4242, ирээдүйн дуусах хугацаа, дурын CVC.
-   Жинхэнэ Stripe холбохдоо энд Stripe.js + backend endpoint залгана. */
 
 const PLAN = { name: "МЭДРЭХ PRO", price: "9'900₮", period: "сар бүр" };
 const TEST_CARD = "4242424242424242";
+
+const labelCls = "flex flex-col gap-1.5";
+const captionCls = "mono !text-[9px]";
+const inputCls =
+  "bg-white/[.04] border border-white/[.08] text-ink font-body text-[14.5px] p-[12px_14px] rounded-lg transition-[border-color,background,box-shadow] duration-250 focus:border-aqua focus:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint";
 
 function digits(s: string | null) {
   return (s || "").replace(/\D/g, "");
@@ -120,23 +127,22 @@ export default function SubscribeModal({
       }}
     >
       <div
-        className={
-          "relative w-full max-w-[430px] bg-[rgba(9,14,14,.96)] border border-white/[.13] p-[30px_30px_24px] [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)] " +
-          "[&_form]:flex [&_form]:flex-col [&_form]:gap-4 [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] " +
-          "[&_input]:bg-white/[.04] [&_input]:border [&_input]:border-line [&_input]:text-ink [&_input]:font-body [&_input]:text-[14.5px] [&_input]:p-[12px_14px] [&_input]:cursor-none [&_input]:rounded-sm [&_input]:transition-[border-color,background,box-shadow] [&_input]:duration-300 " +
-          "[&_input:focus]:border-aqua [&_input:focus]:bg-[rgba(56,232,206,.05)] [&_input:focus-visible]:shadow-glow-aqua [&_input::placeholder]:text-faint"
-        }
+        className="relative w-full max-w-[430px] bg-[rgba(9,14,14,.97)] border border-white/[.1] rounded-2xl p-[30px_30px_24px] shadow-lg [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)]"
         role="dialog"
         aria-modal="true"
         aria-label="Сарын захиалга"
       >
-        <button className="auth-x" onClick={handleClose} aria-label="Хаах">
+        <button
+          className="absolute top-3.5 right-3.5 text-dim text-sm p-1.5 rounded-full transition-colors duration-250 hover:text-ink hover:bg-white/[.06] focus-visible:outline-none focus-visible:shadow-glow-aqua"
+          onClick={handleClose}
+          aria-label="Хаах"
+        >
           ✕
         </button>
 
-        <span className="mono">МЭДРЭХ® / Захиалга</span>
+        <span className="mono block mb-4">МЭДРЭХ® / Захиалга</span>
 
-        <div className="flex justify-between gap-4 border border-[rgba(56,232,206,.3)] bg-[rgba(56,232,206,.04)] p-[16px_18px] my-5 mb-[22px]">
+        <div className="flex justify-between gap-4 border border-aqua/30 bg-aqua/[.04] rounded-xl p-[16px_18px] mb-5">
           <div>
             <b className="font-display text-[15px] block">{PLAN.name}</b>
             <span className="block text-dim text-xs mt-1.5 max-w-[26ch]">Бүх дууг бүрэн сонсох · чичиргээ + гэрлийн горим · шинэ дуу нэмэгдэх бүрд</span>
@@ -153,31 +159,35 @@ export default function SubscribeModal({
             <p className="text-dim text-[13.5px]">Дараагийн төлбөр: {new Date(Date.now() + 2592000000).toLocaleDateString("mn-MN")}</p>
           </div>
         ) : (
-          <form onSubmit={submit}>
-            <label>
-              <span className="mono">Картын дугаар</span>
-              <input name="card" inputMode="numeric" placeholder="4242 4242 4242 4242" autoComplete="cc-number" />
+          <form className="flex flex-col gap-4" onSubmit={submit}>
+            <label className={labelCls}>
+              <span className={captionCls}>Картын дугаар</span>
+              <input className={inputCls} name="card" inputMode="numeric" placeholder="4242 4242 4242 4242" autoComplete="cc-number" />
             </label>
             <div className="grid grid-cols-2 gap-3.5">
-              <label>
-                <span className="mono">Дуусах хугацаа</span>
-                <input name="exp" inputMode="numeric" placeholder="MM/YY" autoComplete="cc-exp" />
+              <label className={labelCls}>
+                <span className={captionCls}>Дуусах хугацаа</span>
+                <input className={inputCls} name="exp" inputMode="numeric" placeholder="MM/YY" autoComplete="cc-exp" />
               </label>
-              <label>
-                <span className="mono">CVC</span>
-                <input name="cvc" inputMode="numeric" placeholder="123" autoComplete="cc-csc" />
+              <label className={labelCls}>
+                <span className={captionCls}>CVC</span>
+                <input className={inputCls} name="cvc" inputMode="numeric" placeholder="123" autoComplete="cc-csc" />
               </label>
             </div>
 
-            {err && <p className="auth-err">{err}</p>}
+            {err && (
+              <p className="text-[13px] text-[#E88A9B]" role="alert">
+                {err}
+              </p>
+            )}
 
-            <button type="submit" className="bt bt-a auth-sub" disabled={busy}>
+            <ActionButton type="submit" variant="primary" disabled={busy}>
               {busy ? "Боловсруулж байна…" : PLAN.price + " төлж захиалах"}
-            </button>
+            </ActionButton>
           </form>
         )}
 
-        <p className="auth-note mono">Демо горим (Stripe test) — жинхэнэ мөнгө шилжихгүй · туршилтын карт 4242 4242 4242 4242</p>
+        <p className="mono !text-[9px] mt-5 pt-4 border-t border-white/[.07]">Демо горим (Stripe test) — жинхэнэ мөнгө шилжихгүй · туршилтын карт 4242 4242 4242 4242</p>
       </div>
     </div>
   );

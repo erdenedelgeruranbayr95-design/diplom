@@ -1,7 +1,14 @@
 "use client";
 
-/* TherapistView.tsx-ийн шинэ эмчилгээний сесс үүсгэх форм (.ab-card) — тусад нь гаргасан.
-   CSS/behavior бүгд өөрчлөгдөөгүй, зөвхөн component boundary шилжсэн. */
+/* TherapistView.tsx-ийн шинэ эмчилгээний сесс үүсгэх форм — нэгдсэн SectionCard primitive
+   ашиглав (Vercel Dashboard pattern). Эх кодод input-ууд ямар ч classname-гүй (browser
+   default загвартай) байсан тул энд бодит Tailwind загвар анх удаа нэмэв — энэ бол зөвхөн
+   визуал сайжруулалт, notes/scheduledAt/saving/onSubmit state/callback огт өөрчлөгдөөгүй. */
+import SectionCard from "@/components/ui/SectionCard";
+
+const inputCls =
+  "bg-white/[.04] border border-white/[.08] text-ink font-body text-[14.5px] p-[12px_14px] rounded-lg transition-[border-color,background,box-shadow] duration-250 focus:border-aqua focus:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint";
+
 export default function TherapySessionForm({
   notes,
   setNotes,
@@ -18,20 +25,31 @@ export default function TherapySessionForm({
   onSubmit: (e: React.FormEvent) => void;
 }) {
   return (
-    <div className="border border-line rounded-md bg-[rgba(20,28,27,.4)] p-[22px_24px] mt-4 flex flex-col gap-4 transition-[box-shadow,border-color] duration-250 hover:shadow-sm hover:border-white/[.16]">
-      <div className="flex gap-4 items-start">
-        <div>
-          <b className="text-base font-semibold block mb-1">Шинэ эмчилгээний сесс</b>
-          <p className="text-dim text-[13px] leading-[1.5] max-w-[60ch]">Тэмдэглэл, товлосон огноогоор шинэ сесс үүсгэнэ.</p>
-        </div>
-      </div>
-      <form className="ab-bcast" onSubmit={onSubmit} style={{ flexWrap: "wrap" }}>
-        <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Тэмдэглэл…" style={{ flex: 2, minWidth: 200 }} />
-        <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
-        <button type="submit" className="bt bt-a" disabled={saving}>
+    <SectionCard title="Шинэ эмчилгээний сесс" description="Тэмдэглэл, товлосон огноогоор шинэ сесс үүсгэнэ" className="mt-6">
+      <form className="flex gap-3 flex-wrap items-start" onSubmit={onSubmit}>
+        <input
+          className={inputCls + " flex-[2] min-w-[200px]"}
+          type="text"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Тэмдэглэл…"
+          aria-label="Сессийн тэмдэглэл"
+        />
+        <input
+          className={inputCls + " flex-1 min-w-[180px]"}
+          type="datetime-local"
+          value={scheduledAt}
+          onChange={(e) => setScheduledAt(e.target.value)}
+          aria-label="Товлосон огноо"
+        />
+        <button
+          type="submit"
+          className="rounded-full text-[13.5px] font-semibold bg-aqua text-[#04100E] py-3 px-6 transition-[background,transform] duration-200 hover:bg-[#6FF3DE] active:scale-[.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:shadow-glow-aqua flex-none"
+          disabled={saving}
+        >
           {saving ? "Үүсгэж байна…" : "Үүсгэх"}
         </button>
       </form>
-    </div>
+    </SectionCard>
   );
 }

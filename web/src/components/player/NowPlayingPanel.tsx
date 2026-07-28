@@ -1,11 +1,12 @@
 "use client";
 
-/* Дэлгэгддэг «Мэдрэх самбар» (Now-Playing) — доод bar дээр дарж нээнэ.
+/* Дэлгэгддэг «Мэдрэх самбар» (Now-Playing) — премиум panel маягаар шинэчлэв.
    Амьд 8 бүсийн meter + чичиргээний хэв маяг + бүс toggle + Мэдрэх горим.
    barsRef нь Player.tsx-ийн useRef — RAF loop 8 баганы өндрийг шууд бичдэг тул
-   энд ШИНЭ useRef БҮҮ үүсгэ. */
+   энд ШИНЭ useRef БҮҮ үүсгэ. Бусад бүх prop/callback хэвээр. */
 import type { MutableRefObject } from "react";
 import { FEEL, FEEL_DEFAULT } from "@/lib/player/constants";
+import { ActionButton } from "@/components/ui/ActionGroup";
 import type { Track } from "@/types/track";
 
 const BANDS: [string, string][] = [
@@ -48,15 +49,15 @@ export default function NowPlayingPanel({
 
   return (
     <div
-      className="fixed left-0 right-0 bottom-[86px] max-nav:bottom-[70px] z-[4] bg-[rgba(10,16,15,.97)] backdrop-blur-3xl border-t border-[rgba(56,232,206,.18)] shadow-[0_-18px_50px_rgba(0,0,0,.5)] [animation:npup_.28s_cubic-bezier(.16,.8,.24,1)]"
+      className="fixed left-0 right-0 bottom-[86px] max-nav:bottom-[70px] z-[4] bg-[rgba(10,16,15,.97)] backdrop-blur-3xl border-t border-aqua/[.18] shadow-[0_-18px_50px_rgba(0,0,0,.5)] [animation:npup_.28s_cubic-bezier(.16,.8,.24,1)]"
       role="dialog"
       aria-label="Мэдрэх самбар"
     >
-      <div className="max-w-[1100px] mx-auto p-[15px_24px_18px]">
-        <div className="flex items-center justify-between mb-3">
+      <div className="max-w-[1100px] mx-auto p-5 max-nav:p-4">
+        <div className="flex items-center justify-between mb-4">
           <span className="mono">Мэдрэх самбар — амьд</span>
           <button
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-dim border border-line bg-transparent cursor-pointer transition-[color,border-color] duration-150 hover:text-ink hover:border-[rgba(242,245,244,.24)]"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-dim border border-line bg-transparent cursor-pointer transition-colors duration-150 hover:text-ink hover:border-white/25 focus-visible:outline-none focus-visible:shadow-glow-aqua"
             onClick={onClose}
             aria-label="Самбар хаах"
           >
@@ -106,9 +107,17 @@ export default function NowPlayingPanel({
             </div>
 
             <span className="mono !text-[9px]">Мэдрэх бүс</span>
-            <div className="sp-bands mb-1.5">
+            <div className="grid grid-cols-3 gap-1.5 mb-1.5" role="group" aria-label="Мэдрэх давтамжийн бүс">
               {BANDS.map(([k, lbl]) => (
-                <button key={k} className={prefs.bands[k] ? "on" : ""} onClick={() => onToggleBand(k)} aria-pressed={prefs.bands[k]}>
+                <button
+                  key={k}
+                  className={
+                    "py-2.5 px-1 text-[12.5px] text-dim border border-line rounded-lg transition-colors duration-150 " +
+                    (prefs.bands[k] ? "text-aqua border-aqua/50 bg-aqua/[.07]" : "hover:border-white/20 hover:text-ink")
+                  }
+                  onClick={() => onToggleBand(k)}
+                  aria-pressed={prefs.bands[k]}
+                >
                   {prefs.bands[k] ? "✓ " : ""}
                   {lbl}
                 </button>
@@ -126,9 +135,9 @@ export default function NowPlayingPanel({
               >
                 📳 {vibro ? "Асаалттай" : "Унтраалттай"}
               </button>
-              <button className="bt bt-a" onClick={onImmersive}>
+              <ActionButton variant="primary" onClick={onImmersive}>
                 ⛶ Мэдрэх горим
-              </button>
+              </ActionButton>
             </div>
           </div>
         </div>

@@ -1,7 +1,15 @@
 "use client";
 
-/* TherapistView.tsx-ийн сессийн түүхийн жагсаалт (.bil-table) — тусад нь гаргасан.
-   CSS/behavior бүгд өөрчлөгдөөгүй, зөвхөн component boundary шилжсэн. */
+/* TherapistView.tsx-ийн сессийн түүхийн жагсаалт — timeline-маягийн карт (Apple Health/
+   GitHub Insights pattern), нэгдсэн StatusBadge/ActionButton/Empty primitive ашиглав (өмнө
+   нь энэ файл өөрийн STATUS_CLS mapping + inline <p> empty state-тэй байсан бол
+   SessionHistoryTable.tsx (Parent тал) Empty ашигладаг байсан зөрүүг эндээс жигдэлж, тэдгээр
+   primitive-ийн адилхан өнгөний толь бичгийг ашиглав). sessions/onMarkCompleted props болон
+   status тооцоолол хэвээр. */
+import StatusBadge, { type StatusTone } from "@/components/ui/StatusBadge";
+import { ActionButton } from "@/components/ui/ActionGroup";
+import { Empty } from "@/components/ui/States";
+import { SectionTitle } from "@/components/ui/PageHeader";
 import type { SessionStatus, TherapySession } from "@/types/therapy";
 
 const STATUS_LABEL: Record<SessionStatus, string> = {
@@ -11,31 +19,37 @@ const STATUS_LABEL: Record<SessionStatus, string> = {
   CANCELLED: "Цуцлагдсан",
 };
 
+const STATUS_TONE: Record<SessionStatus, StatusTone> = {
+  SCHEDULED: "warm",
+  IN_PROGRESS: "aqua",
+  COMPLETED: "aqua",
+  CANCELLED: "faint",
+};
+
 export default function SessionTimeline({ sessions, onMarkCompleted }: { sessions: TherapySession[]; onMarkCompleted: (id: string) => void }) {
   return (
     <>
-      <h3 className="st-h">Сессийн түүх</h3>
+      <div className="mt-8">
+        <SectionTitle title="Сессийн түүх" />
+      </div>
       {sessions.length === 0 ? (
-        <p className="adm-empty">Одоогоор сесс алга</p>
+        <Empty icon="📋" title="Одоогоор сесс алга" hint="Шинэ сесс үүсгэхэд энд харагдана" />
       ) : (
-        <div className="bil-table">
-          <div className="bil-row bil-head !grid-cols-[1.6fr_1fr_.8fr_.7fr] max-[760px]:!grid-cols-[1fr_1fr_.8fr]">
-            <span className="mono">Тэмдэглэл</span>
-            <span className="mono">Товлосон</span>
-            <span className="mono">Статус</span>
-            <span></span>
-          </div>
+        <div className="flex flex-col gap-2.5">
           {sessions.map((s) => (
-            <div className="bil-row !grid-cols-[1.6fr_1fr_.8fr_.7fr] max-[760px]:!grid-cols-[1fr_1fr_.8fr]" key={s.id}>
-              <span>{s.notes || "—"}</span>
-              <span>{s.scheduledAt ? new Date(s.scheduledAt).toLocaleString("mn-MN") : "—"}</span>
-              <span className={s.status === "COMPLETED" ? "bil-ok" : "ab-free"}>{STATUS_LABEL[s.status]}</span>
-              {s.status !== "COMPLETED" && s.status !== "CANCELLED" ? (
-                <button className="adm-del" onClick={() => onMarkCompleted(s.id)}>
+            <div
+              key={s.id}
+              className="flex items-center gap-4 p-4 rounded-xl border border-white/[.08] bg-white/[.02] transition-colors duration-150 hover:bg-white/[.04] max-nav:flex-wrap"
+            >
+              <StatusBadge label={STATUS_LABEL[s.status]} tone={STATUS_TONE[s.status]} className="flex-none" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[13.5px] text-ink whitespace-nowrap overflow-hidden text-ellipsis">{s.notes || "—"}</p>
+                <span className="text-faint font-mono text-[11px]">{s.scheduledAt ? new Date(s.scheduledAt).toLocaleString("mn-MN") : "—"}</span>
+              </div>
+              {s.status !== "COMPLETED" && s.status !== "CANCELLED" && (
+                <ActionButton variant="danger" size="sm" className="flex-none" onClick={() => onMarkCompleted(s.id)}>
                   Дуусгах
-                </button>
-              ) : (
-                <span></span>
+                </ActionButton>
               )}
             </div>
           ))}

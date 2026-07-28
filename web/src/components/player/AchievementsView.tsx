@@ -1,5 +1,10 @@
 "use client";
 
+/* Хэрэглэгчийн одоо байгаа ListeningStats + Progress-оос badge тооцоолж харуулна —
+   backend-д хадгалдаггүй, дуудах бүрт клиент талд дахин тооцоолно. Дашбоард маягийн
+   header/зай нэмж шинэчлэв — computeAchievements() тооцоолол бүхэлдээ хэвээр.
+   AchievementSummary/AchievementGrid (тусдаа файлууд, энэ даалгаврын хамрах хүрээнд
+   ороогүй тул) өөрчлөгдөөгүй. */
 import { useEffect, useState } from "react";
 import BackBar from "./BackBar";
 import { Loading, ErrorState } from "@/components/ui/States";
@@ -11,8 +16,6 @@ import type { ListeningStats } from "@/types/track";
 
 const EMPTY_STATS: ListeningStats = { total: 0, vib: 0, byGenre: {}, byTrack: {}, days: {} };
 
-/* Хэрэглэгчийн одоо байгаа ListeningStats + Progress-оос badge тооцоолж харуулна —
-   backend-д хадгалдаггүй, дуудах бүрт клиент талд дахин тооцоолно. */
 export default function AchievementsView({ stats, onBack }: { stats: ListeningStats | null | undefined; onBack: () => void }) {
   const [progress, setProgress] = useState<Awaited<ReturnType<typeof listProgress>>>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +39,14 @@ export default function AchievementsView({ stats, onBack }: { stats: ListeningSt
 
   return (
     <>
-      <BackBar title="Амжилтууд" onBack={onBack} />
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
+        <BackBar title="Амжилтууд" onBack={onBack} />
+        {!loading && !err && (
+          <span className="mono !text-[10px] py-2 px-3.5 rounded-full border border-aqua/30 bg-aqua/[.06] text-aqua whitespace-nowrap">
+            {unlockedCount} / {achievements.length} нээгдсэн
+          </span>
+        )}
+      </div>
 
       {loading && <Loading label="Ачааллаж байна…" />}
       {!loading && err && <ErrorState title="Ачаалагдсангүй" hint={err} onRetry={load} />}

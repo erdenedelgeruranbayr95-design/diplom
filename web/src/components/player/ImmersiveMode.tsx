@@ -127,7 +127,7 @@ export default function ImmersiveMode({
       </div>
 
       <div
-        className="absolute top-[22px] left-6 right-20 max-[700px]:right-[70px] max-[700px]:top-[76px] z-[4] flex flex-wrap gap-2 cursor-default"
+        className="absolute top-[22px] left-6 right-20 max-[700px]:right-[70px] max-[700px]:top-[76px] z-[4] flex flex-wrap items-center gap-1.5 p-1.5 rounded-full bg-black/20 backdrop-blur-sm cursor-default w-fit"
         onClick={(e) => e.stopPropagation()}
         role="toolbar"
         aria-label="Визуалайзер горим сонгох"

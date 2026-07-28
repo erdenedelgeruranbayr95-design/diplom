@@ -1,6 +1,7 @@
 "use client";
 
 import BackBar from "./BackBar";
+import { SectionTitle } from "@/components/ui/PageHeader";
 
 /* Тусламж — хэрхэн ашиглах вэ. Player.jsx-аас тусад нь гаргасан.
    Props: onOpenCalibrate() — калибровк нээх, onBack() — нүүр рүү буцах. */
@@ -40,7 +41,9 @@ export default function HelpView({ onOpenCalibrate, onBack }: { onOpenCalibrate:
         ))}
       </div>
 
-      <h3 className="st-h">Түгээмэл асуулт</h3>
+      <div className="mt-8">
+        <SectionTitle title="Түгээмэл асуулт" />
+      </div>
       <div className="flex flex-col gap-[9px]">
         {FAQ.map((x) => (
           <details
@@ -58,12 +61,17 @@ export default function HelpView({ onOpenCalibrate, onBack }: { onOpenCalibrate:
         ))}
       </div>
 
-      <div className="sp-banner" style={{ marginTop: 26 }}>
+      <div className="mt-8 rounded-2xl p-6 max-nav:flex-col flex justify-between items-center gap-6 flex-wrap [background:linear-gradient(120deg,rgba(56,232,206,.14),rgba(14,92,83,.25)_55%,rgba(9,14,14,.4))]">
         <div>
-          <b>Мэдрэхүйн калибровк</b>
-          <p>Таны мэдрэх босгыг 1 минутын тестээр тодорхойлж, тохиргоог автоматаар тааруулна.</p>
+          <b className="block font-display font-semibold text-[15px] mb-1">Мэдрэхүйн калибровк</b>
+          <p className="text-dim text-[13px] leading-[1.5]">Таны мэдрэх босгыг 1 минутын тестээр тодорхойлж, тохиргоог автоматаар тааруулна.</p>
         </div>
-        <button className="bt bt-a" onClick={onOpenCalibrate}>🎛 Калибровк эхлүүлэх</button>
+        <button
+          className="rounded-full text-[13.5px] font-semibold bg-aqua text-[#04100E] py-2.5 px-5 transition-[background,transform] duration-200 hover:bg-[#6FF3DE] active:scale-[.97] focus-visible:outline-none focus-visible:shadow-glow-aqua flex-none"
+          onClick={onOpenCalibrate}
+        >
+          🎛 Калибровк эхлүүлэх
+        </button>
       </div>
     </>
   )

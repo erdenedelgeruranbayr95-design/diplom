@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ActionButton } from "@/components/ui/ActionGroup";
 
 /* Мэдрэхүйн калибровк — хэрэглэгчийн мэдрэх босгыг 4 алхамтай тестээр тодорхойлж,
    чичиргээний хүч / гэрлийн эрчим / давтамжийн бүсийн тохиргоог автоматаар өгнө. */
@@ -145,12 +146,12 @@ export default function Calibrate({
               гэрлийн тохиргоог танд яг тааруулж өгье. Ердөө 1 минут зарцуулна.
             </p>
             <div className="flex gap-3 flex-wrap mt-1.5">
-              <button className="bt bt-a" onClick={() => setStep(1)}>
+              <ActionButton variant="primary" onClick={() => setStep(1)}>
                 Эхлэх →
-              </button>
-              <button className="bt" onClick={onClose}>
+              </ActionButton>
+              <ActionButton variant="secondary" onClick={onClose}>
                 Дараа хийе
-              </button>
+              </ActionButton>
             </div>
           </div>
         )}
@@ -259,9 +260,9 @@ export default function Calibrate({
               ))}
             </div>
             <div className="flex gap-3 flex-wrap mt-1.5">
-              <button className="bt bt-a" onClick={() => setStep(4)}>
+              <ActionButton variant="primary" onClick={() => setStep(4)}>
                 Үргэлжлүүлэх →
-              </button>
+              </ActionButton>
             </div>
           </div>
         )}
@@ -289,9 +290,9 @@ export default function Calibrate({
             </div>
             <p className="text-faint text-xs">Тохиргоог хүссэн үедээ ⚙️ цэснээс өөрчилж, дахин калибровк хийж болно.</p>
             <div className="flex gap-3 flex-wrap mt-1.5">
-              <button className="bt bt-a" onClick={finish}>
+              <ActionButton variant="primary" onClick={finish}>
                 Хадгалаад эхлэх →
-              </button>
+              </ActionButton>
             </div>
           </div>
         )}

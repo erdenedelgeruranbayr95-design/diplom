@@ -239,13 +239,7 @@ export default function AdminPanel({
       }}
     >
       <div
-        className={
-          "relative w-full max-w-[560px] bg-[rgba(9,14,14,.96)] border border-white/[.13] p-[30px_30px_24px] [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)] " +
-          "[&_form]:flex [&_form]:flex-col [&_form]:gap-4 [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] " +
-          "[&_input]:bg-white/[.04] [&_input]:border [&_input]:border-line [&_input]:text-ink [&_input]:font-body [&_input]:text-[14.5px] [&_input]:p-[12px_14px] [&_input]:cursor-none [&_input]:rounded-sm [&_input]:transition-[border-color,background,box-shadow] [&_input]:duration-300 " +
-          "[&_input:focus]:border-aqua [&_input:focus]:bg-[rgba(56,232,206,.05)] [&_input:focus-visible]:shadow-glow-aqua [&_input::placeholder]:text-faint " +
-          "[&_input[aria-invalid=true]]:border-[#E88A9B] [&_input[aria-invalid=true]]:bg-[rgba(232,138,155,.06)] [&_input[aria-invalid=true]]:[animation:auth-shake_.3s] [&_input[aria-invalid=true]:focus-visible]:shadow-[0_0_0_3px_rgba(232,138,155,.3)]"
-        }
+        className="relative w-full max-w-[720px] max-h-[88vh] overflow-y-auto bg-[rgba(9,14,14,.97)] border border-white/[.1] rounded-2xl p-[30px_30px_24px] shadow-lg [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)]"
         role="dialog"
         aria-modal="true"
         aria-label="Админ самбар"
@@ -281,7 +275,7 @@ export default function AdminPanel({
 
         {tab === "tracks" && <SongLibraryPanel msg={msg} busy={busy} onSubmit={addTrack} loading={songsLoading} songs={songs} />}
 
-        <p className="auth-note mono">Нэвтэрсэн: {currentUser?.email}</p>
+        <p className="mt-6 pt-4 border-t border-white/[.07] mono !text-[9px]">Нэвтэрсэн: {currentUser?.email}</p>
       </div>
     </div>
   );

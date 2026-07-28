@@ -1,6 +1,7 @@
 /* Дахин ашиглагдах төлвүүд: Loading / Skeleton / Empty / Error.
    Ямар ч хуудсанд <Loading/>, <Skeleton .../>, <Empty .../>, <ErrorState .../> гэж ашиглана. */
 import type { ReactNode } from "react";
+import { ActionButton } from "@/components/ui/ActionGroup";
 
 export function Loading({ label = "Ачааллаж байна…" }: { label?: string }) {
   return (
@@ -81,9 +82,9 @@ export function ErrorState({
       <b>{title}</b>
       {hint && <p>{hint}</p>}
       {onRetry && (
-        <button className="bt bt-a" onClick={onRetry}>
+        <ActionButton variant="primary" onClick={onRetry}>
           Дахин оролдох
-        </button>
+        </ActionButton>
       )}
     </div>
   );

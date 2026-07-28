@@ -1,25 +1,32 @@
 "use client";
 
-/* ParentView.tsx-ийн "Эмчийн зөвлөмж" хэсэг — тусад нь гаргасан. Тусдаа recommendation загвар
-   backend-д байхгүй тул дууссан сессүүдийн therapist-ийн бичсэн notes талбарыг харуулна
-   (эх файлын толгой коммент дэх тайлбарыг үзнэ үү). CSS/behavior бүгд өөрчлөгдөөгүй. */
+/* ParentView.tsx-ийн "Эмчийн зөвлөмж" хэсэг — премиум recommendation card (Apple Health
+   pattern) руу шинэчлэв, .st-h legacy CSS-ийг Tailwind болгож, мөр бүрийг тусдаа карт
+   болгов. Тусдаа recommendation загвар backend-д байхгүй тул дууссан сессүүдийн therapist-ийн
+   бичсэн notes талбарыг харуулах логик хэвээр (эх файлын толгой коммент дэх тайлбарыг үзнэ үү). */
 import { Empty } from "@/components/ui/States";
+import { SectionTitle } from "@/components/ui/PageHeader";
 import type { TherapySession } from "@/types/therapy";
 
 export default function RecommendationPanel({ recommendations }: { recommendations: TherapySession[] }) {
   return (
     <>
-      <h3 className="st-h">Эмчийн зөвлөмж</h3>
+      <div className="mt-8">
+        <SectionTitle title="Эмчийн зөвлөмж" />
+      </div>
       {recommendations.length === 0 ? (
         <Empty icon="💬" title="Одоогоор зөвлөмж алга" hint="Эмч дууссан сесст тэмдэглэл бичихэд энд харагдана" />
       ) : (
-        <div className="border border-line rounded-md bg-[rgba(20,28,27,.4)] p-[22px_24px] mt-[26px] transition-[box-shadow,border-color] duration-250 hover:shadow-sm hover:border-white/[.16] flex flex-col gap-3.5">
+        <div className="flex flex-col gap-2.5">
           {recommendations.map((s) => (
-            <div key={s.id}>
-              <span className="mono" style={{ color: "var(--faint)", fontSize: 11.5 }}>
-                {s.completedAt ? new Date(s.completedAt).toLocaleDateString("mn-MN") : ""}
+            <div key={s.id} className="p-4 rounded-xl border border-aqua/[.18] bg-aqua/[.04] flex gap-3">
+              <span className="w-8 h-8 flex-none rounded-full bg-aqua/[.12] text-aqua flex items-center justify-center text-sm" aria-hidden="true">
+                💬
               </span>
-              <p style={{ marginTop: 4 }}>{s.notes}</p>
+              <div className="min-w-0">
+                <span className="font-mono text-[10.5px] text-faint">{s.completedAt ? new Date(s.completedAt).toLocaleDateString("mn-MN") : ""}</span>
+                <p className="text-[13.5px] text-ink leading-[1.5] mt-1">{s.notes}</p>
+              </div>
             </div>
           ))}
         </div>

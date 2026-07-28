@@ -1,5 +1,9 @@
 "use client";
 
+/* Сонссон түүх — pagination + хайлт + устгах. Дашбоард маягийн header (нийт бичлэгийн тоо)
+   нэмж, дэд компонентуудыг (HistoryToolbar/HistoryTable/HistoryEmptyState) премиум дизайн
+   руу шинэчлэв. load()/submitSearch()/remove() логик бүхэлдээ хэвээр — зөвхөн энэ файл болон
+   HistoryToolbar.tsx/HistoryTable.tsx-ийн визуал давхарга шинэчлэгдсэн. */
 import { useEffect, useState } from "react";
 import BackBar from "./BackBar";
 import { Loading, ErrorState } from "@/components/ui/States";
@@ -11,7 +15,6 @@ import type { ListenHistoryRow } from "@/types/song";
 
 const PAGE_SIZE = 20;
 
-/* Сонссон түүх — pagination + хайлт + устгах. */
 export default function HistoryView({ onBack, onOpenAnalysis }: { onBack: () => void; onOpenAnalysis?: (songId: string) => void }) {
   const [rows, setRows] = useState<ListenHistoryRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -58,7 +61,14 @@ export default function HistoryView({ onBack, onOpenAnalysis }: { onBack: () => 
 
   return (
     <>
-      <BackBar title="Сонссон түүх" onBack={onBack} />
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
+        <BackBar title="Сонссон түүх" onBack={onBack} />
+        {!loading && !err && total > 0 && (
+          <span className="mono !text-[10px] py-2 px-3.5 rounded-full border border-white/[.08] bg-white/[.03] whitespace-nowrap">
+            {total.toLocaleString()} нийт бичлэг
+          </span>
+        )}
+      </div>
 
       <HistoryToolbar q={q} setQ={setQ} onSubmit={submitSearch} />
 

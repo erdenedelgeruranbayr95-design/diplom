@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { TRACKS } from "@/lib/data/tracks";
 import { idbGet } from "@/lib/data/idb";
-import { loadCustomMeta, loadFeed, getReadTs, markFeedRead, loadStats, saveStats, todayKey } from "@/lib/data/library";
+import { loadCustomMeta, loadFeed, getReadTs, markFeedRead, loadStats, saveStats, todayKey, loadPlaylists } from "@/lib/data/library";
 import Calibrate from "./Calibrate";
 import TopBar from "@/components/layout/TopBar";
 import Sidebar from "@/components/layout/Sidebar";
 import PageContainer from "@/components/layout/PageContainer";
+import { ActionButton } from "@/components/ui/ActionGroup";
 import { PREVIEW_SEC, VIB_LEVELS, LIGHT_LEVELS, DEFAULT_PREFS, FEEL, FEEL_DEFAULT } from "@/lib/player/constants";
 import ProfileView from "./ProfileView";
 import DevicesView from "./DevicesView";
@@ -118,6 +119,7 @@ export default function Player({
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [prefsReady, setPrefsReady] = useState(false);
   const [feed, setFeed] = useState<ReturnType<typeof loadFeed>>([]);
+  const [playlists, setPlaylists] = useState<ReturnType<typeof loadPlaylists>>([]); // Нүүр хуудасны "Миний жагсаалт" хэсэгт
   const [readTs, setReadTs] = useState(0);
   const [immersive, setImmersive] = useState(false);
   const [immersiveClosing, setImmersiveClosing] = useState(false);
@@ -253,6 +255,15 @@ export default function Player({
       removeEventListener("storage", onFeed);
     };
   }, [open]);
+  /* ---------- жагсаалтууд (Нүүр хуудасны "Миний жагсаалт" хэсэгт) ---------- */
+  useEffect(() => {
+    if (!open || !email) return;
+    setPlaylists(loadPlaylists(email));
+    const onPl = () => setPlaylists(loadPlaylists(email));
+    addEventListener("medreh:playlists-changed", onPl);
+    return () => removeEventListener("medreh:playlists-changed", onPl);
+  }, [open, email]);
+
   /* TopBar өөрөө notifOpen төлвийг удирддаг тул энд зөвхөн "нээгдэх мөч"-ийн side effect
      (feed read tracking) л үлдэнэ — TopBar dropdown нээгдэхдээ л дуудна. */
   function onOpenNotifs() {
@@ -727,6 +738,14 @@ export default function Player({
               onToggleLike={toggleLike}
               onToggleSave={toggleSave}
               onInfo={openDetail}
+              userName={user?.name}
+              recentTracks={recentTracks}
+              stats={statsRef.current}
+              playlists={playlists}
+              setView={setView}
+              isAdmin={isAdmin}
+              isTherapist={isTherapist}
+              isParent={isParent}
             />
           )}
           {view === "stats" && statsRef.current && <StatsView stats={statsRef.current} byId={byId} onPlay={playTrack} onBack={() => setView("home")} />}
@@ -830,9 +849,9 @@ export default function Player({
       {limitHit && !subscribed && (
         <div className="absolute left-1/2 bottom-[108px] -translate-x-1/2 z-[5] flex items-center gap-4 flex-wrap justify-center border border-[rgba(217,165,76,.45)] bg-[rgba(20,16,7,.95)] rounded-xl p-[14px_20px] text-[13.5px] max-w-[min(92vw,560px)] [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)]">
           <p>Урьдчилан сонсголт дууслаа — бүтэн дуу сонсохын тулд PRO захиалга аваарай.</p>
-          <button className="bt bt-a" onClick={onSubscribe}>
+          <ActionButton variant="primary" onClick={onSubscribe}>
             Захиалга авах →
-          </button>
+          </ActionButton>
         </div>
       )}
 

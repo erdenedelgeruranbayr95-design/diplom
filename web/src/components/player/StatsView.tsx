@@ -4,6 +4,7 @@ import type { Track } from "@/types/track";
 import type { ListeningStats } from "@/types/track";
 import BackBar from "./BackBar";
 import StatCard from "./StatCard";
+import { SectionTitle } from "@/components/ui/PageHeader";
 import { ICONS } from "@/lib/player/constants";
 import { fmtDur } from "@/lib/player/format";
 import { todayKey } from "@/lib/data/library";
@@ -45,8 +46,10 @@ export default function StatsView({
         <StatCard icon={ICONS.star} color="c-rose" value={topGenre ? topGenre[0] : '—'} label="Топ төрөл" />
       </div>
 
-      <h3 className="st-h">Сүүлийн 7 хоног</h3>
-      <div className="grid grid-cols-7 gap-2.5 h-[180px] items-end border border-line rounded-[13px] p-[18px_18px_12px] bg-[rgba(20,28,27,.4)]">
+      <div className="mt-8">
+        <SectionTitle title="Сүүлийн 7 хоног" />
+      </div>
+      <div className="grid grid-cols-7 gap-2.5 h-[180px] items-end border border-white/[.08] rounded-2xl p-[18px_18px_12px] bg-white/[.02]">
         {days.map((d, i) => (
           <div className="flex flex-col items-center gap-[7px] h-full justify-end" key={i}>
             <span className="mono !text-[9px]">{d.sec ? fmtDur(d.sec) : ""}</span>
@@ -66,7 +69,9 @@ export default function StatsView({
 
       {topTracks.length > 0 && (
         <>
-          <h3 className="st-h">Хамгийн их сонссон</h3>
+          <div className="mt-8">
+            <SectionTitle title="Хамгийн их сонссон" />
+          </div>
           <div className="flex flex-col">
             {topTracks.map(({ t, sec }, i) => (
               <button
@@ -87,7 +92,7 @@ export default function StatsView({
           </div>
         </>
       )}
-      {s.total === 0 && <p className="adm-empty">Дуу сонсож эхлэхэд статистик энд цуглана 🎶</p>}
+      {s.total === 0 && <p className="text-faint text-[13.5px] text-center py-6 px-4">Дуу сонсож эхлэхэд статистик энд цуглана 🎶</p>}
     </>
   )
 }

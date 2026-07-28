@@ -1,7 +1,8 @@
 "use client";
 
-/* Эмчийн (THERAPIST) хяналтын самбар — AdminView.tsx-ийн визуал бүтцийг (ab-head → st-cards →
-   ab-card → bil-table → sp-banner) дагана. Assigned patient сонгоод session/progress удирдана. */
+/* Эмчийн (THERAPIST) хяналтын самбар — премиум dashboard дизайн руу шинэчлэв (Admin/Home-той
+   ижил визуал хэл). Assigned patient сонгоод session/progress удирдана. Ачаалах/сонгох/
+   session-progress CRUD логик бүхэлдээ хэвээр — зөвхөн визуал давхарга шинэчлэгдсэн. */
 import { useEffect, useMemo, useState } from "react";
 import {
   listMyPatients,
@@ -19,6 +20,7 @@ import SessionTimeline from "@/components/therapist/SessionTimeline";
 import TherapySessionForm from "@/components/therapist/TherapySessionForm";
 import ProgressEntryForm from "@/components/therapist/ProgressEntryForm";
 import { Loading, ErrorState } from "@/components/ui/States";
+import PromoBanner from "@/components/ui/PromoBanner";
 import type { AssignedPatient, TherapySession, Progress } from "@/types/therapy";
 
 export default function TherapistView({ onGoHome }: { onGoHome: () => void }) {
@@ -59,15 +61,12 @@ export default function TherapistView({ onGoHome }: { onGoHome: () => void }) {
 
       <PatientList loading={loading} err={err} onRetry={load} q={q} setQ={setQ} patients={filtered} onSelect={setSelected} />
 
-      <div className="sp-banner" style={{ marginTop: 30 }}>
-        <div>
-          <b>Тоглуулагч руу шилжих</b>
-          <p>Хэрэглэгчийн нүдээр аппаа туршиж, дуу сонсож, мэдрэх горимыг шалгаарай.</p>
-        </div>
-        <button className="bt" onClick={onGoHome}>
-          🎧 Тоглуулагч нээх
-        </button>
-      </div>
+      <PromoBanner
+        title="Тоглуулагч руу шилжих"
+        description="Хэрэглэгчийн нүдээр аппаа туршиж, дуу сонсож, мэдрэх горимыг шалгаарай."
+        actionLabel="🎧 Тоглуулагч нээх"
+        onAction={onGoHome}
+      />
     </>
   );
 }

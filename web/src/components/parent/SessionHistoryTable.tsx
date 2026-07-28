@@ -1,10 +1,12 @@
 "use client";
 
-/* ParentView.tsx-ийн "Дууссан сессүүд" гарчигтай сессийн жагсаалт — тусад нь гаргасан.
-   Гарчиг "Дууссан" гэсэн ч эх код бүх төлөвийн session-г харуулдаг (зөвхөн COMPLETED биш) —
-   энэ зан төлөвийг өөрчлөлгүй хадгалав. Эмчийн тэмдэглэл (therapist notes) багана нь эх
-   кодод байгаа "Тэмдэглэл" багана мөн — доод тайланд дурдсан. CSS/behavior бүгд өөрчлөгдөөгүй. */
+/* ParentView.tsx-ийн "Дууссан сессүүд" гарчигтай сессийн жагсаалт — SessionTimeline.tsx-тэй
+   ижил timeline-card дизайн, нэгдсэн StatusBadge primitive ашиглав. Гарчиг "Дууссан" гэсэн ч
+   эх код бүх төлөвийн session-г харуулдаг (зөвхөн COMPLETED биш) — энэ зан төлөвийг
+   өөрчлөлгүй хадгалав. sessions prop хэвээр. */
+import StatusBadge, { type StatusTone } from "@/components/ui/StatusBadge";
 import { Empty } from "@/components/ui/States";
+import { SectionTitle } from "@/components/ui/PageHeader";
 import type { SessionStatus, TherapySession } from "@/types/therapy";
 
 const STATUS_LABEL: Record<SessionStatus, string> = {
@@ -14,26 +16,33 @@ const STATUS_LABEL: Record<SessionStatus, string> = {
   CANCELLED: "Цуцлагдсан",
 };
 
+const STATUS_TONE: Record<SessionStatus, StatusTone> = {
+  SCHEDULED: "warm",
+  IN_PROGRESS: "aqua",
+  COMPLETED: "aqua",
+  CANCELLED: "faint",
+};
+
 export default function SessionHistoryTable({ sessions }: { sessions: TherapySession[] }) {
   return (
     <>
-      <h3 className="st-h">Дууссан сессүүд</h3>
+      <div className="mt-8">
+        <SectionTitle title="Дууссан сессүүд" />
+      </div>
       {sessions.length === 0 ? (
         <Empty icon="📋" title="Одоогоор сесс алга" hint="Эмч эмчилгээний сесс товлоход энд харагдана" />
       ) : (
-        <div className="bil-table">
-          <div className="bil-row bil-head !grid-cols-[1.6fr_1fr_.8fr_.7fr] max-[760px]:!grid-cols-[1fr_1fr_.8fr]">
-            <span className="mono">Тэмдэглэл</span>
-            <span className="mono">Товлосон</span>
-            <span className="mono">Статус</span>
-            <span></span>
-          </div>
+        <div className="flex flex-col gap-2.5">
           {sessions.map((s) => (
-            <div className="bil-row !grid-cols-[1.6fr_1fr_.8fr_.7fr] max-[760px]:!grid-cols-[1fr_1fr_.8fr]" key={s.id}>
-              <span>{s.notes || "—"}</span>
-              <span>{s.scheduledAt ? new Date(s.scheduledAt).toLocaleString("mn-MN") : "—"}</span>
-              <span className={s.status === "COMPLETED" ? "bil-ok" : "ab-free"}>{STATUS_LABEL[s.status]}</span>
-              <span></span>
+            <div
+              key={s.id}
+              className="flex items-center gap-4 p-4 rounded-xl border border-white/[.08] bg-white/[.02] transition-colors duration-150 hover:bg-white/[.04] max-nav:flex-wrap"
+            >
+              <StatusBadge label={STATUS_LABEL[s.status]} tone={STATUS_TONE[s.status]} className="flex-none" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[13.5px] text-ink whitespace-nowrap overflow-hidden text-ellipsis">{s.notes || "—"}</p>
+                <span className="text-faint font-mono text-[11px]">{s.scheduledAt ? new Date(s.scheduledAt).toLocaleString("mn-MN") : "—"}</span>
+              </div>
             </div>
           ))}
         </div>

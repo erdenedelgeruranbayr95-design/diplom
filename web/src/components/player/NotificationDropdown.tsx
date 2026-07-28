@@ -1,9 +1,10 @@
 "use client";
 
-/* TopBar.tsx-ийн мэдэгдлийн dropdown (.sp-dd.sp-notifs) — тусад нь гаргасан. CSS/behavior
-   бүгд өөрчлөгдөөгүй, зөвхөн component boundary шилжсэн. */
+/* TopBar-ийн мэдэгдлийн dropdown — премиум dropdown каркас (DropdownPanel) руу шинэчлэв.
+   State/props/toggle логик бүхэлдээ хэвээр — зөвхөн визуал давхарга шинэчлэгдсэн. */
 import { relTime } from "@/lib/player/format";
 import type { FeedItem } from "@/types/track";
+import DropdownPanel from "@/components/ui/DropdownPanel";
 
 export default function NotificationDropdown({
   open,
@@ -19,9 +20,12 @@ export default function NotificationDropdown({
   onToggle: () => void;
 }) {
   return (
-    <div className="sp-dd-wrap">
+    <div className="relative">
       <button
-        className={"sp-icbtn relative" + (open ? " on" : "")}
+        className={
+          "relative w-[42px] h-[42px] max-viz:w-[38px] max-viz:h-[38px] flex-none rounded-full flex items-center justify-center transition-[color,background,box-shadow] duration-250 cursor-none focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+          (open ? "text-aqua bg-aqua/[.12]" : "text-dim bg-white/[.05] hover:text-ink hover:bg-white/[.1]")
+        }
         onClick={onToggle}
         aria-label={"Мэдэгдэл" + (unread ? " — " + unread + " шинэ" : "")}
         aria-expanded={open}
@@ -38,27 +42,27 @@ export default function NotificationDropdown({
         )}
       </button>
       {open && (
-        <div className="sp-dd w-[330px] max-h-[380px] overflow-y-auto" role="dialog" aria-label="Мэдэгдлүүд">
-          <span className="mono">Мэдэгдэл</span>
-          {feed.length === 0 && <p className="sp-side-empty">Мэдэгдэл алга</p>}
+        <DropdownPanel label="Мэдэгдлүүд" width={340}>
+          <span className="mono !text-[10px] px-2 pt-1 pb-2">Мэдэгдэл</span>
+          {feed.length === 0 && <p className="text-faint text-[12.5px] leading-[1.5] px-2 py-3">Мэдэгдэл алга</p>}
           {feed.map((f) => (
             <div
               className={
-                "flex gap-3 items-start p-[11px_12px] rounded-[10px] border border-transparent " +
-                (f.date > readTs ? "bg-[rgba(56,232,206,.06)] border-[rgba(56,232,206,.2)]" : "")
+                "flex gap-3 items-start p-2.5 rounded-xl border border-transparent transition-colors duration-150 " +
+                (f.date > readTs ? "bg-aqua/[.06] border-aqua/20" : "hover:bg-white/[.03]")
               }
               key={f.id}
             >
               <span className="w-9 h-9 flex-none rounded-full bg-[#141C1B] flex items-center justify-center text-base" aria-hidden="true">
                 {f.icon}
               </span>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[13px] leading-[1.45] text-ink">{f.text}</p>
                 <span className="mono !text-[9px]">{relTime(f.date)}</span>
               </div>
             </div>
           ))}
-        </div>
+        </DropdownPanel>
       )}
     </div>
   );

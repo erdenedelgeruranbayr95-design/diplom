@@ -3,6 +3,8 @@
 import { QRCodeSVG } from "qrcode.react";
 import type { Track } from "@/types/track";
 import BackBar from "./BackBar";
+import { SectionTitle } from "@/components/ui/PageHeader";
+import { ActionButton } from "@/components/ui/ActionGroup";
 import { FEEL, FEEL_DEFAULT } from "@/lib/player/constants";
 
 /* Дууны дэлгэрэнгүй — Player.jsx-аас тусад нь гаргасан.
@@ -70,11 +72,11 @@ export default function DetailView({
             src={t.cover}
             alt={t.title}
           />
-          <div className="flex flex-col gap-2.5 mt-4 [&_.bt]:w-full [&_.bt]:text-center">
-            <button className="bt bt-a" onClick={onPlay}>
+          <div className="flex flex-col gap-2.5 mt-4">
+            <ActionButton variant="primary" className="w-full text-center" onClick={onPlay}>
               {isCurrent && playing ? '⏸ Зогсоох' : '▶ Тоглуулах'}
-            </button>
-            <button className="bt" onClick={onFeelTest}>📳 Туршиж мэдрэх</button>
+            </ActionButton>
+            <ActionButton variant="secondary" className="w-full text-center" onClick={onFeelTest}>📳 Туршиж мэдрэх</ActionButton>
             <div className="flex gap-2.5 mt-0.5">
               <button
                 className={
@@ -110,29 +112,33 @@ export default function DetailView({
           </div>
 
           {songId && (
-            <div className="sp-banner !mt-1" style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 20 }}>
-              <span style={{ background: "#fff", padding: 10, borderRadius: 8, display: "inline-flex" }}>
+            <div className="rounded-2xl p-5 mt-5 flex items-center gap-5 [background:linear-gradient(120deg,rgba(56,232,206,.14),rgba(14,92,83,.25)_55%,rgba(9,14,14,.4))]">
+              <span className="bg-white p-2.5 rounded-lg inline-flex">
                 <QRCodeSVG value={`${window.location.origin}/song/${songId}`} size={112} />
               </span>
               <div>
-                <b>Утсаараа сонсох</b>
-                <p>QR кодыг уншуулж энэ дууг утсан дээрээ шууд нээж сонсоно уу.</p>
+                <b className="block font-display font-semibold text-[15px] mb-1">Утсаараа сонсох</b>
+                <p className="text-dim text-[13px] leading-[1.5]">QR кодыг уншуулж энэ дууг утсан дээрээ шууд нээж сонсоно уу.</p>
               </div>
             </div>
           )}
         </div>
         <div>
-          <span className="sp-chip on">{t.genre}</span>
+          <span className="w-fit inline-block text-[13px] font-semibold rounded-full py-2 px-4 bg-aqua text-[#04100E]">{t.genre}</span>
           <h2 className="text-[clamp(26px,3.4vw,40px)] font-extrabold tracking-[-.04em] mt-3">{t.title}</h2>
           <p className="text-dim text-[14.5px] mt-1">
             Дуучин: {t.artist}
             {t.composer && <> · Зохиолч: {t.composer}</>}
           </p>
 
-          <h3 className="st-h">Энэ дуу хэрхэн мэдрэгдэх вэ?</h3>
+          <div className="mt-8">
+            <SectionTitle title="Энэ дуу хэрхэн мэдрэгдэх вэ?" />
+          </div>
           <p className="text-ink text-[14.5px] leading-[1.65] max-w-[60ch]">{f.text}</p>
 
-          <h3 className="st-h">Давтамжийн спектр — 8 бүс</h3>
+          <div className="mt-8">
+            <SectionTitle title="Давтамжийн спектр — 8 бүс" />
+          </div>
           <div className="flex flex-col gap-[13px] mt-1">
             {BANDS8.map(([lbl, hz], i) => (
               <div key={lbl}>
@@ -151,7 +157,9 @@ export default function DetailView({
             ))}
           </div>
 
-          <h3 className="st-h">Чичиргээний хэв маяг</h3>
+          <div className="mt-8">
+            <SectionTitle title="Чичиргээний хэв маяг" />
+          </div>
           <div className="flex items-center h-[26px] border border-line rounded-[9px] px-2.5 bg-[rgba(20,28,27,.4)]" aria-label="Чичиргээний хэв маяг">
             {f.pattern.map((ms, i) => (
               i % 2 === 0

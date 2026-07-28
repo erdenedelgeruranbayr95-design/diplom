@@ -1,23 +1,9 @@
 "use client";
 
-/* Player.tsx-ийн дээд баар (.sp-top) — Tailwind руу хөрвүүлсэн. notifOpen/settingsOpen/
-   profileOpen 3 dropdown-ийн төлөв энд бүрэн internalize хийгдсэн.
-
-   Cascade судалгааны дүгнэлт (эффектив утгууд):
-   - .sp-top: ui.css:218-223 нь padding/background-г override хийж, шинэ backdrop-filter blur
-     + border-bottom нэмдэг. ≤860px дээр ui.css:389 padding-г дахин override хийдэг ч
-     medreh.css:588-ийн gap:12px хэвээр (ui.css mobile блок үүнийг хөндөөгүй).
-   - .sp-logo: ui.css:224 desktop font-size-г 19px болгодог, гэхдээ ≤860px дээр ui.css-д
-     өрсөлдөгч дүрэм байхгүй тул medreh.css:589-ийн 15px хэвээр ажиллана (max-nav variant хэрэгтэй).
-   - .sp-icbtn: ui.css:230-231 background/hover-background override хийнэ; ≤1020px дээр
-     38px×38px болдог (medreh.css:807, ui.css-д өрсөлдөгч байхгүй — max-viz variant хэрэгтэй).
-   - .sp-search: ui.css:225-229 background/radius/padding/focus-states бүрэн override хийдэг
-     (pill 100px → radius-md 13px болж хувирна); ≤1020px дээр max-width:none болдог.
-   - .sp-viz: ≤1020px дээр бүрэн disappear (max-viz:hidden).
-   - .sp-admbtn: .sp-icbtn дээр нэмэгддэг цэвэр CSS override (background нь .sp-icbtn-ээс,
-     color нь .sp-admbtn-ээс), .on үед бүрэн warm өнгөөр солигдоно (aqua-г бүрэн дарна).
-   - Dropdown children (NotificationDropdown/SettingsDropdown/ProfileDropdown) болон
-     .sp-dd-veil энэ даалгаварт ХАМААГҮЙ — тэдгээрийн дотоод CSS энд хөндөгдөөгүй. */
+/* Дээд баар — премиум SaaS TopBar руу шинэчлэв (илүү өндөр, тодорхой page-title/logo
+   ялгаа, цэвэр search pill, icon товчнуудын нийцтэй зай). notifOpen/settingsOpen/
+   profileOpen 3 dropdown-ийн state/ESC-handler логик бүхэлдээ хэвээр — зөвхөн визуал
+   давхарга шинэчлэгдсэн, ямар ч prop/callback/wiring өөрчлөгдөөгүй. */
 import { useEffect, useState } from "react";
 import type { MutableRefObject } from "react";
 import type { SessionUser } from "@/types/auth";
@@ -96,11 +82,11 @@ export default function TopBar({
 
   return (
     <>
-      <header className="sp-top relative z-[6] flex items-center gap-5 max-nav:gap-3 p-[15px_28px] max-nav:p-[12px_16px] bg-[rgba(9,12,12,.72)] backdrop-blur-3xl [backdrop-filter:blur(22px)_saturate(1.2)] border-b border-[rgba(255,255,255,.06)]">
-        <span className="font-display font-extrabold text-[19px] max-nav:text-[15px] tracking-[-.04em] whitespace-nowrap [&>sup]:font-body [&>sup]:text-[9px] [&>sup]:font-medium [&>sup]:ml-0.5">
+      <header className="relative z-[6] flex items-center gap-6 max-nav:gap-3 h-[68px] px-7 max-nav:px-4 bg-[rgba(9,12,12,.78)] backdrop-blur-3xl [backdrop-filter:blur(22px)_saturate(1.2)] border-b border-white/[.07]">
+        <span className="font-display font-extrabold text-[18px] max-nav:text-[15px] tracking-[-.04em] whitespace-nowrap [&>sup]:font-body [&>sup]:text-[9px] [&>sup]:font-medium [&>sup]:ml-0.5">
           МЭДРЭХ<sup>®</sup>
           {isAdmin && (
-            <em className="not-italic font-mono text-[8.5px] tracking-[.2em] text-warm border border-[rgba(217,165,76,.45)] rounded-full py-[3px] px-[9px] ml-2.5 align-[3px]">
+            <em className="not-italic font-mono text-[8.5px] tracking-[.2em] text-warm border border-warm/45 rounded-full py-[3px] px-[9px] ml-2.5 align-[3px]">
               АДМИН
             </em>
           )}
@@ -109,8 +95,8 @@ export default function TopBar({
         <div className="flex-1 flex items-center justify-center gap-3.5 min-w-0">
           <button
             className={
-              "w-[42px] h-[42px] max-viz:w-[38px] max-viz:h-[38px] flex-none rounded-full flex items-center justify-center transition-[color,background,box-shadow] duration-[250ms] cursor-none focus-visible:shadow-glow-aqua disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none " +
-              (view === "home" ? "text-aqua bg-[rgba(56,232,206,.12)]" : "text-dim bg-white/[.05] hover:text-ink hover:bg-white/10")
+              "w-[42px] h-[42px] max-viz:w-[38px] max-viz:h-[38px] flex-none rounded-full flex items-center justify-center transition-[color,background,box-shadow] duration-250 cursor-none focus-visible:outline-none focus-visible:shadow-glow-aqua disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none " +
+              (view === "home" ? "text-aqua bg-aqua/[.12]" : "text-dim bg-white/[.05] hover:text-ink hover:bg-white/10")
             }
             onClick={() => setView("home")}
             aria-label="Нүүр"
@@ -121,8 +107,8 @@ export default function TopBar({
               <path d="M5 9.5V21h14V9.5" />
             </svg>
           </button>
-          <div className="flex-1 max-w-[440px] max-viz:max-w-none mx-auto flex items-center gap-3 bg-white/[.055] border border-transparent rounded-md p-[12px_18px] text-dim transition-[border-color,background,box-shadow] duration-300 focus-within:bg-white/[.085] focus-within:border-[rgba(56,232,206,.6)] focus-within:shadow-glow-aqua">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <div className="flex-1 max-w-[460px] max-viz:max-w-none mx-auto flex items-center gap-3 h-11 bg-white/[.05] border border-white/[.06] rounded-full px-4 text-dim transition-[border-color,background,box-shadow] duration-300 focus-within:bg-white/[.08] focus-within:border-aqua/60 focus-within:shadow-glow-aqua">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="flex-none">
               <circle cx="11" cy="11" r="7" />
               <line x1="21" y1="21" x2="16.5" y2="16.5" />
             </svg>
@@ -133,7 +119,7 @@ export default function TopBar({
               onFocus={() => setView("home")}
               onChange={(e) => setQuery(e.target.value)}
               aria-label="Дуу хайх"
-              className="flex-1 bg-none border-none text-ink font-body text-[14.5px] cursor-none outline-none placeholder:text-faint"
+              className="flex-1 bg-transparent border-none text-ink font-body text-[14px] cursor-none outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden appearance-none"
             />
           </div>
           <div className="max-viz:hidden flex items-end gap-[3px] h-6 w-[34px] flex-none" aria-hidden="true">
@@ -149,10 +135,10 @@ export default function TopBar({
           </div>
         </div>
 
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-3">
           {!subscribed && (
             <button
-              className="rounded-full text-[13px] font-semibold border border-aqua bg-aqua text-[#04100E] transition-[background,color,border-color,box-shadow,transform] duration-300 py-2.5 px-5 will-change-transform cursor-none hover:bg-[#6FF3DE] hover:border-[#6FF3DE] hover:text-[#04100E] hover:shadow-sm hover:-translate-y-px active:translate-y-0 focus-visible:shadow-glow-aqua"
+              className="rounded-full text-[13px] font-semibold border border-aqua bg-aqua text-[#04100E] transition-[background,color,border-color,box-shadow,transform] duration-300 py-2.5 px-5 will-change-transform cursor-none hover:bg-[#6FF3DE] hover:border-[#6FF3DE] hover:text-[#04100E] hover:shadow-sm hover:-translate-y-px active:translate-y-0 focus-visible:outline-none focus-visible:shadow-glow-aqua"
               onClick={onSubscribe}
             >
               Захиалга авах
@@ -163,8 +149,8 @@ export default function TopBar({
           {isAdmin && (
             <button
               className={
-                "w-[42px] h-[42px] max-viz:w-[38px] max-viz:h-[38px] flex-none rounded-full flex items-center justify-center transition-[color,background,box-shadow] duration-[250ms] cursor-none focus-visible:shadow-glow-aqua bg-white/[.05] hover:bg-white/10 " +
-                (view === "admin" ? "text-warm bg-[rgba(217,165,76,.14)]" : "text-warm")
+                "w-[42px] h-[42px] max-viz:w-[38px] max-viz:h-[38px] flex-none rounded-full flex items-center justify-center transition-[color,background,box-shadow] duration-250 cursor-none focus-visible:outline-none focus-visible:shadow-glow-warm bg-white/[.05] hover:bg-white/10 " +
+                (view === "admin" ? "text-warm bg-warm/[.14]" : "text-warm")
               }
               onClick={() => setView("admin")}
               aria-label="Хяналтын самбар"
@@ -183,8 +169,8 @@ export default function TopBar({
           {isTherapist && (
             <button
               className={
-                "w-[42px] h-[42px] max-viz:w-[38px] max-viz:h-[38px] flex-none rounded-full flex items-center justify-center transition-[color,background,box-shadow] duration-[250ms] cursor-none focus-visible:shadow-glow-aqua bg-white/[.05] hover:bg-white/10 " +
-                (view === "therapist" ? "text-warm bg-[rgba(217,165,76,.14)]" : "text-warm")
+                "w-[42px] h-[42px] max-viz:w-[38px] max-viz:h-[38px] flex-none rounded-full flex items-center justify-center transition-[color,background,box-shadow] duration-250 cursor-none focus-visible:outline-none focus-visible:shadow-glow-warm bg-white/[.05] hover:bg-white/10 " +
+                (view === "therapist" ? "text-warm bg-warm/[.14]" : "text-warm")
               }
               onClick={() => setView("therapist")}
               aria-label="Эмчийн самбар"
@@ -203,8 +189,8 @@ export default function TopBar({
           {isParent && (
             <button
               className={
-                "w-[42px] h-[42px] max-viz:w-[38px] max-viz:h-[38px] flex-none rounded-full flex items-center justify-center transition-[color,background,box-shadow] duration-[250ms] cursor-none focus-visible:shadow-glow-aqua bg-white/[.05] hover:bg-white/10 " +
-                (view === "parent" ? "text-warm bg-[rgba(217,165,76,.14)]" : "text-warm")
+                "w-[42px] h-[42px] max-viz:w-[38px] max-viz:h-[38px] flex-none rounded-full flex items-center justify-center transition-[color,background,box-shadow] duration-250 cursor-none focus-visible:outline-none focus-visible:shadow-glow-warm bg-white/[.05] hover:bg-white/10 " +
+                (view === "parent" ? "text-warm bg-warm/[.14]" : "text-warm")
               }
               onClick={() => setView("parent")}
               aria-label="Эцэг эхийн самбар"
@@ -242,7 +228,7 @@ export default function TopBar({
             onToggle={() => setDropdown(dropdown === "profile" ? null : "profile")}
           />
 
-          <button className="static text-dim text-sm p-1.5 transition-colors duration-[250ms] hover:text-ink" onClick={onClose} aria-label="Хаах">
+          <button className="w-9 h-9 flex-none rounded-full flex items-center justify-center text-dim text-sm transition-colors duration-250 hover:text-ink hover:bg-white/[.06] focus-visible:outline-none focus-visible:shadow-glow-aqua ml-1" onClick={onClose} aria-label="Хаах">
             ✕
           </button>
         </div>

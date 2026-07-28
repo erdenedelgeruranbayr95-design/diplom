@@ -1,29 +1,46 @@
 "use client";
 
-/* AdminPanel.tsx-ийн толгой хэсэг (гарчиг + таб сэлгэгч) — тусад нь гаргасан.
-   CSS/behavior бүгд өөрчлөгдөөгүй, зөвхөн component boundary шилжсэн. */
+/* AdminPanel.tsx-ийн толгой хэсэг (гарчиг + таб сэлгэгч) — премиум dashboard header
+   (Supabase Studio/Linear tab pattern) руу шинэчлэв, .auth-x/.auth-tabs legacy CSS-ээс
+   Tailwind руу хөрвүүлсэн (эх .auth-tabs нь grid-cols 2 байсан ч энд 3 таб байрлуулж байсан
+   тул шахагдсан харагдаж байсныг эндээс засав — цэвэр визуал засвар, tab/onClose логик
+   хэвээр). tab/setTab/onClose props бүгд хэвээр. */
 export type AdminTab = "users" | "tracks" | "assign";
 
 export default function AdminHeader({ tab, setTab, onClose }: { tab: AdminTab; setTab: (t: AdminTab) => void; onClose: () => void }) {
+  const tabs: { v: AdminTab; label: string }[] = [
+    { v: "users", label: "Хэрэглэгчид" },
+    { v: "assign", label: "Эмч томилолт" },
+    { v: "tracks", label: "Дууны сан" },
+  ];
   return (
-    <>
-      <button className="auth-x" onClick={onClose} aria-label="Хаах">
+    <div className="mb-1">
+      <button
+        className="absolute top-3.5 right-3.5 text-dim text-sm p-1.5 rounded-full transition-colors duration-250 hover:text-ink hover:bg-white/[.06] focus-visible:outline-none focus-visible:shadow-glow-aqua"
+        onClick={onClose}
+        aria-label="Хаах"
+      >
         ✕
       </button>
 
-      <span className="mono">МЭДРЭХ® / Админ самбар</span>
+      <span className="mono block mb-4">МЭДРЭХ® / Админ самбар</span>
 
-      <div className="auth-tabs" style={{ marginBottom: 0 }}>
-        <button className={tab === "users" ? "on" : ""} onClick={() => setTab("users")}>
-          Хэрэглэгчид
-        </button>
-        <button className={tab === "assign" ? "on" : ""} onClick={() => setTab("assign")}>
-          Эмч томилолт
-        </button>
-        <button className={tab === "tracks" ? "on" : ""} onClick={() => setTab("tracks")}>
-          Дууны сан
-        </button>
+      <div className="grid grid-cols-3 border border-white/[.08] rounded-xl overflow-hidden mb-5" role="tablist" aria-label="Админ самбарын таб">
+        {tabs.map((t) => (
+          <button
+            key={t.v}
+            role="tab"
+            aria-selected={tab === t.v}
+            className={
+              "font-display text-[12px] tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+              (tab === t.v ? "bg-aqua text-[#04100E] font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
+            }
+            onClick={() => setTab(t.v)}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
-    </>
+    </div>
   );
 }

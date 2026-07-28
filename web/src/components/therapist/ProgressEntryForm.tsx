@@ -1,7 +1,10 @@
 "use client";
 
-/* TherapistView.tsx-ийн ахиц бичих форм (.ab-card) — тусад нь гаргасан. CSS/behavior бүгд
-   өөрчлөгдөөгүй, зөвхөн component boundary шилжсэн. */
+/* TherapistView.tsx-ийн ахиц бичих форм — нэгдсэн SectionCard primitive ашиглав (Vercel
+   Dashboard pattern), range slider-уудыг accent-aqua болгов. completionPct/engagementScore/
+   saving/formMsg/onSubmit state/callback хэвээр. */
+import SectionCard from "@/components/ui/SectionCard";
+
 export default function ProgressEntryForm({
   completionPct,
   setCompletionPct,
@@ -20,31 +23,45 @@ export default function ProgressEntryForm({
   onSubmit: (e: React.FormEvent) => void;
 }) {
   return (
-    <div className="border border-line rounded-md bg-[rgba(20,28,27,.4)] p-[22px_24px] mt-4 flex flex-col gap-4 transition-[box-shadow,border-color] duration-250 hover:shadow-sm hover:border-white/[.16]">
-      <div className="flex gap-4 items-start">
-        <div>
-          <b className="text-base font-semibold block mb-1">Ахиц бичих</b>
-          <p className="text-dim text-[13px] leading-[1.5] max-w-[60ch]">Гүйцэтгэл болон оролцооны оноог 0–100 хооронд оруулна.</p>
-        </div>
-      </div>
-      <form className="ab-bcast" onSubmit={onSubmit} style={{ flexWrap: "wrap", alignItems: "center" }}>
-        <label className="mono" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          Гүйцэтгэл % ({completionPct})
-          <input type="range" min={0} max={100} value={completionPct} onChange={(e) => setCompletionPct(Number(e.target.value))} />
+    <SectionCard title="Ахиц бичих" description="Гүйцэтгэл болон оролцооны оноог 0–100 хооронд оруулна" className="mt-6">
+      <form className="flex gap-6 flex-wrap items-end" onSubmit={onSubmit}>
+        <label className="flex flex-col gap-2 flex-1 min-w-[180px]">
+          <span className="mono !text-[9px]">Гүйцэтгэл % ({completionPct})</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={completionPct}
+            onChange={(e) => setCompletionPct(Number(e.target.value))}
+            className="w-full accent-aqua cursor-pointer"
+            aria-label="Гүйцэтгэлийн хувь"
+          />
         </label>
-        <label className="mono" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          Оролцоо ({engagementScore})
-          <input type="range" min={0} max={100} value={engagementScore} onChange={(e) => setEngagementScore(Number(e.target.value))} />
+        <label className="flex flex-col gap-2 flex-1 min-w-[180px]">
+          <span className="mono !text-[9px]">Оролцоо ({engagementScore})</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={engagementScore}
+            onChange={(e) => setEngagementScore(Number(e.target.value))}
+            className="w-full accent-aqua cursor-pointer"
+            aria-label="Оролцооны оноо"
+          />
         </label>
-        <button type="submit" className="bt bt-a" disabled={saving}>
+        <button
+          type="submit"
+          className="rounded-full text-[13.5px] font-semibold bg-aqua text-[#04100E] py-3 px-6 transition-[background,transform] duration-200 hover:bg-[#6FF3DE] active:scale-[.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:shadow-glow-aqua flex-none"
+          disabled={saving}
+        >
           {saving ? "Бичиж байна…" : "Хадгалах"}
         </button>
       </form>
       {formMsg && (
-        <p className={formMsg.startsWith("✅") ? "auth-ok" : "auth-err"} style={{ fontSize: 13, marginTop: 8 }}>
+        <p className={"text-[13px] mt-4 " + (formMsg.startsWith("✅") ? "text-aqua" : "text-[#E88A9B]")} role="status">
           {formMsg}
         </p>
       )}
-    </div>
+    </SectionCard>
   );
 }

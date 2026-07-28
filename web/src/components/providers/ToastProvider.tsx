@@ -56,7 +56,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               {icon[t.type] || icon.info}
             </span>
             <p>{t.text}</p>
-            <button className="toast-x" onClick={() => remove(t.id)} aria-label="Хаах">
+            <button className="toast-x focus-visible:outline-none focus-visible:shadow-glow-aqua" onClick={() => remove(t.id)} aria-label="Хаах">
               ✕
             </button>
           </div>

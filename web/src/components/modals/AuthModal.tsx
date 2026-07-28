@@ -1,18 +1,37 @@
 "use client";
 
+/* Нэвтрэх / Бүртгүүлэх modal — премиум auth card (AdminPanel.tsx-ийн эцэг wrapper-тэй ижил
+   дизайн хэл) руу шинэчлэв. .auth-x/.auth-tabs/.auth-err/.auth-ok/.auth-sub/.auth-note
+   legacy CSS-ийг Tailwind болгож, input/label-ийг эцэг wrapper-ийн descendant selector-оос
+   үл хамааран өөрөө бүрэн загварчилсан, .bt bt-a-г ActionButton болгов. login()/register()/
+   submit() validation логик, useClosingTransition, ESC handler бүхэлдээ хэвээр — зөвхөн
+   визуал давхарга шинэчлэгдсэн. */
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useClosingTransition } from "@/lib/ui/useClosingTransition";
+import { ActionButton } from "@/components/ui/ActionGroup";
 import type { SessionUser } from "@/types/auth";
+
+const labelCls = "flex flex-col gap-1.5";
+const captionCls = "mono !text-[9px]";
+const inputCls =
+  "bg-white/[.04] border border-white/[.08] text-ink font-body text-[14.5px] p-[12px_14px] rounded-lg transition-[border-color,background,box-shadow] duration-250 focus:border-aqua focus:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint aria-[invalid=true]:border-[#E88A9B] aria-[invalid=true]:bg-[rgba(232,138,155,.06)] aria-[invalid=true]:[animation:auth-shake_.3s] aria-[invalid=true]:focus-visible:shadow-[0_0_0_3px_rgba(232,138,155,.3)]";
 
 function PassInput({ name, autoComplete, invalid }: { name: string; autoComplete: string; invalid?: boolean }) {
   const [show, setShow] = useState(false);
   return (
-    <span className="relative flex [&>input]:w-full [&>input]:pr-11">
-      <input name={name} type={show ? "text" : "password"} placeholder="••••••••" autoComplete={autoComplete} aria-invalid={invalid || undefined} />
+    <span className="relative flex">
+      <input
+        className={inputCls + " w-full pr-11"}
+        name={name}
+        type={show ? "text" : "password"}
+        placeholder="••••••••"
+        autoComplete={autoComplete}
+        aria-invalid={invalid || undefined}
+      />
       <button
         type="button"
-        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 text-faint flex items-center transition-colors duration-250 hover:text-aqua"
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 text-faint flex items-center transition-colors duration-250 hover:text-aqua focus-visible:outline-none focus-visible:shadow-glow-aqua rounded-md"
         onClick={() => setShow(!show)}
         aria-label={show ? "Нууц үг нуух" : "Нууц үг харах"}
         title={show ? "Нуух" : "Харах"}
@@ -130,26 +149,29 @@ export default function AuthModal({
       }}
     >
       <div
-        className={
-          "relative w-full max-w-[400px] bg-[rgba(9,14,14,.96)] border border-white/[.13] p-[30px_30px_24px] [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)] " +
-          "[&_form]:flex [&_form]:flex-col [&_form]:gap-4 [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] " +
-          "[&_input]:bg-white/[.04] [&_input]:border [&_input]:border-line [&_input]:text-ink [&_input]:font-body [&_input]:text-[14.5px] [&_input]:p-[12px_14px] [&_input]:cursor-none [&_input]:rounded-sm [&_input]:transition-[border-color,background,box-shadow] [&_input]:duration-300 " +
-          "[&_input:focus]:border-aqua [&_input:focus]:bg-[rgba(56,232,206,.05)] [&_input:focus-visible]:shadow-glow-aqua [&_input::placeholder]:text-faint " +
-          "[&_input[aria-invalid=true]]:border-[#E88A9B] [&_input[aria-invalid=true]]:bg-[rgba(232,138,155,.06)] [&_input[aria-invalid=true]]:[animation:auth-shake_.3s] [&_input[aria-invalid=true]:focus-visible]:shadow-[0_0_0_3px_rgba(232,138,155,.3)]"
-        }
+        className="relative w-full max-w-[400px] bg-[rgba(9,14,14,.97)] border border-white/[.1] rounded-2xl p-[30px_30px_24px] shadow-lg [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)]"
         role="dialog"
         aria-modal="true"
         aria-label="Нэвтрэх / Бүртгүүлэх"
       >
-        <button className="auth-x" onClick={handleClose} aria-label="Хаах">
+        <button
+          className="absolute top-3.5 right-3.5 text-dim text-sm p-1.5 rounded-full transition-colors duration-250 hover:text-ink hover:bg-white/[.06] focus-visible:outline-none focus-visible:shadow-glow-aqua"
+          onClick={handleClose}
+          aria-label="Хаах"
+        >
           ✕
         </button>
 
-        <span className="mono">МЭДРЭХ® / Хандалт</span>
+        <span className="mono block mb-4">МЭДРЭХ® / Хандалт</span>
 
-        <div className="auth-tabs">
+        <div className="grid grid-cols-2 border border-white/[.08] rounded-xl overflow-hidden mb-5" role="tablist" aria-label="Нэвтрэх/Бүртгүүлэх сонгох">
           <button
-            className={mode === "login" ? "on" : ""}
+            role="tab"
+            aria-selected={mode === "login"}
+            className={
+              "font-display text-[12px] tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+              (mode === "login" ? "bg-aqua text-[#04100E] font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
+            }
             onClick={() => {
               setMode("login");
               setErr("");
@@ -159,7 +181,12 @@ export default function AuthModal({
             Нэвтрэх
           </button>
           <button
-            className={mode === "register" ? "on" : ""}
+            role="tab"
+            aria-selected={mode === "register"}
+            className={
+              "font-display text-[12px] tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+              (mode === "register" ? "bg-aqua text-[#04100E] font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
+            }
             onClick={() => {
               setMode("register");
               setErr("");
@@ -170,16 +197,17 @@ export default function AuthModal({
           </button>
         </div>
 
-        <form onSubmit={submit} key={mode}>
+        <form className="flex flex-col gap-4" onSubmit={submit} key={mode}>
           {mode === "register" && (
-            <label>
-              <span className="mono">Нэр</span>
-              <input name="name" type="text" placeholder="Таны нэр" autoComplete="name" aria-invalid={err.includes("нэрээ") || undefined} />
+            <label className={labelCls}>
+              <span className={captionCls}>Нэр</span>
+              <input className={inputCls} name="name" type="text" placeholder="Таны нэр" autoComplete="name" aria-invalid={err.includes("нэрээ") || undefined} />
             </label>
           )}
-          <label>
-            <span className="mono">Имэйл</span>
+          <label className={labelCls}>
+            <span className={captionCls}>Имэйл</span>
             <input
+              className={inputCls}
               name="email"
               type="email"
               placeholder="you@mail.com"
@@ -189,26 +217,34 @@ export default function AuthModal({
               aria-invalid={err.includes("Имэйл") || undefined}
             />
           </label>
-          <label>
-            <span className="mono">Нууц үг</span>
+          <label className={labelCls}>
+            <span className={captionCls}>Нууц үг</span>
             <PassInput name="pass" autoComplete={mode === "login" ? "current-password" : "new-password"} invalid={err.includes("Нууц үг") && !err.includes("давтах")} />
           </label>
           {mode === "register" && (
-            <label>
-              <span className="mono">Нууц үг давтах</span>
+            <label className={labelCls}>
+              <span className={captionCls}>Нууц үг давтах</span>
               <PassInput name="pass2" autoComplete="new-password" invalid={err.includes("таарахгүй")} />
             </label>
           )}
 
-          {err && <p className="auth-err">{err}</p>}
-          {ok && <p className="auth-ok">{ok}</p>}
+          {err && (
+            <p className="text-[13px] text-[#E88A9B]" role="alert">
+              {err}
+            </p>
+          )}
+          {ok && (
+            <p className="text-[13px] text-aqua" role="status">
+              {ok}
+            </p>
+          )}
 
-          <button type="submit" className="bt bt-a auth-sub" disabled={busy}>
+          <ActionButton type="submit" variant="primary" disabled={busy}>
             {mode === "login" ? "Нэвтрэх →" : "Бүртгүүлэх →"}
-          </button>
+          </ActionButton>
         </form>
 
-        <p className="auth-note mono">Session нь серверт JWT-ээр баталгаажина</p>
+        <p className="mono !text-[9px] mt-5 pt-4 border-t border-white/[.07]">Session нь серверт JWT-ээр баталгаажина</p>
       </div>
     </div>
   );

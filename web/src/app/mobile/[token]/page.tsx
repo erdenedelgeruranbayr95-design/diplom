@@ -1,5 +1,11 @@
 "use client";
 
+/* Гар утасны хосолсон хуудас — Desktop QR-аар холбогдож, дуутай синхроноор чичирнэ.
+   .mob-* legacy CSS-ийг Tailwind болгов — .mob-ripple keyframe (haptic pulse), checkbox
+   toggle-ийн :checked/:focus-visible зан төлөв бүхэлдээ хэвээр (Tailwind-аар шинээр
+   давхардуулав), socket/vibration логик (init/vibrateForBeat/testVibration) огт
+   өөрчлөгдөөгүй — зөвхөн визуал давхарга шинэчлэгдсэн. .dv-dot classname нь CSS дүрэмгүй
+   байсан (харагдахгүй цэг) тул бодит Tailwind дугуй болгож засав. */
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { connectPhoneSocket, type BeatEvent, type TrackInfo } from "@/lib/socket/client";
@@ -107,76 +113,109 @@ export default function MobilePage() {
   const vibrateSupported = typeof navigator !== "undefined" && "vibrate" in navigator;
 
   return (
-    <div className="mob-wrap">
-      <div className="mob-inner">
+    <div className="min-h-[100svh] bg-bg text-ink flex items-center justify-center p-6">
+      <div className="w-full max-w-[380px] flex flex-col items-center gap-[18px] text-center">
         <span className="mono">МЭДРЭХ® / Утас</span>
 
         {state === "loading" && (
-          <div className="mob-state">
+          <div className="flex flex-col items-center gap-2.5 py-10">
             <span className="state-spinner" aria-hidden="true"></span>
-            <p>Ачааллаж байна…</p>
+            <p className="text-dim text-sm">Ачааллаж байна…</p>
           </div>
         )}
 
         {state === "expired" && (
-          <div className="mob-state">
-            <span className="mob-ic" aria-hidden="true">
+          <div className="flex flex-col items-center gap-2.5 py-10">
+            <span className="text-[40px]" aria-hidden="true">
               ⏱
             </span>
-            <b>QR код хугацаа дууссан</b>
-            <p>Desktop дээрээ шинэ QR үүсгэнэ үү.</p>
+            <b className="text-ink font-display font-normal text-lg">QR код хугацаа дууссан</b>
+            <p className="text-dim text-sm">Desktop дээрээ шинэ QR үүсгэнэ үү.</p>
           </div>
         )}
 
         {state === "error" && (
-          <div className="mob-state">
-            <span className="mob-ic" aria-hidden="true">
+          <div className="flex flex-col items-center gap-2.5 py-10">
+            <span className="text-[40px]" aria-hidden="true">
               ⚠️
             </span>
-            <b>Холбогдож чадсангүй</b>
-            <p>Линк буруу эсвэл сесс олдсонгүй.</p>
+            <b className="text-ink font-display font-normal text-lg">Холбогдож чадсангүй</b>
+            <p className="text-dim text-sm">Линк буруу эсвэл сесс олдсонгүй.</p>
           </div>
         )}
 
         {(state === "waiting" || state === "connected") && (
           <>
-            <div className={"mob-pulse-wrap" + (pulse ? " on" : "")}>
-              <span className="mob-pulse" aria-hidden="true"></span>
-              <span className="mob-pulse-ic" aria-hidden="true">
+            <div
+              className={
+                "relative w-[140px] h-[140px] rounded-full flex items-center justify-center bg-aqua/[.08] border border-white/[.1] transition-[transform,background] duration-150 " +
+                (pulse ? "scale-[1.08] bg-aqua/[.22]" : "")
+              }
+            >
+              <span
+                className={
+                  "absolute inset-0 rounded-full border-2 border-aqua pointer-events-none " +
+                  (pulse ? "opacity-60 [animation:mob-ripple_.6s_cubic-bezier(.2,.8,.2,1)]" : "opacity-0")
+                }
+                aria-hidden="true"
+              ></span>
+              <span className="text-[46px]" aria-hidden="true">
                 📳
               </span>
             </div>
 
-            <div className={"mob-status" + (state === "connected" ? " on" : "")}>
-              <i className="dv-dot" aria-hidden="true"></i>
+            <div className={"inline-flex items-center gap-2 font-mono text-[11px] tracking-[.18em] uppercase " + (state === "connected" ? "text-aqua" : "text-dim")}>
+              <i className={"w-2 h-2 rounded-full " + (state === "connected" ? "bg-aqua shadow-[0_0_8px_var(--aqua)]" : "bg-faint")} aria-hidden="true"></i>
               {state === "connected" ? "Холбогдсон" : "Холбогдож байна…"}
             </div>
 
             {track ? (
-              <div className="mob-track">
-                <b>{track.title}</b>
-                {track.artist && <i>{track.artist}</i>}
+              <div className="flex flex-col gap-1">
+                <b className="text-xl text-ink">{track.title}</b>
+                {track.artist && <i className="not-italic text-dim">{track.artist}</i>}
               </div>
             ) : (
-              <p className="mob-hint">Desktop дээр дуу тоглуулахад энд харагдана</p>
+              <p className="text-dim text-[13px]">Desktop дээр дуу тоглуулахад энд харагдана</p>
             )}
 
-            <div className="mob-settings">
-              <label className="mob-toggle">
-                <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+            <div className="w-full flex flex-col gap-3 items-center pt-3 border-t border-white/[.08]">
+              <label className="flex items-center gap-2.5 text-sm min-h-11 cursor-pointer">
+                <span className="relative flex-none">
+                  <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="peer sr-only" />
+                  <span
+                    className="block w-[46px] h-7 rounded-full bg-white/[.14] border border-white/[.1] transition-colors duration-200 peer-checked:bg-aqua peer-checked:border-aqua peer-focus-visible:outline-none peer-focus-visible:shadow-glow-aqua"
+                    aria-hidden="true"
+                  ></span>
+                  <span
+                    className="absolute top-0.5 left-0.5 w-[22px] h-[22px] rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-[18px]"
+                    aria-hidden="true"
+                  ></span>
+                </span>
                 <span>Чичиргээ {enabled ? "асаалттай" : "унтраалттай"}</span>
               </label>
 
               <span className="mono">Хүч</span>
-              <div className="sp-seg">
+              <div className="grid grid-cols-3 gap-px bg-white/10 rounded-[9px] overflow-hidden w-full" role="group" aria-label="Чичиргээний хүч">
                 {VIB_LEVELS.map((v, i) => (
-                  <button key={v.label} className={strength === i ? "on" : ""} onClick={() => setStrength(i)}>
+                  <button
+                    key={v.label}
+                    className={
+                      "py-2.5 px-1.5 min-h-11 text-[12.5px] font-medium bg-[#101817] transition-colors duration-150 focus-visible:outline-none focus-visible:relative focus-visible:z-[1] focus-visible:shadow-glow-aqua " +
+                      (strength === i ? "bg-aqua text-[#04100E] font-semibold" : "text-dim")
+                    }
+                    onClick={() => setStrength(i)}
+                    aria-pressed={strength === i}
+                  >
                     {v.label}
                   </button>
                 ))}
               </div>
 
-              <button className="bt bt-a" onClick={testVibration} disabled={!vibrateSupported}>
+              <button
+                className="rounded-full text-[13.5px] font-semibold bg-aqua text-[#04100E] py-3 px-6 w-full transition-[background,transform] duration-200 hover:bg-[#6FF3DE] active:scale-[.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:shadow-glow-aqua"
+                onClick={testVibration}
+                disabled={!vibrateSupported}
+              >
                 {vibrateSupported ? "📳 Турших" : "Энэ төхөөрөмж дэмжихгүй"}
               </button>
             </div>

@@ -33,33 +33,6 @@ export default function Dock({
         </a>
       </div>
 
-      {/* landing-ийн цэс — зөвхөн зочдод (нэвтрээгүй үед) */}
-      {!user && (
-        <div className="flex items-center gap-1.5">
-          <a href="#top" className={navLinkCls}>
-            Нүүр
-          </a>
-          <a
-            href="#feel"
-            className="text-sm font-medium text-[#D8E0DE] py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 whitespace-nowrap hover:text-aqua hover:bg-[rgba(56,232,206,.08)] focus-visible:shadow-glow-aqua"
-          >
-            Мэдрэх
-          </a>
-          <a
-            href="#gal"
-            className="text-sm font-medium text-[#D8E0DE] py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 whitespace-nowrap hover:text-aqua hover:bg-[rgba(56,232,206,.08)] focus-visible:shadow-glow-aqua"
-          >
-            Галерей
-          </a>
-          <a
-            href="#how"
-            className="text-sm font-medium text-[#D8E0DE] py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 whitespace-nowrap hover:text-aqua hover:bg-[rgba(56,232,206,.08)] focus-visible:shadow-glow-aqua"
-          >
-            Хэрхэн
-          </a>
-        </div>
-      )}
-
       <div className="flex items-center gap-2">
         {/* нэвтэрсэн хэрэглэгч Player-ээ хаасан бол буцаж нээх зам */}
         {user && (
