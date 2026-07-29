@@ -116,7 +116,9 @@ export default function DevicesView({
     { key: 'phone', icon: '📱', name: 'Утас (чичиргээ)', desc: 'Android Chrome дээр шууд ажиллана. iOS дэмжихгүй.',
       status: canVibrate ? 'Бэлэн' : 'Дэмжигдэхгүй', ok: canVibrate, action: testPhone, actionLabel: 'Тест' },
     { key: 'qr', icon: '🔗', name: 'QR-ээр холбох (алсаас)', desc: 'Гар утсаараа QR уншуулж, тоглуулж буй дуутай синхроноор чичирнэ.',
-      status: qrStatusLabel[deviceSync.qrState], ok: deviceSync.qrState === 'connected', action: connectQr, actionLabel: deviceSync.qrState === 'idle' ? 'Холбох' : 'Дахин холбох' },
+      status: qrStatusLabel[deviceSync.qrState], ok: deviceSync.qrState === 'connected', action: connectQr,
+      actionLabel: deviceSync.qrState === 'connected' ? 'Холбогдсон' : deviceSync.qrState === 'idle' || deviceSync.qrState === 'error' ? 'Холбох' : 'Хүлээж байна…',
+      disabled: deviceSync.qrState === 'connected' || deviceSync.qrState === 'loading' || deviceSync.qrState === 'waiting' },
     { key: 'gamepad', icon: '🎮', name: 'Gamepad (rumble)', desc: 'USB/Bluetooth джойстик — 2 моторт, эрчимтэй чичиргээ.',
       status: gamepad ? ('Холбогдсон: ' + (gamepad.id?.slice(0, 22) || 'gamepad')) : 'Холбогдоогүй', ok: !!gamepad, action: testGamepad, actionLabel: 'Тест' },
     { key: 'ble', icon: '🦺', name: 'BLE хаптик хантааз', desc: 'Олон моторт хантааз/суудал — биеийн бүсээр tonotopic мэдрэмж.',
@@ -151,7 +153,7 @@ export default function DevicesView({
               ></i>
               {d.status}
             </span>
-            <ActionButton variant="primary" size="sm" onClick={d.action}>{d.actionLabel}</ActionButton>
+            <ActionButton variant="primary" size="sm" onClick={d.action} disabled={'disabled' in d ? d.disabled : false}>{d.actionLabel}</ActionButton>
           </div>
         ))}
       </div>

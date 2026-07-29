@@ -51,7 +51,7 @@ export function Breadcrumb({ items }: { items: { label: string; onClick?: () => 
   );
 }
 
-export function SectionTitle({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
+export function SectionTitle({ title, description, actions }: { title: ReactNode; description?: string; actions?: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
       <div>

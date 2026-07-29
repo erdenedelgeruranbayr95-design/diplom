@@ -4,10 +4,16 @@ import type { SessionUser } from "@/types/auth";
 import BackBar from "./BackBar";
 import { SectionTitle } from "@/components/ui/PageHeader";
 import { Empty } from "@/components/ui/States";
-import StatusBadge from "@/components/ui/StatusBadge";
+import StatusBadge, { type StatusTone } from "@/components/ui/StatusBadge";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import { loadPayments } from "@/lib/data/library";
 import { PREVIEW_SEC } from "@/lib/player/constants";
+
+const PAYMENT_STATUS_TONE: Record<string, StatusTone> = {
+  "Амжилттай": "aqua",
+  "Хүлээгдэж байна": "warm",
+  "Цуцлагдсан": "rose",
+};
 
 /* Захиалгын удирдлага — Player.jsx-аас тусад нь гаргасан.
    loadPayments(email) нь read-only тул дотор нь дуудсан хэвээр.
@@ -71,7 +77,7 @@ export default function BillingView({
       <div className="mt-8">
         <SectionTitle title="Планаа харьцуулах" />
       </div>
-      <div className="grid grid-cols-2 max-[640px]:grid-cols-1 gap-3.5">
+      <div className="grid grid-cols-3 max-nav:grid-cols-1 gap-3.5">
         <div className={"relative border border-line rounded-[14px] p-[22px] " + (!active && !isAdmin ? "border-[rgba(56,232,206,.5)] shadow-[0_0_0_1px_rgba(56,232,206,.2)]" : "")}>
           {!active && !isAdmin && (
             <span className="absolute top-4 right-4 font-mono text-[8.5px]">Таны план</span>
@@ -109,35 +115,56 @@ export default function BillingView({
           }
         >
           {(active || isAdmin) && <span className="absolute top-4 right-4 font-mono text-[8.5px]">Идэвхтэй</span>}
-          <span className="mono">МЭДРЭХ PRO</span>
+          <span className="mono">🟦 PRO</span>
           <b className="font-display text-[26px] tracking-[-.03em] block my-1.5 text-aqua">
             9&apos;900₮<i className="font-body text-[13px] text-dim not-italic font-normal">/сар</i>
           </b>
           <ul className="list-none flex flex-col gap-[9px] flex-1">
             <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
-              Бүх дуу бүрэн, хязгааргүй
+              Хязгааргүй хөгжим
             </li>
             <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
-              Олон төхөөрөмж (gamepad, хантааз)
+              AI анализ
             </li>
             <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
-              Өндөр нарийвчлалтай хаптик
+              Бүх төхөөрөмж холбох
             </li>
             <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
-              Шинэ дуунд эрт хандах
+              Хязгааргүй playlist
             </li>
             <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
-              Реклам-гүй туршлага
-            </li>
-            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-aqua before:font-bold">
-              Мэдрэх горим бүрэн нээлттэй
+              Advanced vibration
             </li>
           </ul>
           {!isAdmin && !active && (
             <ActionButton variant="primary" className="mt-[18px] w-full text-center" onClick={onSubscribe}>
-              {user?.sub ? 'Сэргээх →' : 'PRO болох →'}
+              {user?.sub ? "Сэргээх" : "PRO авах"}
             </ActionButton>
           )}
+        </div>
+
+        <div className="relative border border-purple/[.28] bg-purple/[.04] rounded-[14px] p-[22px] opacity-75">
+          <span className="absolute top-4 right-4">
+            <StatusBadge label="Coming Soon" tone="purple" />
+          </span>
+          <span className="mono">🟪 Family</span>
+          <b className="font-display text-[26px] tracking-[-.03em] block my-1.5 text-purple">
+            19&apos;900₮<i className="font-body text-[13px] text-dim not-italic font-normal">/сар</i>
+          </b>
+          <ul className="list-none flex flex-col gap-[9px] flex-1">
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-purple before:font-bold">
+              5 хүртэлх гишүүн
+            </li>
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-purple before:font-bold">
+              Гэр бүлийн статистик
+            </li>
+            <li className="relative pl-6 text-[13px] text-ink leading-[1.45] before:content-['✓'] before:absolute before:left-0 before:top-0 before:text-purple before:font-bold">
+              PRO-гийн бүх боломж
+            </li>
+          </ul>
+          <ActionButton variant="secondary" className="mt-[18px] w-full text-center" disabled>
+            Удахгүй
+          </ActionButton>
         </div>
       </div>
 
@@ -148,28 +175,28 @@ export default function BillingView({
         <Empty icon="💳" title="Төлбөрийн түүх хоосон байна" />
       ) : (
         <div className="border border-white/[.08] rounded-2xl overflow-hidden bg-white/[.015]">
-          <div className="grid grid-cols-[1fr_1fr_1.2fr_.8fr_1fr] max-nav:grid-cols-[1fr_1fr_1fr] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-white/[.02]">
+          <div className="grid grid-cols-[1fr_1fr_1fr_.9fr_.8fr] max-nav:grid-cols-[1fr_1fr_.9fr] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-white/[.02]">
             <span className="mono">Огноо</span>
             <span className="mono">План</span>
-            <span className="mono max-nav:hidden">Төлбөрийн хэрэгсэл</span>
-            <span className="mono">Дүн</span>
+            <span className="mono max-nav:hidden">Хэрэгсэл</span>
             <span className="mono">Төлөв</span>
+            <span className="mono">Дүн</span>
           </div>
           {payments.map((p) => (
             <div
-              className="grid grid-cols-[1fr_1fr_1.2fr_.8fr_1fr] max-nav:grid-cols-[1fr_1fr_1fr] gap-3 items-center py-3 px-5 border-b border-white/[.06] last:border-b-0 text-[13.5px] transition-colors duration-150 hover:bg-white/[.03]"
+              className="grid grid-cols-[1fr_1fr_1fr_.9fr_.8fr] max-nav:grid-cols-[1fr_1fr_.9fr] gap-3 items-center py-3 px-5 border-b border-white/[.06] last:border-b-0 text-[13.5px] transition-colors duration-150 hover:bg-white/[.03]"
               key={p.id}
             >
               <span className="text-dim">{new Date(p.date).toLocaleDateString('mn-MN')}</span>
               <span>{p.plan}</span>
               <span className="text-dim max-nav:hidden">{p.method}</span>
+              <StatusBadge label={p.status} tone={PAYMENT_STATUS_TONE[p.status] ?? "faint"} />
               <b>{p.amount}</b>
-              <StatusBadge label={"✓ " + p.status} tone="aqua" />
             </div>
           ))}
         </div>
       )}
-      <p className="mono !text-[9px] mt-6 text-left">Демо горим — Stripe test. Жинхэнэ мөнгө шилжээгүй.</p>
+      <p className="mono !text-[9px] mt-6 text-left">Демо горим — SocialPay Demo. Жинхэнэ мөнгө шилжээгүй.</p>
     </>
   )
 }

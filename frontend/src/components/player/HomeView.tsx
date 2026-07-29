@@ -9,12 +9,34 @@
    Props: genres, genre, onGenre, list, query, curId, playing, onPlay,
           likes, saves, onToggleLike, onToggleSave, onInfo,
           userName, recentTracks, stats, playlists, setView, isAdmin, isTherapist, isParent */
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faHeadphones,
+  faClockRotateLeft,
+  faChartLine,
+  faTrophy,
+  faGear,
+  faUserNurse,
+  faPeopleRoof,
+  faWandMagicSparkles,
+  faFire,
+  faCirclePlus,
+  faMicrophone,
+  faStar,
+  faHeart,
+  faPlay,
+  faPause,
+} from "@fortawesome/free-solid-svg-icons";
 import type { Track as BaseTrack } from "@/types/track";
 import type { ListeningStats, Playlist } from "@/types/track";
 import { LikeBtn, SaveBtn, InfoBtn } from "./TrackButtons";
 import { SectionTitle } from "@/components/ui/PageHeader";
 import { Empty } from "@/components/ui/States";
 import { fmtDur } from "@/lib/player/format";
+import { scoreRecommendations } from "@/lib/player/recommendations";
+import * as songsApi from "@/lib/api/client";
 import type { ViewName } from "@/components/player/Player";
 
 type Track = BaseTrack & { custom?: boolean };
@@ -27,27 +49,92 @@ function greeting() {
   return "Оройн мэнд";
 }
 
-function QuickAction({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
+function QuickAction({ icon, label, onClick }: { icon: ReactNode; label: string; onClick: () => void }) {
   return (
     <button
       className="flex items-center gap-2.5 py-2.5 px-4 rounded-full border border-white/[.08] bg-white/[.04] text-[13.5px] font-medium text-ink transition-colors duration-150 hover:bg-white/[.08] focus-visible:outline-none focus-visible:shadow-glow-aqua whitespace-nowrap"
       onClick={onClick}
     >
-      <span aria-hidden="true">{icon}</span>
+      <span className="text-aqua w-[15px] text-center" aria-hidden="true">{icon}</span>
       {label}
     </button>
   );
 }
 
+/* Horizontally-scrollable dashboard row — Continue Listening / Recently Played /
+   Favorites / Trending бүгд ижил rail загвараар. */
+function TrackRail({
+  tracks,
+  curId,
+  playing,
+  onPlay,
+  likes,
+  saves,
+  onToggleLike,
+  onToggleSave,
+  onInfo,
+  ariaLabel,
+}: {
+  tracks: Track[];
+  curId: number | string | null;
+  playing: boolean;
+  onPlay: (t: Track) => void;
+  likes: (number | string)[];
+  saves: (number | string)[];
+  onToggleLike: (id: number | string) => void;
+  onToggleSave: (id: number | string) => void;
+  onInfo: (t: Track) => void;
+  ariaLabel: string;
+}) {
+  return (
+    <div className="relative isolate flex gap-3.5 overflow-x-auto pt-2 pb-2 -mx-1 px-1 [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]" role="list" aria-label={ariaLabel}>
+      {tracks.map((t) => {
+        const isCur = curId === t.id;
+        return (
+          <motion.button
+            key={t.id}
+            role="listitem"
+            className={
+              "group relative flex-none w-[168px] text-left p-3 rounded-[16px] border transition-colors duration-200 hover:z-10 focus-visible:z-10 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+              (isCur ? "bg-aqua/[.07] border-aqua/35" : "bg-white/[.03] border-white/[.06] hover:bg-white/[.055] hover:border-white/[.1]")
+            }
+            onClick={() => onPlay(t)}
+            whileHover={{ y: -4 }}
+          >
+            <span className="relative rounded-xl overflow-hidden aspect-square mb-2.5 bg-[#0B1211] block">
+              <img src={t.cover} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
+              <LikeBtn id={t.id} active={likes.includes(t.id)} onToggle={() => onToggleLike(t.id)} />
+              <SaveBtn id={t.id} active={saves.includes(t.id)} onToggle={() => onToggleSave(t.id)} />
+              <InfoBtn t={t} onInfo={() => onInfo(t)} />
+              <span
+                className={
+                  "absolute right-2 bottom-2 w-9 h-9 rounded-full bg-aqua text-[#04100E] flex items-center justify-center text-[13px] transition-[opacity,transform] duration-250 shadow-[0_6px_18px_rgba(0,0,0,.5)] " +
+                  (isCur && playing ? "opacity-100" : "opacity-0 translate-y-1.5 group-hover:opacity-100 group-hover:translate-y-0")
+                }
+                aria-hidden="true"
+              >
+                <FontAwesomeIcon icon={isCur && playing ? faPause : faPlay} />
+              </span>
+            </span>
+            <b className="block font-semibold text-[13px] whitespace-nowrap overflow-hidden text-ellipsis">{t.title}</b>
+            <i className="not-italic text-[11.5px] text-dim whitespace-nowrap overflow-hidden text-ellipsis block">{t.artist}</i>
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function HomeView({
-  genres, genre, onGenre, list, query, curId, playing, onPlay,
-  likes, saves, onToggleLike, onToggleSave, onInfo,
-  userName, recentTracks, stats, playlists, setView, isAdmin, isTherapist, isParent,
+  genres, genre, onGenre, list, allTracks, query, curId, playing, onPlay,
+  likes, saves, onToggleLike, onToggleSave, onInfo, onOpenArtist,
+  userName, recentTracks, likedTracks, stats, playlists, setView, isAdmin, isTherapist, isParent,
 }: {
   genres: string[];
   genre: string;
   onGenre: (g: string) => void;
   list: Track[];
+  allTracks: Track[];
   query: string;
   curId: number | string | null;
   playing: boolean;
@@ -57,8 +144,10 @@ export default function HomeView({
   onToggleLike: (id: number | string) => void;
   onToggleSave: (id: number | string) => void;
   onInfo: (t: Track) => void;
+  onOpenArtist: (artistId: string) => void;
   userName?: string;
   recentTracks: Track[];
+  likedTracks: Track[];
   stats: ListeningStats | null | undefined;
   playlists: Playlist[];
   setView: (v: ViewName) => void;
@@ -68,6 +157,53 @@ export default function HomeView({
 }) {
   const firstName = (userName || "").trim().split(/\s+/)[0] || "";
   const topGenre = stats ? Object.entries(stats.byGenre).sort((a, b) => b[1] - a[1])[0] : undefined;
+
+  /* Хамгийн алдартай (ListenHistory тоолуураар), Сүүлийн үеийн (createdAt), Онцлох
+     (админ гараар тэмдэглэсэн featured=true) — гурав нь backend/songs.service.ts-ийн
+     бодит query, зохиомол/хуурамч эрэмбэ биш. allTracks (static+backend+custom)-аас
+     тусад нь, зөвхөн backend Song каталогийг ашиглана (id-үүд тааралдвал ALL-аас
+     тохирох PlayerTrack-ыг ашиглаж, play/like/save handler-ууд зөв ажиллана). */
+  const [popularIds, setPopularIds] = useState<(number | string)[]>([]);
+  const [recentIds, setRecentIds] = useState<(number | string)[]>([]);
+  const [featuredIds, setFeaturedIds] = useState<(number | string)[]>([]);
+
+  useEffect(() => {
+    songsApi.getPopularSongs().then((rows) => setPopularIds(rows.map((s) => s.id))).catch(() => {});
+    songsApi.getRecentSongs().then((rows) => setRecentIds(rows.map((s) => s.id))).catch(() => {});
+    songsApi.getFeaturedSongs().then((rows) => setFeaturedIds(rows.map((s) => s.id))).catch(() => {});
+  }, []);
+
+  /* Алдартай дуучид — GET /artists (бодит backend, artists.controller.ts). Дугуй
+     зурагтай карт, дарахад ArtistView (onOpenArtist) руу шилжинэ. */
+  const [artists, setArtists] = useState<Awaited<ReturnType<typeof songsApi.listArtists>>>([]);
+  useEffect(() => {
+    songsApi.listArtists().then(setArtists).catch(() => {});
+  }, []);
+
+  /* backend-ээс ирсэн id-үүдийг allTracks (Player.tsx-ийн ALL, songId/play/history-той
+     бүрэн PlayerTrack)-аас олж тохируулна — ингэснээр onPlay/onInfo/like/save бүгд
+     одоо байгаа playTrack()/logHistory() урсгалаар яг адилхан ажиллана, шинэ playback
+     логик үүсгэхгүй. */
+  const byBackendId = useMemo(() => new Map(allTracks.map((t) => [String(t.id), t])), [allTracks]);
+  const popularSongs = useMemo(() => popularIds.map((id) => byBackendId.get(String(id))).filter((t): t is Track => !!t), [popularIds, byBackendId]);
+  const recentSongs = useMemo(() => recentIds.map((id) => byBackendId.get(String(id))).filter((t): t is Track => !!t), [recentIds, byBackendId]);
+  const featuredSongs = useMemo(() => featuredIds.map((id) => byBackendId.get(String(id))).filter((t): t is Track => !!t), [featuredIds, byBackendId]);
+
+  /* AI-санал болгол — зөвхөн бодит дата (stats.byGenre/byTrack, likes, saves, recentTracks)
+     дээр тооцоологдоно, backend дуудлагагүй. curId-г хасаж одоо тоглож буй дууг санал
+     болгохгүй. */
+  const recommendations = useMemo(
+    () =>
+      scoreRecommendations(allTracks, {
+        stats,
+        likedIds: likes,
+        savedIds: saves,
+        recentTracks,
+        excludeIds: curId != null ? [curId] : [],
+        limit: 10,
+      }),
+    [allTracks, stats, likes, saves, recentTracks, curId],
+  );
 
   return (
     <>
@@ -80,59 +216,149 @@ export default function HomeView({
         <p className="mt-1.5 text-dim text-[14px]">Өнөөдөр юу сонсох вэ?</p>
 
         <div className="flex gap-2.5 flex-wrap mt-5">
-          <QuickAction icon="🎧" label="Жагсаалтууд" onClick={() => setView("playlists")} />
-          <QuickAction icon="🕐" label="Сонссон түүх" onClick={() => setView("history")} />
-          <QuickAction icon="📈" label="Миний ахиц" onClick={() => setView("progress")} />
-          <QuickAction icon="🏆" label="Амжилтууд" onClick={() => setView("achievements")} />
-          {isAdmin && <QuickAction icon="🛠" label="Хяналтын самбар" onClick={() => setView("admin")} />}
-          {isTherapist && <QuickAction icon="🧑‍⚕️" label="Эмчийн самбар" onClick={() => setView("therapist")} />}
-          {isParent && <QuickAction icon="👨‍👩‍👧" label="Эцэг эхийн самбар" onClick={() => setView("parent")} />}
+          <QuickAction icon={<FontAwesomeIcon icon={faHeadphones} />} label="Жагсаалтууд" onClick={() => setView("playlists")} />
+          <QuickAction icon={<FontAwesomeIcon icon={faClockRotateLeft} />} label="Сонссон түүх" onClick={() => setView("history")} />
+          <QuickAction icon={<FontAwesomeIcon icon={faChartLine} />} label="Миний ахиц" onClick={() => setView("progress")} />
+          <QuickAction icon={<FontAwesomeIcon icon={faTrophy} />} label="Амжилтууд" onClick={() => setView("achievements")} />
+          {isAdmin && <QuickAction icon={<FontAwesomeIcon icon={faGear} />} label="Хяналтын самбар" onClick={() => setView("admin")} />}
+          {isTherapist && <QuickAction icon={<FontAwesomeIcon icon={faUserNurse} />} label="Эмчийн самбар" onClick={() => setView("therapist")} />}
+          {isParent && <QuickAction icon={<FontAwesomeIcon icon={faPeopleRoof} />} label="Эцэг эхийн самбар" onClick={() => setView("parent")} />}
         </div>
       </div>
 
-      {/* Үргэлжлүүлэн сонсох */}
+      {/* Алдартай дуучид — дугуй зурагтай rail, дарахад ArtistView (GET /artists/:id) руу
+          шилжинэ. Home хуудасны хамгийн дээд хэсэгт, мэндчилгээний доор шууд харагдана. */}
+      {artists.length > 0 && (
+        <div className="mb-9">
+          <SectionTitle title="Алдартай дуучид" />
+          <div className="relative isolate flex gap-4 overflow-x-auto pt-4 pb-2 -mx-1 px-1 [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]" role="list" aria-label="Алдартай дуучид">
+            {artists.map((a) => (
+              <motion.button
+                key={a.id}
+                role="listitem"
+                className="group relative flex-none w-[120px] flex flex-col items-center gap-2.5 text-center focus-visible:outline-none rounded-2xl hover:z-10 focus-visible:z-10"
+                onClick={() => onOpenArtist(a.id)}
+                whileHover={{ y: -4 }}
+              >
+                <span className="relative w-[104px] h-[104px] rounded-full overflow-hidden bg-[linear-gradient(135deg,rgba(56,232,206,.2),rgba(56,232,206,.03))] flex items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,.4)] transition-shadow duration-250 group-hover:shadow-[0_12px_32px_rgba(56,232,206,.25)] group-focus-visible:shadow-glow-aqua">
+                  {a.photoUrl ? (
+                    <img src={a.photoUrl} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <FontAwesomeIcon icon={faMicrophone} className="text-2xl text-aqua/70" aria-hidden="true" />
+                  )}
+                </span>
+                <span className="min-w-0 w-full">
+                  <b className="block font-semibold text-[13px] whitespace-nowrap overflow-hidden text-ellipsis">{a.name}</b>
+                  {a._count && <i className="not-italic text-[11px] text-dim">{a._count.songs} дуу</i>}
+                </span>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Үргэлжлүүлэн сонсох — horizontal rail */}
       {recentTracks.length > 0 && (
         <div className="mb-9">
           <SectionTitle title="Үргэлжлүүлэн сонсох" />
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-            {recentTracks.slice(0, 4).map((t) => {
+          <TrackRail
+            tracks={recentTracks}
+            curId={curId}
+            playing={playing}
+            onPlay={onPlay}
+            likes={likes}
+            saves={saves}
+            onToggleLike={onToggleLike}
+            onToggleSave={onToggleSave}
+            onInfo={onInfo}
+            ariaLabel="Үргэлжлүүлэн сонсох"
+          />
+        </div>
+      )}
+
+      {/* AI-санал болгол — зөвхөн бодит stats/likes/saves/recent дата дээр тооцоологдоно. */}
+      {recommendations.length > 0 ? (
+        <div className="mb-9">
+          <SectionTitle title={<><FontAwesomeIcon icon={faWandMagicSparkles} className="text-aqua mr-2" />Танд санал болгож байна</>} />
+          <div className="relative isolate flex gap-3.5 overflow-x-auto pt-2 pb-2 -mx-1 px-1 [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]" role="list" aria-label="Санал болгож буй дуунууд">
+            {recommendations.map((rec, i) => {
+              const t = rec.track;
               const isCur = curId === t.id;
               return (
-                <button
+                <motion.button
                   key={t.id}
-                  className={
-                    "group flex items-center gap-3 p-2.5 rounded-xl border text-left transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
-                    (isCur ? "bg-aqua/[.07] border-aqua/35" : "bg-white/[.03] border-white/[.06] hover:bg-white/[.06]")
-                  }
+                  role="listitem"
+                  className="group relative flex-none w-[168px] text-left rounded-[18px] p-[1.5px] hover:z-10 focus-visible:z-10 [background:linear-gradient(140deg,rgba(56,232,206,.5),rgba(56,232,206,.06)_50%,rgba(56,232,206,.35))] focus-visible:outline-none focus-visible:shadow-glow-aqua"
                   onClick={() => onPlay(t)}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i, 7) * 0.04, duration: 0.28 }}
+                  whileHover={{ y: -4 }}
+                  aria-label={`${t.title} — ${t.artist}. ${rec.reasons[0] || "Санал болгож байна"}`}
                 >
-                  <span className="relative w-12 h-12 rounded-lg overflow-hidden flex-none bg-[#0B1211]">
-                    <img src={t.cover} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
-                    <span
-                      className={
-                        "absolute inset-0 flex items-center justify-center bg-black/40 text-white text-base transition-opacity duration-150 " +
-                        (isCur && playing ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-                      }
-                      aria-hidden="true"
-                    >
-                      {isCur && playing ? "⏸" : "▶"}
+                  <div className="rounded-[16.5px] p-3 bg-[rgba(13,19,18,.85)] backdrop-blur-xl h-full">
+                    <span className="relative rounded-xl overflow-hidden aspect-square mb-2.5 bg-[#0B1211] block">
+                      <img src={t.cover} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
+                      <span
+                        className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/55 backdrop-blur-sm text-aqua text-[10px] font-mono py-1 px-2"
+                        aria-hidden="true"
+                      >
+                        <FontAwesomeIcon icon={faWandMagicSparkles} /> AI
+                      </span>
+                      <span
+                        className={
+                          "absolute right-2 bottom-2 w-9 h-9 rounded-full bg-aqua text-[#04100E] flex items-center justify-center text-[13px] transition-[opacity,transform] duration-250 shadow-[0_6px_18px_rgba(0,0,0,.5)] " +
+                          (isCur && playing ? "opacity-100" : "opacity-0 translate-y-1.5 group-hover:opacity-100 group-hover:translate-y-0")
+                        }
+                        aria-hidden="true"
+                      >
+                        <FontAwesomeIcon icon={isCur && playing ? faPause : faPlay} />
+                      </span>
                     </span>
-                  </span>
-                  <span className="min-w-0">
-                    <b className="block font-semibold text-[13.5px] whitespace-nowrap overflow-hidden text-ellipsis">{t.title}</b>
-                    <i className="not-italic text-xs text-dim whitespace-nowrap overflow-hidden text-ellipsis">{t.artist}</i>
-                  </span>
-                </button>
+                    <b className="block font-semibold text-[13px] whitespace-nowrap overflow-hidden text-ellipsis">{t.title}</b>
+                    <i className="not-italic text-[11.5px] text-dim whitespace-nowrap overflow-hidden text-ellipsis block mb-1.5">{t.artist}</i>
+                    <span className="inline-flex text-[9.5px] font-mono uppercase tracking-[.04em] rounded-full py-1 px-2 border border-white/[.1] text-faint mb-1.5">
+                      {t.genre}
+                    </span>
+                    {rec.reasons[0] && (
+                      <span className="block text-[10.5px] text-aqua/85 leading-[1.35] line-clamp-2">{rec.reasons[0]}</span>
+                    )}
+                  </div>
+                </motion.button>
               );
             })}
           </div>
+        </div>
+      ) : (
+        <div className="mb-9">
+          <SectionTitle title={<><FontAwesomeIcon icon={faWandMagicSparkles} className="text-aqua mr-2" />Танд санал болгож байна</>} />
+          <Empty icon="✨" title="Санал болгох хангалттай мэдээлэл алга." hint="Дуу сонсож, дуртай/хадгалах дээр дарж эхэлбэл энд танд тохирсон дуу санал болгоно" />
+        </div>
+      )}
+
+      {/* Дуртай дуунууд — horizontal rail */}
+      {likedTracks.length > 0 && (
+        <div className="mb-9">
+          <SectionTitle title="Дуртай дуунууд" actions={<QuickAction icon={<FontAwesomeIcon icon={faHeart} />} label="Бүгдийг харах" onClick={() => setView("liked")} />} />
+          <TrackRail
+            tracks={likedTracks}
+            curId={curId}
+            playing={playing}
+            onPlay={onPlay}
+            likes={likes}
+            saves={saves}
+            onToggleLike={onToggleLike}
+            onToggleSave={onToggleSave}
+            onInfo={onInfo}
+            ariaLabel="Дуртай дуунууд"
+          />
         </div>
       )}
 
       {/* Статистикийн хураангуй */}
       {stats && stats.total > 0 && (
         <div className="mb-9">
-          <SectionTitle title="Миний статистик" actions={<QuickAction icon="📊" label="Дэлгэрэнгүй" onClick={() => setView("stats")} />} />
+          <SectionTitle title="Миний статистик" actions={<QuickAction icon={<FontAwesomeIcon icon={faChartLine} />} label="Дэлгэрэнгүй" onClick={() => setView("stats")} />} />
           <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
             <div className="flex flex-row items-center gap-4 p-[18px_20px] rounded-md bg-[linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))] border border-white/[.09]">
               <span className="flex flex-col gap-0.5 min-w-0">
@@ -159,7 +385,7 @@ export default function HomeView({
       {/* Дуртай жагсаалт */}
       {playlists.length > 0 && (
         <div className="mb-9">
-          <SectionTitle title="Миний жагсаалт" actions={<QuickAction icon="🎧" label="Бүгдийг харах" onClick={() => setView("playlists")} />} />
+          <SectionTitle title="Миний жагсаалт" actions={<QuickAction icon={<FontAwesomeIcon icon={faHeadphones} />} label="Бүгдийг харах" onClick={() => setView("playlists")} />} />
           <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3.5">
             {playlists.slice(0, 4).map((p) => (
               <button
@@ -177,6 +403,63 @@ export default function HomeView({
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Онцлох — админ гараар тэмдэглэсэн (Song.featured), бодит backend query */}
+      {featuredSongs.length > 0 && (
+        <div className="mb-9">
+          <SectionTitle title={<><FontAwesomeIcon icon={faStar} className="text-aqua mr-2" />Онцлох</>} />
+          <TrackRail
+            tracks={featuredSongs}
+            curId={curId}
+            playing={playing}
+            onPlay={onPlay}
+            likes={likes}
+            saves={saves}
+            onToggleLike={onToggleLike}
+            onToggleSave={onToggleSave}
+            onInfo={onInfo}
+            ariaLabel="Онцлох дуунууд"
+          />
+        </div>
+      )}
+
+      {/* Хамгийн алдартай — ListenHistory тоолуураар (бодит тоглуулалтын давтамж) */}
+      {popularSongs.length > 0 && (
+        <div className="mb-9">
+          <SectionTitle title={<><FontAwesomeIcon icon={faFire} className="text-aqua mr-2" />Хамгийн алдартай</>} />
+          <TrackRail
+            tracks={popularSongs}
+            curId={curId}
+            playing={playing}
+            onPlay={onPlay}
+            likes={likes}
+            saves={saves}
+            onToggleLike={onToggleLike}
+            onToggleSave={onToggleSave}
+            onInfo={onInfo}
+            ariaLabel="Хамгийн алдартай дуунууд"
+          />
+        </div>
+      )}
+
+      {/* Сүүлийн үеийн — createdAt-аар эрэмбэлсэн шинэ дуунууд */}
+      {recentSongs.length > 0 && (
+        <div className="mb-9">
+          <SectionTitle title={<><FontAwesomeIcon icon={faCirclePlus} className="text-aqua mr-2" />Сүүлийн үеийн</>} />
+          <TrackRail
+            tracks={recentSongs}
+            curId={curId}
+            playing={playing}
+            onPlay={onPlay}
+            likes={likes}
+            saves={saves}
+            onToggleLike={onToggleLike}
+            onToggleSave={onToggleSave}
+            onInfo={onInfo}
+            ariaLabel="Сүүлийн үеийн дуунууд"
+          />
         </div>
       )}
 
@@ -199,7 +482,7 @@ export default function HomeView({
         ))}
       </div>
 
-      <SectionTitle title="Тренд дуунууд" />
+      <SectionTitle title="Бүх дуунуудаас хайх" />
       {list.length === 0 && <Empty title={`"${query}" — олдсонгүй`} hint="Өөр түлхүүр үгээр хайж үзнэ үү" />}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(182px,1fr))] gap-5 max-nav:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] max-nav:gap-3.5">
         {list.map((t) => {
@@ -232,7 +515,7 @@ export default function HomeView({
                   }
                   aria-hidden="true"
                 >
-                  {isCur && playing ? "⏸" : "▶"}
+                  <FontAwesomeIcon icon={isCur && playing ? faPause : faPlay} />
                 </span>
                 {isCur && playing && (
                   <span className="pl-eq absolute left-2.5 bottom-2.5" aria-hidden="true">
@@ -292,7 +575,7 @@ export default function HomeView({
                         <u></u>
                       </span>
                     ) : (
-                      "▶"
+                      <FontAwesomeIcon icon={faPlay} />
                     )}
                   </span>
                 </button>

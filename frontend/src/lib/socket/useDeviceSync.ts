@@ -12,26 +12,37 @@ export type QrSyncState = "idle" | "loading" | "waiting" | "connected" | "error"
 export function useDeviceSync(onPhoneConnected?: () => void) {
   const [qrState, setQrState] = useState<QrSyncState>("idle");
   const [qrToken, setQrToken] = useState<string | null>(null);
+  const [connectedAt, setConnectedAt] = useState<number | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const onPhoneConnectedRef = useRef(onPhoneConnected);
   onPhoneConnectedRef.current = onPhoneConnected;
 
   function ensureSocket(): Socket {
     if (!socketRef.current) {
-      socketRef.current = connectDesktopSocket();
-      socketRef.current.on("phone:connected", () => {
+      const s = connectDesktopSocket();
+      socketRef.current = s;
+      setSocket(s);
+      s.on("phone:connected", () => {
         setQrState("connected");
+        setConnectedAt(Date.now());
         /* Шинээр (эсвэл дахин) холбогдсон утас руу одоогийн тоглож буй дууны
            мэдээллийг шууд sync хийнэ — эс бол "desktop:track-changed" зөвхөн
            дуу солиход л явдаг тул дундуур нэгдсэн утас юу ч мэдэхгүй үлдэнэ. */
         onPhoneConnectedRef.current?.();
       });
-      socketRef.current.on("phone:disconnected", () => setQrState("waiting"));
+      s.on("phone:disconnected", () => {
+        setQrState("waiting");
+        setConnectedAt(null);
+      });
     }
     return socketRef.current;
   }
 
   const createSession = useCallback(async () => {
+    /* Давхар session үүсэхээс сэргийлнэ — идэвхтэй (loading/waiting/connected) үед
+       дахин дуудвал хуучин session-оо орхиод шинийг эхлүүлэхгүй, зүгээр буцна. */
+    if (qrState !== "idle" && qrState !== "error") return;
     setQrState("loading");
     try {
       const session = await createQrSession();
@@ -47,7 +58,7 @@ export function useDeviceSync(onPhoneConnected?: () => void) {
     } catch {
       setQrState("error");
     }
-  }, []);
+  }, [qrState]);
 
   const emitBeat = useCallback((evt: BeatEvent) => {
     socketRef.current?.emit("desktop:beat", evt);
@@ -60,13 +71,17 @@ export function useDeviceSync(onPhoneConnected?: () => void) {
   const disconnect = useCallback(() => {
     socketRef.current?.disconnect();
     socketRef.current = null;
+    setSocket(null);
     setQrState("idle");
     setQrToken(null);
+    setConnectedAt(null);
   }, []);
 
   return {
     qrState,
     qrToken,
+    socket,
+    connectedAt,
     isConnected: qrState === "connected",
     createSession,
     emitBeat,

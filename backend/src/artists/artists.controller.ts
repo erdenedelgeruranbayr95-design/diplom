@@ -1,0 +1,38 @@
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Role } from '@prisma/client';
+import { ArtistsService } from './artists.service';
+import { CreateArtistDto } from './dto/create-artist.dto';
+import { Roles } from '../common/decorators/roles.decorator';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Public } from '../common/decorators/public.decorator';
+
+@Controller('artists')
+export class ArtistsController {
+  constructor(private artists: ArtistsService) {}
+
+  /* ADMIN дуучны бүртгэл нэмнэ — SongLibraryPanel-ийн дуу нэмэх урсгалтай адил зарчим. */
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post()
+  create(@Body() dto: CreateArtistDto) {
+    return this.artists.create(dto);
+  }
+
+  @Public()
+  @Get()
+  list() {
+    return this.artists.list();
+  }
+
+  @Public()
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.artists.findOne(id);
+  }
+
+  @Public()
+  @Get(':id/songs')
+  songs(@Param('id') id: string) {
+    return this.artists.songs(id);
+  }
+}

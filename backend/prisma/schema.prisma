@@ -88,17 +88,39 @@ model ParentLink {
   @@index([childUserId])
 }
 
-model Song {
+// Монгол дуучдын каталог — Song.artist (чөлөөт текст) -ээс тусад нь, бодит "дуучны хуудас"
+// (танилцуулга, карьер, зураг) харуулах зорилготой. Хуучин Song.artist string талбарыг
+// устгаагүй (одоо байгаа мөрүүд болон backend-жихгүй static frontend catalog-тай нийцтэй
+// байлгах "legacy fallback" зорилготой) — зөвхөн artistId нэмж, аль болох Song.artist-ийг
+// ч бөглөнө (denormalized, жагсаалт render хийхэд join хийхгүйгээр шууд харуулах боломж).
+model Artist {
   id         String   @id @default(cuid())
-  title      String
-  artist     String?
-  genre      String?
-  fileUrl    String
-  duration   Int?
-  bpm        Int?
-  uploadedBy String
-  uploader   User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  name       String   @unique
+  bio        String?
+  careerInfo String?
+  photoUrl   String?
   createdAt  DateTime @default(now())
+
+  songs Song[]
+}
+
+model Song {
+  id          String   @id @default(cuid())
+  title       String
+  artist      String?
+  artistId    String?
+  artistRef   Artist?  @relation(fields: [artistId], references: [id], onDelete: SetNull)
+  genre       String?
+  description String?
+  releaseYear Int?
+  coverUrl    String?
+  featured    Boolean  @default(false)
+  fileUrl     String
+  duration    Int?
+  bpm         Int?
+  uploadedBy  String
+  uploader    User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
 
   // ---- client-side анализын үр дүн (backend зөвхөн хадгална, тооцоолохгүй) ----
   analyzedBpm    Int?
@@ -116,6 +138,7 @@ model Song {
   listenHistory ListenHistory[]
 
   @@index([uploadedBy])
+  @@index([artistId])
 }
 
 model ListenHistory {

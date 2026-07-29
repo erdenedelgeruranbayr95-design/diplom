@@ -15,6 +15,7 @@ import DevicesView from "./DevicesView";
 import PlaylistsView from "./PlaylistsView";
 import HelpView from "./HelpView";
 import DetailView from "./DetailView";
+import ArtistView from "./ArtistView";
 import StatsView from "./StatsView";
 import AdminView from "./AdminView";
 import ImmersiveMode from "./ImmersiveMode";
@@ -28,6 +29,7 @@ import BillingView from "./BillingView";
 import HomeView from "./HomeView";
 import LibraryView from "./LibraryView";
 import NowPlayingPanel from "./NowPlayingPanel";
+import PairingCard from "./PairingCard";
 import AnalysisView from "./AnalysisView";
 import HistoryView from "./HistoryView";
 import PlayerHeader from "./PlayerHeader";
@@ -36,16 +38,24 @@ import ActionToolbar from "./ActionToolbar";
 import * as songsApi from "@/lib/api/client";
 import { useDeviceSync } from "@/lib/socket/useDeviceSync";
 import { BeatScheduler } from "@/lib/audio/beat-scheduler";
+import { scoreRecommendations } from "@/lib/player/recommendations";
 import type { SessionUser } from "@/types/auth";
 import type { ListeningStats, Track } from "@/types/track";
 
-export type PlayerTrack = Track & { custom?: boolean; songId?: string };
+export type PlayerTrack = Track & {
+  custom?: boolean;
+  songId?: string;
+  artistId?: string;
+  description?: string;
+  releaseYear?: number;
+};
 export type ViewName =
   | "home"
   | "stats"
   | "billing"
   | "help"
   | "detail"
+  | "artist"
   | "admin"
   | "profile"
   | "devices"
@@ -104,12 +114,14 @@ export default function Player({
 }) {
   const [view, setView] = useState<ViewName>("home");
   const [detail, setDetail] = useState<PlayerTrack | null>(null);
+  const [artistId, setArtistId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [genre, setGenre] = useState("Бүгд");
   const [recent, setRecent] = useState<(number | string)[]>([]);
   const [likes, setLikes] = useState<(number | string)[]>([]);
   const [saves, setSaves] = useState<(number | string)[]>([]);
   const [custom, setCustom] = useState<PlayerTrack[]>([]); // админы нэмсэн дуунууд (IndexedDB)
+  const [backendSongs, setBackendSongs] = useState<PlayerTrack[]>([]); // GET /songs — Artist каталог, Монгол дуунууд
   const [cur, setCur] = useState<PlayerTrack | null>(null);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -136,6 +148,7 @@ export default function Player({
     const t = curRef.current;
     if (t) deviceSync.emitTrackChanged({ title: t.title, artist: t.artist });
   });
+  const [pairingOpen, setPairingOpen] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ctxRef = useRef<{ ctx: AudioContext; an: AnalyserNode; data: Uint8Array<ArrayBuffer> } | null>(null);
@@ -203,6 +216,35 @@ export default function Player({
     addEventListener("medreh:users-changed", onUsers);
     return () => removeEventListener("medreh:users-changed", onUsers);
   }, []);
+
+  /* ---------- backend Song каталог (Artist-тэй холбогдсон, seed-хийсэн Монгол дуунууд) ---------- */
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    songsApi
+      .listSongs()
+      .then((songs) => {
+        if (!alive) return;
+        setBackendSongs(
+          songs.map((s) => ({
+            id: s.id,
+            title: s.title,
+            artist: s.artist || s.artistRef?.name || "Тодорхойгүй",
+            artistId: s.artistId || undefined,
+            genre: s.genre || "Бусад",
+            description: s.description || undefined,
+            releaseYear: s.releaseYear || undefined,
+            file: s.fileUrl,
+            cover: s.coverUrl || TRACKS[Math.abs(s.title.length) % TRACKS.length].cover,
+            songId: s.id,
+          })),
+        );
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [open]);
 
   /* ---------- админы нэмсэн дуунуудыг IndexedDB-ээс ачаална ---------- */
   useEffect(() => {
@@ -556,7 +598,7 @@ export default function Player({
 
   if (!open) return null;
 
-  const ALL: PlayerTrack[] = [...TRACKS, ...custom];
+  const ALL: PlayerTrack[] = [...TRACKS, ...backendSongs, ...custom];
   const GENRES = ["Бүгд", ...new Set(ALL.map((t) => t.genre))];
   const list = ALL.filter((t) => {
     if (genre !== "Бүгд" && t.genre !== genre) return false;
@@ -652,12 +694,32 @@ export default function Player({
     const nt = ALL[(i + dir + ALL.length) % ALL.length];
     playTrack(nt);
   }
+  /* Дуу дуусахад (autoplay) шат амьд index-ийн оронд хамгийн өндөр оноотой AI-санал
+     болгосон дууг тоглуулна — playTrack() өөрчлөгдөөгүй, зөвхөн "юуг сонгох вэ" гэдэг
+     сонголтын логик солигдсон. Санал болгоход тохирох дуу олдохгүй бол (өгөгдөл дутуу)
+     хуучин index-based fallback-руу ордог. */
   function next() {
+    const recs = scoreRecommendations(ALL, {
+      stats: statsRef.current,
+      likedIds: likes,
+      savedIds: saves,
+      recentTracks,
+      excludeIds: cur ? [cur.id] : [],
+      limit: 1,
+    });
+    if (recs[0]) {
+      playTrack(recs[0].track);
+      return;
+    }
     step(1);
   }
   function openDetail(t: PlayerTrack) {
     setDetail(t);
     setView("detail");
+  }
+  function openArtist(id: string) {
+    setArtistId(id);
+    setView("artist");
   }
   function openAnalysis(songId: string) {
     setAnalysisSongId(songId);
@@ -735,6 +797,7 @@ export default function Player({
               genre={genre}
               onGenre={setGenre}
               list={list}
+              allTracks={ALL}
               query={query}
               curId={cur?.id ?? null}
               playing={playing}
@@ -744,8 +807,10 @@ export default function Player({
               onToggleLike={toggleLike}
               onToggleSave={toggleSave}
               onInfo={openDetail}
+              onOpenArtist={openArtist}
               userName={user?.name}
               recentTracks={recentTracks}
+              likedTracks={likedTracks}
               stats={statsRef.current}
               playlists={playlists}
               setView={setView}
@@ -780,6 +845,27 @@ export default function Player({
               saved={saves.includes(detail?.id)}
               onToggleLike={() => toggleLike(detail.id)}
               onToggleSave={() => toggleSave(detail.id)}
+              recommendReasons={
+                scoreRecommendations(ALL, { stats: statsRef.current, likedIds: likes, savedIds: saves, recentTracks, limit: ALL.length }).find(
+                  (r) => r.track.id === detail.id,
+                )?.reasons
+              }
+              deviceSync={deviceSync}
+              onOpenArtist={openArtist}
+            />
+          )}
+          {view === "artist" && artistId && (
+            <ArtistView
+              artistId={artistId}
+              allTracks={ALL}
+              curId={cur?.id ?? null}
+              playing={playing}
+              onPlay={playTrack}
+              likes={likes}
+              saves={saves}
+              onToggleLike={toggleLike}
+              onToggleSave={toggleSave}
+              onBack={() => setView("home")}
             />
           )}
           {view === "admin" && isAdmin && <AdminView allTracksCount={ALL.length} onOpenAdmin={onAdmin} onGoHome={() => setView("home")} />}
@@ -875,13 +961,33 @@ export default function Player({
         }}
         onClose={() => setNpOpen(false)}
         barsRef={feelBarsRef}
+        deviceSync={deviceSync}
+        canVibrate={canVibrate}
+        onTestVibration={() => {
+          if (canVibrate) navigator.vibrate([230, 80, 230]);
+        }}
+        onOpenPairing={() => {
+          if (deviceSync.qrState === "idle") deviceSync.createSession();
+          setPairingOpen(true);
+        }}
       />
+
+      <PairingCard open={pairingOpen} onClose={() => setPairingOpen(false)} deviceSync={deviceSync} />
 
       {/* доод баар */}
       <footer
         className="relative z-[3] grid grid-cols-[1fr_auto_1fr] max-nav:grid-cols-[auto_1fr] items-center gap-[18px] p-[12px_22px] min-h-[92px] bg-[rgba(9,12,12,.82)] backdrop-blur-3xl [backdrop-filter:blur(26px)_saturate(1.3)] border-t border-[rgba(255,255,255,.07)]"
       >
-        <PlayerHeader track={cur} npOpen={npOpen} onToggleNowPlaying={() => setNpOpen((o) => !o)} />
+        <PlayerHeader
+          track={cur}
+          npOpen={npOpen}
+          onToggleNowPlaying={() => setNpOpen((o) => !o)}
+          phoneConnected={deviceSync.isConnected}
+          onOpenPairing={() => {
+            if (deviceSync.qrState === "idle") deviceSync.createSession();
+            setPairingOpen(true);
+          }}
+        />
 
         <PlaybackControls
           playing={playing}

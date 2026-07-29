@@ -9,13 +9,28 @@ export default function PlayerHeader({
   track,
   npOpen,
   onToggleNowPlaying,
+  phoneConnected,
+  onOpenPairing,
 }: {
   track: PlayerTrack | null;
   npOpen: boolean;
   onToggleNowPlaying: () => void;
+  phoneConnected: boolean;
+  onOpenPairing: () => void;
 }) {
   return (
     <div className="flex items-center gap-3 min-w-0">
+      <button
+        className={
+          "w-8 h-8 flex-none rounded-full flex items-center justify-center text-[15px] transition-[color,background] duration-200 cursor-pointer focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+          (phoneConnected ? "text-aqua bg-aqua/[.12]" : "text-faint hover:text-dim hover:bg-white/[.06]")
+        }
+        onClick={onOpenPairing}
+        aria-label={phoneConnected ? "Утас холбогдсон — удирдах" : "Утас холбох"}
+        title={phoneConnected ? "Утас холбогдсон" : "Утас холбох"}
+      >
+        📱
+      </button>
       {track ? (
         <>
           <img className="w-14 h-14 rounded-xl object-cover flex-none shadow-[0_6px_18px_rgba(0,0,0,.45)]" src={track.cover} alt="" />

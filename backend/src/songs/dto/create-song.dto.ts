@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, IsUrl, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, IsUrl, Max, Min, MinLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateSongDto {
@@ -10,9 +10,35 @@ export class CreateSongDto {
   @IsString()
   artist?: string;
 
+  /* Артист каталог (Artist model)-той холбох — сонголтоор, өгөгдөөгүй бол Song.artist
+     чөлөөт текст хэвээр ажиллана (backward-compatible). */
+  @IsOptional()
+  @IsString()
+  artistId?: string;
+
   @IsOptional()
   @IsString()
   genre?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1900)
+  @Max(2100)
+  releaseYear?: number;
+
+  @IsOptional()
+  @IsUrl()
+  coverUrl?: string;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  featured?: boolean;
 
   @IsOptional()
   @Type(() => Number)

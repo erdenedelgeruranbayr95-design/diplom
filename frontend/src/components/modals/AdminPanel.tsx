@@ -11,6 +11,8 @@ import UsersTable from "@/components/admin/UsersTable";
 import StaffCreationForm from "@/components/admin/StaffCreationForm";
 import AssignmentsPanel from "@/components/admin/AssignmentsPanel";
 import SongLibraryPanel from "@/components/admin/SongLibraryPanel";
+import ProManagementPanel from "@/components/admin/ProManagementPanel";
+import { applySubOverrides } from "@/lib/data/admin-sub-overrides";
 import type { AdminUserRow, SessionUser } from "@/types/auth";
 import type { Song } from "@/types/song";
 import type { TherapistAssignmentRow } from "@/types/therapy";
@@ -58,7 +60,11 @@ export default function AdminPanel({
     setUserErr("");
     api
       .listUsers()
-      .then(setUsers)
+      /* Backend дээр subActive/subPlan бичих endpoint байхгүй тул UsersTable-ийн
+         Grant/Remove PRO нь зөвхөн localStorage demo-override хадгалдаг
+         (admin-sub-overrides.ts) — жинхэнэ GET /users үр дүн дээр энд client талд
+         л merge хийж харуулна. */
+      .then((rows) => setUsers(applySubOverrides(rows)))
       .catch((e) => setUserErr(e.message))
       .finally(() => setUsersLoading(false));
   }
@@ -252,7 +258,16 @@ export default function AdminPanel({
 
             <StaffCreationForm newRole={newRole} setNewRole={setNewRole} createMsg={createMsg} creating={creating} onSubmit={createStaff} />
 
-            <UsersTable loading={usersLoading} error={userErr} onRetry={loadUsers} q={q} setQ={setQ} users={filteredUsers} onDelete={removeUser} />
+            <UsersTable
+              loading={usersLoading}
+              error={userErr}
+              onRetry={loadUsers}
+              q={q}
+              setQ={setQ}
+              users={filteredUsers}
+              onDelete={removeUser}
+              onSubChanged={loadUsers}
+            />
           </>
         )}
 
@@ -274,6 +289,8 @@ export default function AdminPanel({
         )}
 
         {tab === "tracks" && <SongLibraryPanel msg={msg} busy={busy} onSubmit={addTrack} loading={songsLoading} songs={songs} />}
+
+        {tab === "pro" && <ProManagementPanel users={users} />}
 
         <p className="mt-6 pt-4 border-t border-white/[.07] mono !text-[9px]">Нэвтэрсэн: {currentUser?.email}</p>
       </div>

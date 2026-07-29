@@ -7,7 +7,9 @@
 import type { MutableRefObject } from "react";
 import { FEEL, FEEL_DEFAULT } from "@/lib/player/constants";
 import { ActionButton } from "@/components/ui/ActionGroup";
+import DeviceCard from "./DeviceCard";
 import type { Track } from "@/types/track";
+import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
 
 const BANDS: [string, string][] = [
   ["bass", "Бас"],
@@ -32,6 +34,10 @@ export default function NowPlayingPanel({
   onImmersive,
   onClose,
   barsRef,
+  deviceSync,
+  onOpenPairing,
+  canVibrate,
+  onTestVibration,
 }: {
   open: boolean;
   track: Track | null;
@@ -42,6 +48,10 @@ export default function NowPlayingPanel({
   onImmersive: () => void;
   onClose: () => void;
   barsRef: MutableRefObject<(HTMLSpanElement | null)[]>;
+  deviceSync: ReturnType<typeof useDeviceSync>;
+  onOpenPairing: () => void;
+  canVibrate: boolean;
+  onTestVibration: () => void;
 }) {
   if (!open || !track) return null;
   const f = FEEL[track.genre] || FEEL_DEFAULT;
@@ -140,6 +150,26 @@ export default function NowPlayingPanel({
               </ActionButton>
             </div>
           </div>
+        </div>
+
+        {/* Утас холбох хэсэг — Desktop: DeviceCard баруун талд налж харагдана (items-end,
+            max-w-[340px]), Tablet/Mobile (max-viz, ≤1020px): бүтэн өргөнөөр (items-stretch,
+            DeviceCard дотор w-full). Холбогдоогүй үед энгийн мөр, connected үед premium
+            companion card. */}
+        <div className="col-span-full mt-5 pt-5 border-t border-line flex flex-col max-viz:items-stretch items-end">
+          {deviceSync.qrState === "connected" ? (
+            <DeviceCard deviceSync={deviceSync} canVibrate={canVibrate} onTestVibration={onTestVibration} />
+          ) : (
+            <div className="w-full flex items-center gap-3">
+              <i className="w-2 h-2 rounded-full flex-none bg-faint" aria-hidden="true" />
+              <span className="flex-1 text-[12.5px] text-dim" aria-live="polite">
+                Утас холбогдоогүй
+              </span>
+              <ActionButton variant="ghost" size="sm" onClick={onOpenPairing}>
+                📱 Утас холбох
+              </ActionButton>
+            </div>
+          )}
         </div>
       </div>
     </div>

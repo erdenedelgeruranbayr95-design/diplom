@@ -73,7 +73,7 @@ export function SaveBtn({
 export function InfoBtn({ t, row, onInfo }: { t: Track; row?: boolean; onInfo: () => void }) {
   return (
     <span
-      className={likeBase + (row ? " " + likeRow : "")}
+      className={likeBase + (row ? " " + likeRow : " !top-[57px]")}
       role="button"
       tabIndex={0}
       aria-label={t.title + " — дэлгэрэнгүй"}

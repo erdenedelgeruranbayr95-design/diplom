@@ -5,13 +5,14 @@
    Tailwind руу хөрвүүлсэн (эх .auth-tabs нь grid-cols 2 байсан ч энд 3 таб байрлуулж байсан
    тул шахагдсан харагдаж байсныг эндээс засав — цэвэр визуал засвар, tab/onClose логик
    хэвээр). tab/setTab/onClose props бүгд хэвээр. */
-export type AdminTab = "users" | "tracks" | "assign";
+export type AdminTab = "users" | "tracks" | "assign" | "pro";
 
 export default function AdminHeader({ tab, setTab, onClose }: { tab: AdminTab; setTab: (t: AdminTab) => void; onClose: () => void }) {
   const tabs: { v: AdminTab; label: string }[] = [
     { v: "users", label: "Хэрэглэгчид" },
     { v: "assign", label: "Эмч томилолт" },
     { v: "tracks", label: "Дууны сан" },
+    { v: "pro", label: "💎 PRO" },
   ];
   return (
     <div className="mb-1">
@@ -25,7 +26,7 @@ export default function AdminHeader({ tab, setTab, onClose }: { tab: AdminTab; s
 
       <span className="mono block mb-4">МЭДРЭХ® / Админ самбар</span>
 
-      <div className="grid grid-cols-3 border border-white/[.08] rounded-xl overflow-hidden mb-5" role="tablist" aria-label="Админ самбарын таб">
+      <div className="grid grid-cols-4 max-nav:grid-cols-2 border border-white/[.08] rounded-xl overflow-hidden mb-5" role="tablist" aria-label="Админ самбарын таб">
         {tabs.map((t) => (
           <button
             key={t.v}

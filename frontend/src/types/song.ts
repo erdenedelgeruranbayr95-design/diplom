@@ -1,8 +1,28 @@
+export interface Artist {
+  id: string;
+  name: string;
+  bio: string | null;
+  careerInfo: string | null;
+  photoUrl: string | null;
+  createdAt: string;
+  _count?: { songs: number };
+}
+
+export interface ArtistWithSongs extends Artist {
+  songs: Song[];
+}
+
 export interface Song {
   id: string;
   title: string;
   artist: string | null;
+  artistId: string | null;
+  artistRef?: Artist | null;
   genre: string | null;
+  description: string | null;
+  releaseYear: number | null;
+  coverUrl: string | null;
+  featured: boolean;
   fileUrl: string;
   duration: number | null;
   bpm: number | null;

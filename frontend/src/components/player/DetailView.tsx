@@ -1,11 +1,22 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
-import type { Track } from "@/types/track";
 import BackBar from "./BackBar";
 import { SectionTitle } from "@/components/ui/PageHeader";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import { FEEL, FEEL_DEFAULT } from "@/lib/player/constants";
+import { useDeviceSync } from "@/lib/socket/useDeviceSync";
+import * as songsApi from "@/lib/api/client";
+import type { PlayerTrack } from "./Player";
+
+interface MoreByArtistTrack {
+  id: string;
+  title: string;
+  genre: string | null;
+  coverUrl: string | null;
+}
 
 /* Дууны дэлгэрэнгүй — Player.jsx-аас тусад нь гаргасан.
    Props: track, isCurrent, playing, onPlay(), onFeelTest(), onBack(),
@@ -42,9 +53,9 @@ function to8Bands(f: { bass: number; mid: number; high: number }) {
 
 export default function DetailView({
   track, songId, isCurrent, playing, onPlay, onFeelTest, onBack,
-  liked, saved, onToggleLike, onToggleSave,
+  liked, saved, onToggleLike, onToggleSave, recommendReasons, deviceSync, onOpenArtist,
 }: {
-  track: Track | null | undefined;
+  track: PlayerTrack | null | undefined;
   songId?: string;
   isCurrent: boolean;
   playing: boolean;
@@ -55,8 +66,39 @@ export default function DetailView({
   saved: boolean;
   onToggleLike: () => void;
   onToggleSave: () => void;
+  /* AI-санал болгосон шалтгаанууд (recommendations.ts) — зөвхөн энэ дуу одоогийн
+     "Танд санал болгож байна" жагсаалтад байвал ирнэ, эс бол undefined. */
+  recommendReasons?: string[];
+  /* Утас QR pairing (session/socket sync) — songId-той дуунд зориулсан хуучин
+     QR-ээс ялгаатай, ямар ч дуу дээр (static catalog track ч) ажиллана. */
+  deviceSync: ReturnType<typeof useDeviceSync>;
+  /* Дуучны нэр дээр дарахад дуучны хуудас руу шилжинэ (зөвхөн artistId-тэй үед л
+     идэвхтэй харагдана — static catalog/custom track дээр Artist relation байхгүй). */
+  onOpenArtist: (artistId: string) => void;
 }) {
+  const [whyOpen, setWhyOpen] = useState(false)
+  const [moreByArtist, setMoreByArtist] = useState<MoreByArtistTrack[]>([])
   const t = track
+
+  /* "Тухайн дуучны бусад дуунууд" — backend GET /songs/:id/more-by-artist (songId-тэй,
+     artistId-тэй дуунд л ажиллана; songId байхгүй бол backend дуудлага хийхгүй). */
+  useEffect(() => {
+    if (!songId) {
+      setMoreByArtist([])
+      return
+    }
+    let alive = true
+    songsApi
+      .getMoreByArtist(songId)
+      .then((rows) => {
+        if (alive) setMoreByArtist(rows.map((s) => ({ id: s.id, title: s.title, genre: s.genre, coverUrl: s.coverUrl })))
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [songId])
+
   if (!t) return null
   const f = FEEL[t.genre] || FEEL_DEFAULT
   const tot = f.pattern.reduce((a, b) => a + b, 0)
@@ -111,25 +153,112 @@ export default function DetailView({
             </div>
           </div>
 
-          {songId && (
-            <div className="rounded-2xl p-5 mt-5 flex items-center gap-5 [background:linear-gradient(120deg,rgba(56,232,206,.14),rgba(14,92,83,.25)_55%,rgba(9,14,14,.4))]">
-              <span className="bg-white p-2.5 rounded-lg inline-flex">
-                <QRCodeSVG value={`${window.location.origin}/song/${songId}`} size={112} />
-              </span>
+          {/* Утас QR pairing (session/socket, чичиргээ sync) — songId шаардахгүй,
+              ямар ч дуу дээр (static demo track ч) ажиллана. deviceSync.qrToken
+              өөрчлөгдөхгүй хэвээр л, зөвхөн 1 удаа createSession() дуудна. */}
+          <div className="relative rounded-[22px] p-6 mt-5 overflow-hidden border border-aqua/[.16] [background:linear-gradient(165deg,rgba(56,232,206,.1),rgba(9,14,14,.55)_60%)] shadow-[0_20px_50px_rgba(0,0,0,.4)]">
+            <div
+              className="pointer-events-none absolute -top-16 -right-16 w-52 h-52 rounded-full bg-aqua/[.14] blur-[60px]"
+              aria-hidden="true"
+            />
+            <div className="relative flex flex-col items-center text-center gap-4">
+              {deviceSync.qrState === "waiting" && deviceSync.qrToken ? (
+                <span className="bg-white p-4 rounded-2xl inline-flex shadow-[0_10px_30px_rgba(0,0,0,.35)]">
+                  <QRCodeSVG value={`${window.location.origin}/mobile/${deviceSync.qrToken}`} size={168} />
+                </span>
+              ) : deviceSync.qrState === "connected" ? (
+                <span className="w-[168px] h-[168px] rounded-2xl bg-aqua/[.14] border border-aqua/30 text-aqua flex items-center justify-center text-5xl" aria-hidden="true">
+                  🟢
+                </span>
+              ) : (
+                <button
+                  className="w-[168px] h-[168px] rounded-2xl border-2 border-dashed border-aqua/30 flex flex-col items-center justify-center gap-2 text-aqua text-[13px] font-semibold transition-colors duration-200 hover:border-aqua/60 hover:bg-aqua/[.06] focus-visible:outline-none focus-visible:shadow-glow-aqua"
+                  onClick={() => deviceSync.createSession()}
+                >
+                  <span className="text-3xl" aria-hidden="true">📱</span>
+                  QR үүсгэх
+                </button>
+              )}
               <div>
-                <b className="block font-display font-semibold text-[15px] mb-1">Утсаараа сонсох</b>
-                <p className="text-dim text-[13px] leading-[1.5]">QR кодыг уншуулж энэ дууг утсан дээрээ шууд нээж сонсоно уу.</p>
+                <b className="block font-display font-semibold text-[16px] mb-1.5">
+                  {deviceSync.qrState === "connected" ? "🟢 Утас холбогдсон" : "Чичиргээгээ утсандаа авах"}
+                </b>
+                <p className="text-dim text-[13px] leading-[1.55] max-w-[240px] mx-auto">
+                  {deviceSync.qrState === "connected"
+                    ? "Одоо тоглуулж буй дуутай синхроноор утас чичирнэ."
+                    : "QR кодыг MEDREH mobile-оор уншуулж, чичиргээг утсандаа синхроноор аваарай — дуу солигдоход ч энэ холболт хэвээр үлдэнэ."}
+                </p>
               </div>
             </div>
-          )}
+          </div>
         </div>
         <div>
           <span className="w-fit inline-block text-[13px] font-semibold rounded-full py-2 px-4 bg-aqua text-[#04100E]">{t.genre}</span>
           <h2 className="text-[clamp(26px,3.4vw,40px)] font-extrabold tracking-[-.04em] mt-3">{t.title}</h2>
           <p className="text-dim text-[14.5px] mt-1">
-            Дуучин: {t.artist}
+            Дуучин:{" "}
+            {t.artistId ? (
+              <button
+                className="text-aqua font-semibold hover:underline focus-visible:outline-none focus-visible:shadow-glow-aqua rounded-sm"
+                onClick={() => onOpenArtist(t.artistId!)}
+              >
+                {t.artist}
+              </button>
+            ) : (
+              t.artist
+            )}
             {t.composer && <> · Зохиолч: {t.composer}</>}
+            {t.releaseYear && <> · {t.releaseYear}</>}
           </p>
+          {t.description && <p className="text-dim text-[13.5px] leading-[1.55] max-w-[60ch] mt-2">{t.description}</p>}
+
+          {recommendReasons && recommendReasons.length > 0 && (
+            <div className="mt-5 rounded-2xl border border-aqua/[.25] bg-aqua/[.05] overflow-hidden">
+              <button
+                className="w-full flex items-center justify-between gap-3 py-3 px-4 text-left focus-visible:outline-none focus-visible:shadow-glow-aqua"
+                onClick={() => setWhyOpen((o) => !o)}
+                aria-expanded={whyOpen}
+                aria-controls="why-recommended-panel"
+              >
+                <span className="flex items-center gap-2 text-[13.5px] font-semibold text-aqua">✨ Яагаад санал болгосон бэ?</span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={"text-aqua transition-transform duration-250 " + (whyOpen ? "rotate-180" : "")}
+                  aria-hidden="true"
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+              <AnimatePresence initial={false}>
+                {whyOpen && (
+                  <motion.div
+                    id="why-recommended-panel"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22 }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    <ul className="flex flex-col gap-1.5 px-4 pb-4 list-none">
+                      {recommendReasons.map((r) => (
+                        <li key={r} className="text-[12.5px] text-ink flex items-center gap-2">
+                          <span className="text-aqua" aria-hidden="true">✓</span>
+                          {r}
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
 
           <div className="mt-8">
             <SectionTitle title="Энэ дуу хэрхэн мэдрэгдэх вэ?" />
@@ -175,6 +304,30 @@ export default function DetailView({
             ))}
           </div>
           <p className="mono !text-[9px] mt-2">{f.pattern.join(' · ')} мс</p>
+
+          {moreByArtist.length > 0 && (
+            <>
+              <div className="mt-8">
+                <SectionTitle title={`${t.artist} — бусад дуунууд`} />
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 mt-1 [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]" role="list" aria-label={`${t.artist}-ийн бусад дуунууд`}>
+                {moreByArtist.map((m) => (
+                  <button
+                    key={m.id}
+                    role="listitem"
+                    className="flex-none w-[140px] text-left p-2.5 rounded-xl border border-white/[.06] bg-white/[.03] transition-colors duration-200 hover:bg-white/[.06] hover:border-white/[.1] focus-visible:outline-none focus-visible:shadow-glow-aqua"
+                    onClick={() => t.artistId && onOpenArtist(t.artistId)}
+                  >
+                    <span className="relative rounded-lg overflow-hidden aspect-square mb-2 bg-[#0B1211] block">
+                      {m.coverUrl && <img src={m.coverUrl} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
+                    </span>
+                    <b className="block font-semibold text-[12.5px] whitespace-nowrap overflow-hidden text-ellipsis">{m.title}</b>
+                    <i className="not-italic text-[11px] text-dim whitespace-nowrap overflow-hidden text-ellipsis block">{m.genre}</i>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </>

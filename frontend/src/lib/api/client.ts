@@ -4,8 +4,8 @@
    refresh token нь httpOnly cookie-д, browser автоматаар илгээнэ.
    Access token нь зөвхөн browser tab-ийн module-level хувьсагчид оршдог тул энэ файл болон
    үүнийг ашигладаг бүх код Client Component-т байх ёстой (Server Component-д унших боломжгүй). */
-import type { AdminUserRow, CreatedUser, CreateUserPayload, SessionUser } from "@/types/auth";
-import type { AnalyzeSongPayload, CreateHistoryPayload, HistoryPage, ListenHistoryRow, Song } from "@/types/song";
+import type { AdminUserRow, CreatedUser, CreateUserPayload, SessionUser, UserSub } from "@/types/auth";
+import type { AnalyzeSongPayload, Artist, ArtistWithSongs, CreateHistoryPayload, HistoryPage, ListenHistoryRow, Song } from "@/types/song";
 import type { QrSessionRow } from "@/types/qr";
 import type {
   AssignedPatient,
@@ -101,6 +101,16 @@ export function createUser(payload: CreateUserPayload) {
   return apiFetch<CreatedUser>("/users", { method: "POST", body: JSON.stringify(payload) });
 }
 
+/* PRO эрхийг DB-д бодитоор бичнэ (users.controller.ts: PATCH/DELETE /users/me/subscription) —
+   refresh/дахин нэвтрэх/өөр tab дээр ч хадгалагдана, зөвхөн React state-д биш. */
+export function subscribeMe(plan?: string) {
+  return apiFetch<UserSub | null>("/users/me/subscription", { method: "PATCH", body: JSON.stringify({ plan }) });
+}
+
+export function cancelSubscriptionMe() {
+  return apiFetch<UserSub | null>("/users/me/subscription", { method: "DELETE" });
+}
+
 // ---- Эмч томилолт (admin) ----
 export function createTherapistAssignment(therapistId: string, userId: string) {
   return apiFetch<TherapistAssignmentRow>("/assignments/therapists", {
@@ -132,6 +142,39 @@ export function getSong(id: string) {
 
 export function submitAnalysis(id: string, payload: AnalyzeSongPayload) {
   return apiFetch<Song>(`/songs/${id}/analyze`, { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function getFeaturedSongs() {
+  return apiFetch<Song[]>("/songs/featured");
+}
+
+export function getRecentSongs() {
+  return apiFetch<Song[]>("/songs/recent");
+}
+
+export function getPopularSongs() {
+  return apiFetch<Song[]>("/songs/popular");
+}
+
+export function getMoreByArtist(songId: string) {
+  return apiFetch<Song[]>(`/songs/${songId}/more-by-artist`);
+}
+
+// ---- Artists (дуучид) ----
+export function listArtists() {
+  return apiFetch<Artist[]>("/artists");
+}
+
+export function getArtist(id: string) {
+  return apiFetch<ArtistWithSongs>(`/artists/${id}`);
+}
+
+export function getArtistSongs(id: string) {
+  return apiFetch<Song[]>(`/artists/${id}/songs`);
+}
+
+export function createArtist(payload: { name: string; bio?: string; careerInfo?: string; photoUrl?: string }) {
+  return apiFetch<Artist>("/artists", { method: "POST", body: JSON.stringify(payload) });
 }
 
 // ---- Listen history ----

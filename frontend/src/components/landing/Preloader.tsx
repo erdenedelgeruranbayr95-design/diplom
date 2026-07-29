@@ -1,7 +1,7 @@
 export default function Preloader() {
   return (
     <div className="pre" id="pre">
-      <b>МЭДРЭХ</b>
+      <b style={{ fontSize: "clamp(24px,4.5vw,54px)" }}>МЭДРЭХ</b>
       <b id="pct" style={{ fontSize: "clamp(24px,4.5vw,54px)" }}>
         0
       </b>

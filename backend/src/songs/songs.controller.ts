@@ -26,7 +26,12 @@ export class SongsController {
     return this.songs.create({
       title: dto.title,
       artist: dto.artist,
+      artistId: dto.artistId,
       genre: dto.genre,
+      description: dto.description,
+      releaseYear: dto.releaseYear,
+      coverUrl: dto.coverUrl,
+      featured: dto.featured,
       duration: dto.duration,
       bpm: dto.bpm,
       fileUrl: file ? '/uploads/' + file.filename : dto.sourceUrl!,
@@ -34,9 +39,31 @@ export class SongsController {
     });
   }
 
+  @Public()
   @Get()
   list() {
     return this.songs.list();
+  }
+
+  /* Нүүр хуудасны "Хамгийн алдартай / Сүүлийн үеийн / Онцлох" — специфик endpoint-ууд,
+     жагсаалт бүр өөр эрэмбэ/шүүлттэй тул list()-ээс тусад нь. Query param биш тусдаа
+     route болгосон нь frontend талд кэшлэхэд/тодорхойд илүү энгийн. */
+  @Public()
+  @Get('featured')
+  featured() {
+    return this.songs.featured();
+  }
+
+  @Public()
+  @Get('recent')
+  recent() {
+    return this.songs.recent();
+  }
+
+  @Public()
+  @Get('popular')
+  popular() {
+    return this.songs.popular();
   }
 
   /* QR-аар дуу нээхэд гар утас (нэвтрээгүй) энэ endpoint-ыг дуудна. */
@@ -44,6 +71,12 @@ export class SongsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.songs.findOne(id);
+  }
+
+  @Public()
+  @Get(':id/more-by-artist')
+  moreByArtist(@Param('id') id: string) {
+    return this.songs.moreByArtist(id);
   }
 
   @UseGuards(RolesGuard)

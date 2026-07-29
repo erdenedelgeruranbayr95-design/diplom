@@ -19,7 +19,7 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   updateUser: (patch: Partial<SessionUser>) => void;
   setSub: (sub: UserSub | null) => void;
-  cancelSub: () => void;
+  cancelSub: () => Promise<void>;
 }
 
 const AuthCtx = createContext<AuthContextValue | null>(null);
@@ -71,7 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function setSub(sub: UserSub | null) {
     setUser((prev) => (prev ? { ...prev, sub } : prev));
   }
-  function cancelSub() {
+  async function cancelSub() {
+    /* DB руу бодитоор бичнэ (DELETE /users/me/subscription) — эс бол refresh хийхэд
+       backend-ийн хуучин (идэвхтэй) subActive дахин ирж, орон нутгийн цуцлалт алга болно. */
+    await api.cancelSubscriptionMe().catch(() => {});
     setUser((prev) =>
       prev ? { ...prev, sub: prev.sub ? { ...prev.sub, active: false } : prev.sub } : prev,
     );

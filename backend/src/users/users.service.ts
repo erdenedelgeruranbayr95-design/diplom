@@ -47,4 +47,34 @@ export class UsersService {
     await this.prisma.user.delete({ where: { id } });
     return { ok: true };
   }
+
+  /* Self-service PRO захиалга (демо SocialPay урсгал) — өөрийн эрхийг бодитоор DB-д
+     бичнэ, ингэснээр refresh/дахин нэвтрэх/өөр tab дээр ч PRO эрх хадгалагдана.
+     Жинхэнэ төлбөрийн систем (SocialPay/QPay) холбогдоогүй тул зөвхөн энэ endpoint-ыг
+     дуудсанаар л идэвхжинэ — бодит бэлэн мөнгөн гүйлгээ шалгахгүй (SubscribeModal.tsx-ийн
+     демо тайлбартай нийцтэй). */
+  async subscribe(userId: string, plan: string) {
+    const now = new Date();
+    const renews = new Date(now);
+    renews.setMonth(renews.getMonth() + 1);
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { subActive: true, subPlan: plan, subSince: now, subRenews: renews },
+    });
+    return this.toSubDto(user);
+  }
+
+  async cancelSubscription(userId: string) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { subActive: false },
+    });
+    return this.toSubDto(user);
+  }
+
+  private toSubDto(user: { subActive: boolean; subPlan: string | null; subSince: Date | null; subRenews: Date | null }) {
+    return user.subActive
+      ? { active: user.subActive, plan: user.subPlan, since: user.subSince, renews: user.subRenews }
+      : null;
+  }
 }
