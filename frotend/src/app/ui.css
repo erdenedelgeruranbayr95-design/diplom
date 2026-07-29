@@ -1,0 +1,297 @@
+/* ============ Үе 1 суурь UI: Toast · States · NotFound ============ */
+
+/* ---- Toast ---- */
+.toast-wrap {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  z-index: 99999; display: flex; flex-direction: column; gap: 10px;
+  width: min(92vw, 420px); pointer-events: none;
+}
+.toast {
+  pointer-events: auto; display: flex; align-items: center; gap: 12px;
+  padding: 13px 15px; border-radius: var(--radius-md);
+  background: rgba(14, 20, 20, .94); backdrop-filter: blur(12px);
+  border: 1px solid var(--line); box-shadow: var(--shadow-lg);
+  animation: toast-in .28s cubic-bezier(.2, .8, .2, 1);
+}
+.toast p { flex: 1; margin: 0; font-size: 14px; line-height: 1.35; color: var(--ink); }
+.toast-ic {
+  width: 26px; height: 26px; flex: 0 0 26px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 14px; font-weight: 700;
+}
+.toast-success { border-color: rgba(56, 232, 206, .5); }
+.toast-success .toast-ic { background: rgba(56, 232, 206, .16); color: var(--aqua); }
+.toast-error { border-color: rgba(233, 111, 111, .5); }
+.toast-error .toast-ic { background: rgba(233, 111, 111, .16); color: #ff8a8a; }
+.toast-info .toast-ic { background: rgba(242, 245, 244, .12); color: var(--ink); }
+.toast-x {
+  background: none; border: none; color: var(--faint); font-size: 14px;
+  cursor: pointer; padding: 2px 4px; line-height: 1;
+}
+.toast-x:hover { color: var(--ink); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+
+/* ---- States (Loading / Empty / Error) ---- */
+.state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 48px 24px; text-align: center; color: var(--dim);
+  animation: state-in .35s cubic-bezier(.2,.8,.2,1);
+}
+.state-ic {
+  font-size: 40px; line-height: 1; width: 76px; height: 76px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle, rgba(255,255,255,.05), transparent 70%);
+}
+.state b { font-family: 'Unbounded', sans-serif; font-weight: 400; font-size: 18px; color: var(--ink); }
+.state p { margin: 0; font-size: 14px; max-width: 340px; line-height: 1.5; }
+.state-spinner {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid var(--line); border-top-color: var(--aqua);
+  animation: ui-spin .8s linear infinite;
+}
+.state-error .state-ic { background: radial-gradient(circle, rgba(233,111,111,.12), transparent 70%); }
+.state-empty .state-ic { background: radial-gradient(circle, rgba(56,232,206,.08), transparent 70%); }
+@keyframes ui-spin { to { transform: rotate(360deg); } }
+@keyframes state-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ---- Skeleton (shimmer placeholder) ---- */
+.skel {
+  background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%);
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+.skel-rows { display: flex; flex-direction: column; gap: 8px; }
+.skel-row { height: 44px; border-radius: var(--radius-sm); }
+.skel-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.skel-card { height: 90px; border-radius: var(--radius-md); }
+.skel-text { display: inline-block; height: 12px; width: 100%; border-radius: 4px; }
+@keyframes skel-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ---- NotFound (404) ---- */
+.nf {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px;
+  text-align: center; padding: 24px; background: var(--bg);
+}
+.nf-code {
+  font-family: 'Unbounded', sans-serif; line-height: 1;
+  font-size: clamp(64px, 16vw, 140px); letter-spacing: -.04em; color: var(--aqua);
+}
+.nf h1 { font-family: 'Unbounded', sans-serif; font-weight: 400; font-size: clamp(22px, 3vw, 32px); color: var(--ink); }
+.nf p { color: var(--dim); max-width: 360px; line-height: 1.5; }
+.nf .bt { margin-top: 8px; text-decoration: none; display: inline-flex; }
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+  .state-spinner { animation-duration: 1.8s; }
+}
+
+/* ============ Үе 2: Profile / Devices / Playlists ============ */
+
+/* --- нийтлэг input --- */
+.plv-create input, .plv-search {
+  width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, .04); border: 1px solid var(--line);
+  color: var(--ink); font-size: 14.5px; font-family: inherit;
+  transition: border-color .3s, box-shadow .3s;
+}
+.plv-create input:focus, .plv-search:focus { border-color: var(--aqua); }
+.plv-create input:focus-visible, .plv-search:focus-visible {
+  outline: none; box-shadow: var(--glow-aqua);
+}
+
+/* --- Profile --- */
+.pv-top { display: flex; align-items: center; gap: 16px; margin: 6px 0 22px; }
+.pv-top b { display: block; font-family: 'Unbounded', sans-serif; font-weight: 400; font-size: 19px; color: var(--ink); }
+.pv-top i { display: block; font-style: normal; color: var(--dim); font-size: 13px; margin-top: 2px; }
+.pv-swatch.on { border-color: #fff; transform: scale(1.12); }
+.pv-toggle input { width: 17px; height: 17px; accent-color: var(--aqua); cursor: pointer; }
+
+/* --- Devices --- */
+.dv-lead { color: var(--dim); font-size: 14px; line-height: 1.55; margin: 6px 0 18px; max-width: 640px; }
+.dv-card.ok { border-color: rgba(56, 232, 206, .35); }
+.dv-card b { font-family: 'Unbounded', sans-serif; font-weight: 400; font-size: 15px; color: var(--ink); }
+.dv-card p { flex: 1; margin: 0; color: var(--dim); font-size: 12.5px; line-height: 1.5; }
+.dv-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); transition: background .3s, box-shadow .3s; }
+.dv-status.on { color: var(--aqua); }
+.dv-status.on .dv-dot { background: var(--aqua); box-shadow: 0 0 8px var(--aqua); }
+.dv-maprow { display: flex; align-items: center; gap: var(--sp-3); background: rgba(255, 255, 255, .03); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 10px 14px; }
+
+/* QR карт — inline style-ийн оронд token-driven, орох animation-той */
+.dv-qr-card {
+  background: #fff; padding: var(--sp-3); border-radius: var(--radius-lg); display: inline-flex;
+  box-shadow: var(--shadow-md); border: 1px solid rgba(255, 255, 255, .08);
+  animation: dv-qr-in .3s cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes dv-qr-in { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+.dv-qr-check.pop { animation: dv-qr-pop .5s cubic-bezier(.2, .8, .2, 1); }
+@keyframes dv-qr-pop { 0% { transform: scale(.5); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+
+/* --- Playlists --- */
+.plv-create { display: flex; gap: 10px; margin: 6px 0 20px; }
+.plv-create input { flex: 1; }
+.plv-cover img { width: 100%; height: 100%; object-fit: cover; }
+.plv-card b { display: block; font-size: 14px; color: var(--ink); }
+.plv-card i { display: block; font-style: normal; font-size: 12px; color: var(--dim); margin-top: 2px; }
+.plv-card:hover .plv-cardact { opacity: 1; }
+.plv-mini.danger { color: #ff8a8a; }
+.plv-search { margin-bottom: 10px; }
+
+/* ============================================================
+   Player glow-up — Apple Music-аас санаа авсан өнгөлгөө.
+   Зөвхөн дүр төрх (CSS). Логик/дата/JSX хөндөөгүй.
+   styles.css-ийн дараа ачаалагддаг тул override болно.
+   ============================================================ */
+
+/* --- Ерөнхий фон + гарчиг --- */
+.pl-ov.sp {
+  background:
+    radial-gradient(1100px 560px at 80% -10%, rgba(56, 232, 206, .06), transparent 58%),
+    linear-gradient(180deg, #0b0e0e, #070909 62%);
+}
+.sp-h { font-size: clamp(24px, 3vw, 34px); font-weight: 800; letter-spacing: -.045em; margin-bottom: 22px; }
+.sp-h2 { margin-top: 46px; }
+
+/* --- Дээд баар: glassy sticky --- */
+.sp-top {
+  padding: 15px 28px;
+  background: rgba(9, 12, 12, .72);
+  backdrop-filter: blur(22px) saturate(1.2); -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+}
+.sp-icbtn { background: rgba(255, 255, 255, .05); }
+.sp-icbtn:hover { background: rgba(255, 255, 255, .1); }
+
+/* --- Карт grid: premium --- */
+.sp-grid { grid-template-columns: repeat(auto-fill, minmax(182px, 1fr)); gap: 22px; }
+.sp-card.on { background: rgba(56, 232, 206, .06); border-color: rgba(56, 232, 206, .4); box-shadow: var(--shadow-md); }
+.sp-card:hover .sp-cover img { transform: scale(1.08); }
+.sp-card:hover .sp-playbtn { box-shadow: 0 10px 28px rgba(56, 232, 206, .4); }
+.sp-card b { font-size: 15px; }
+
+/* --- Chips (жанр шүүлтүүр) --- */
+.sp-chips { gap: 10px; margin-bottom: 28px; }
+.sp-chip {
+  background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .05);
+  padding: 9px 18px; border-radius: 100px; transition: background .25s, border-color .25s, color .25s, box-shadow .25s;
+}
+.sp-chip:hover { background: rgba(255, 255, 255, .1); }
+.sp-chip.on { background: var(--aqua); border-color: var(--aqua); box-shadow: 0 4px 18px rgba(56, 232, 206, .32); }
+
+/* --- Жагсаалт: dividers → rounded hover --- */
+.sp-list { border: none; border-radius: 0; overflow: visible; }
+.sp-lrow.on { background: rgba(56, 232, 206, .08); }
+
+/* --- Доод player bar: glassy --- */
+.sp-bar {
+  background: rgba(9, 12, 12, .82);
+  backdrop-filter: blur(26px) saturate(1.3); -webkit-backdrop-filter: blur(26px) saturate(1.3);
+  border-top: 1px solid rgba(255, 255, 255, .07); min-height: 92px;
+}
+.sp-ctl .sp-play { width: 48px; height: 48px; box-shadow: 0 6px 18px rgba(56, 232, 206, .3); transition: transform .2s, background .25s; }
+.sp-ctl .sp-play:hover { transform: scale(1.07); }
+.sp-ctl .sp-play:active { transform: scale(.94); }
+
+/* --- Progress bar: aqua glow + hover knob --- */
+.pl-bar { height: 6px; background: rgba(255, 255, 255, .14); border-radius: var(--radius-full); transition: height .18s, box-shadow .18s; }
+.sp-seek:hover .pl-bar, .pl-bar:hover, .pl-bar:active, .pl-bar:focus-visible { height: 8px; }
+.pl-bar:focus-visible { box-shadow: var(--glow-aqua); }
+.pl-fill { background: linear-gradient(90deg, var(--aqua), #6FF3DE); box-shadow: 0 0 12px rgba(56, 232, 206, .5); }
+.pl-fill::after {
+  content: ''; position: absolute; right: 0; top: 50%; width: 13px; height: 13px; border-radius: 50%;
+  background: #fff; transform: translate(50%, -50%) scale(0); transition: transform .18s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .5);
+}
+.pl-bar:hover .pl-fill::after, .pl-bar:active .pl-fill::after, .pl-bar:focus-visible .pl-fill::after { transform: translate(50%, -50%) scale(1); }
+.pl-bar:active .pl-fill::after { transform: translate(50%, -50%) scale(1.25); }
+
+/* --- Нарийн scrollbar --- */
+.sp-main::-webkit-scrollbar, .sp-side::-webkit-scrollbar { width: 11px; }
+.sp-main::-webkit-scrollbar-track, .sp-side::-webkit-scrollbar-track { background: transparent; }
+.sp-main::-webkit-scrollbar-thumb, .sp-side::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, .1); border-radius: 100px; border: 3px solid transparent; background-clip: padding-box;
+}
+.sp-main::-webkit-scrollbar-thumb:hover, .sp-side::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, .2); background-clip: padding-box;
+}
+
+/* --- Зүүн sidebar nav (Apple Music маягийн icon-той цэс) --- */
+.sp-navcol { display: flex; flex-direction: column; gap: 4px; }
+.sp-navitem {
+  display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
+  padding: 11px 14px; border-radius: 12px; color: var(--dim); font-size: 14.5px; font-weight: 500;
+  transition: background .2s, color .2s;
+}
+.sp-navitem svg { width: 20px; height: 20px; flex: none; }
+.sp-navitem:hover { background: rgba(255, 255, 255, .06); color: var(--ink); }
+.sp-navitem.on { background: rgba(56, 232, 206, .13); color: var(--aqua); }
+.sp-navdiv { height: 1px; background: rgba(255, 255, 255, .07); margin: 14px 6px 6px; }
+
+/* --- Title-д aqua өргөлт (илүү тод) --- */
+.sp-main > .sp-h:first-of-type { position: relative; padding-bottom: 4px; }
+
+/* ============ /mobile/[token] — гар утасны хосолсон хуудас ============ */
+.mob-wrap {
+  min-height: 100svh; background: var(--bg); color: var(--ink);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.mob-inner {
+  width: 100%; max-width: 380px; display: flex; flex-direction: column;
+  align-items: center; gap: 18px; text-align: center;
+}
+.mob-state { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 0; }
+.mob-ic { font-size: 40px; }
+.mob-pulse-wrap {
+  position: relative; width: 140px; height: 140px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(56, 232, 206, .08); border: 1px solid var(--line);
+  transition: transform .15s ease, background .15s ease;
+}
+.mob-pulse-wrap.on { transform: scale(1.08); background: rgba(56, 232, 206, .22); }
+.mob-pulse-ic { font-size: 46px; }
+/* Цохилт бүрт нэг удаа гарах ripple цагираг — continuous биш, .on идэвхжих мөчид л ажиллана (GPU-хямд, transform+opacity) */
+.mob-pulse {
+  position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--aqua); opacity: 0; pointer-events: none;
+}
+.mob-pulse-wrap.on .mob-pulse { animation: mob-ripple .6s cubic-bezier(.2, .8, .2, 1); }
+@keyframes mob-ripple {
+  from { transform: scale(1); opacity: .6; }
+  to { transform: scale(1.35); opacity: 0; }
+}
+.mob-status {
+  display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim);
+}
+.mob-status.on { color: var(--aqua); }
+.mob-track { display: flex; flex-direction: column; gap: 4px; }
+.mob-track b { font-size: 20px; }
+.mob-track i { color: var(--dim); font-style: normal; }
+.mob-hint { color: var(--dim); font-size: 13px; }
+.mob-settings {
+  width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: center;
+  padding-top: 12px; border-top: 1px solid var(--line);
+}
+.mob-toggle { display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 44px; cursor: pointer; }
+.mob-toggle input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; position: relative;
+  width: 46px; height: 28px; border-radius: var(--radius-full); background: rgba(255, 255, 255, .14);
+  border: 1px solid var(--line); flex: none; cursor: pointer; transition: background .2s, border-color .2s;
+}
+.mob-toggle input[type="checkbox"]::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; transition: transform .2s cubic-bezier(.2, .8, .2, 1); box-shadow: var(--shadow-sm);
+}
+.mob-toggle input[type="checkbox"]:checked { background: var(--aqua); border-color: var(--aqua); }
+.mob-toggle input[type="checkbox"]:checked::after { transform: translateX(18px); }
+.mob-toggle input[type="checkbox"]:focus-visible { box-shadow: var(--glow-aqua); }
+@media (max-width: 860px) {
+  .sp-seg button { min-height: 44px; padding: 10px 6px; }
+}
+
+/* --- Мобайл дээр хэмжээг эргүүлж тааруулна --- */
+@media (max-width: 860px) {
+  .sp-h { font-size: clamp(22px, 6vw, 28px); }
+  .sp-navcol { flex-direction: row; flex-wrap: wrap; }
+  .sp-navitem { width: auto; }
+  .sp-navdiv { display: none; }
+}
