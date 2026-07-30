@@ -58,7 +58,7 @@ body {
 }
 
 /* тоон утга бүр ижил өргөнтэй → хүснэгт/KPI-д цифр нүүхгүй */
-.mono, .tot, .idx, .ms, .hz, .dt-pct {
+.mono, .tot, .idx, .ms, .hz {
   font-variant-numeric: tabular-nums;
 }
 
@@ -69,7 +69,7 @@ body {
 }
 
 /* урт догол мөрийн уншигдац: хэт өргөн мөрийг optical хязгаарлана */
-.head p, .step p, .hlp-card p, .ab-card-h p, .bil-plan p, .sp-banner p {
+.head p, .step p, .sp-banner p {
   max-width: 62ch;
   text-wrap: pretty;
 }
@@ -127,12 +127,6 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 section {
   padding-block: clamp(64px, 9vw, 104px);
 }
-.gal-head, .gal-prog, .gal-track {
-  padding-inline: clamp(20px, 4vw, 32px);
-}
-.hbar {
-  padding: clamp(16px, 2.4vw, 24px) clamp(20px, 4vw, 32px);
-}
 footer {
   padding-block: clamp(28px, 4vw, 40px);
 }
@@ -145,14 +139,14 @@ footer {
 /* --------------------------------------- 06 гадаргуу · карт · хүснэгт ------ */
 /* Нэг картын "хэв" — hairline highlight + зөөлөн gradient. Компонентууд Tailwind-ээр
    өөрийн дэвсгэрийг зааж байгаа тул энд зөвхөн legacy CSS-ийн картуудыг тэгшитгэв. */
-.ab-card, .bil-plan, .dv-maprow, .adm-form, .adm-cover, .sp-empty-tile {
+.ab-card, .dv-maprow {
   box-shadow: var(--hairline-top);
 }
-.ab-card, .bil-plan {
+.ab-card {
   background: var(--surf-1);
   border-color: var(--line);
 }
-.ab-card:hover, .bil-plan:hover {
+.ab-card:hover {
   border-color: var(--line-2);
 }
 
@@ -160,25 +154,10 @@ footer {
 .bil-row:not(.bil-head):hover, .crow:hover {
   background: rgba(255, 255, 255, .04);
 }
-.bil-head, .c-top {
+.c-top {
   background: rgba(255, 255, 255, .025);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-}
-
-/* хуваагч шугамууд нэг өнгөнд */
-.sp-navdiv { background: var(--line); }
-
-/* chip · pill нэгдсэн хэв маяг (жанрын шүүлтүүр, sidebar цэс, seg control) */
-.sp-chip {
-  border: 1px solid transparent;
-  font-weight: 500;
-}
-.sp-chip:not(.on):hover {
-  border-color: var(--line-2);
-}
-.sp-chip.on {
-  box-shadow: 0 4px 16px -4px rgba(56, 232, 206, .5);
 }
 
 /* нэмэлт accent tint-үүд (StatCard-ийн .c-* legacy хувилбар) — бүдэг outer glow-ийг
@@ -278,7 +257,7 @@ input[type="search"]::-webkit-search-decoration {
 
 /* ------------------------------------- 09 тоглуулагчийн нарийн өнгөлгөө ---- */
 /* дээд баар · доод баар — шилний эффект нэг зузаанд */
-.sp-top, .sp-bar {
+.sp-bar {
   border-color: var(--line);
 }
 .sp-side {
@@ -293,12 +272,6 @@ input[type="search"]::-webkit-search-decoration {
 .sp-icbtn:hover { background: rgba(255, 255, 255, .11); }
 .sp-icbtn:active { transform: scale(.94); }
 
-/* картын дээрх зүрх/хадгалах товчнууд — үргэлж уншигдахуйц дэвсгэртэй */
-.sp-like {
-  background: rgba(4, 8, 8, .62);
-  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, .6);
-}
-
 /* progress bar — цохилтын мөр тод, knob-ын сүүдэр гүн */
 .pl-fill { box-shadow: 0 0 10px rgba(56, 232, 206, .45); }
 
@@ -307,9 +280,6 @@ input[type="search"]::-webkit-search-decoration {
   border-color: var(--line-2);
   box-shadow: var(--shadow-lg);
 }
-
-/* амжилтын карт — идэвхгүй үед хэт бүдгэрч уншигдахгүй болохоос сэргийлнэ */
-.ach-card p { color: var(--dim); }
 
 /* ------------------------------- 10 хэрэглэгчийн системийн тохиргоо -------- */
 /* Илүү контраст хүссэн хэрэглэгчид (Windows/macOS-ийн "increase contrast") */
@@ -321,19 +291,12 @@ input[type="search"]::-webkit-search-decoration {
     --line-2: rgba(242, 245, 244, .34);
   }
   .mono { color: var(--dim); }
-  .state p, .ach-card p, .hlp-card p { color: #C4CFCD; }
+  .state p { color: #C4CFCD; }
 }
 
 /* Хөдөлгөөн багасгах — medreh.css-ийн блокийг нөхөж, transform-той hover-уудыг ч
    тайвшруулна (зөвхөн хөдөлгөөн, ямар ч агуулга нуугдахгүй) */
 @media (prefers-reduced-motion: reduce) {
-  .sp-card:hover .sp-cover img,
-  .slide:hover .fr canvas,
-  .slide:hover .fr img,
-  .st-card:hover,
-  .ach-card.on:hover {
-    transform: none !important;
-  }
   .skel { animation: none; background: rgba(255, 255, 255, .05); }
   .disc.spin, .badge svg { animation: none !important; }
 }
@@ -341,15 +304,14 @@ input[type="search"]::-webkit-search-decoration {
 /* Хүрэлцэх төхөөрөмж — жижиг icon товчнуудын hit-area 44px хүртэл (WCAG 2.5.8).
    Зөвхөн padding/min-size, layout-ийн бүтэц хэвээр. */
 @media (hover: none) and (pointer: coarse) {
-  .toast-x, .auth-x, .pass-eye, .plv-mini, .adm-del, .dt-cbtn {
+  .toast-x, .auth-x {
     min-width: 44px;
     min-height: 44px;
   }
-  .sp-navitem { min-height: 44px; }
 }
 
 /* Хэвлэх — бараан дэвсгэр цаас/бэхийг дэмий үрэхгүй */
 @media print {
-  .grid-bg, .glow, .cd, .cr, .dock, .toast-wrap, .pre { display: none !important; }
+  .cd, .cr, .dock, .toast-wrap, .pre { display: none !important; }
   body { background: #fff; color: #111; }
 }

@@ -50,6 +50,7 @@ export type PlayerTrack = Track & {
   artistId?: string;
   description?: string;
   releaseYear?: number;
+  duration?: number;
 };
 export type ViewName =
   | "home"

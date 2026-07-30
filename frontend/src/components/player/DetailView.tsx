@@ -25,6 +25,7 @@ function toTrack(song: Song, fallback: PlayerTrack | null, artistName?: string |
     releaseYear: song.releaseYear || fallback?.releaseYear,
     songId: song.id,
     description: song.description || fallback?.description,
+    duration: song.duration || fallback?.duration,
   };
 }
 
@@ -312,7 +313,7 @@ export default function DetailView({
                       "grid grid-cols-[64px_1fr_90px] max-nav:grid-cols-[52px_1fr_70px] gap-3 items-center px-5 py-4 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:shadow-glow-aqua border-t border-white/[.05] " +
                       (active ? "bg-aqua/[.08]" : "hover:bg-white/[.04]")
                     }
-                    onClick={() => onPlayTrack(toTrack(song, t, artist?.name))}
+                    onClick={() => onPlayTrack(song)}
                   >
                     <span className="mono text-[11px] text-dim">{String(index + 1).padStart(2, "0")}</span>
                     <span className="min-w-0">
