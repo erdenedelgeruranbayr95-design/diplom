@@ -2,22 +2,26 @@
 
 import BackBar from "./BackBar";
 import { SectionTitle } from "@/components/ui/PageHeader";
+import Icon from "@/components/ui/Icon";
 
 /* Тусламж — хэрхэн ашиглах вэ. Player.jsx-аас тусад нь гаргасан.
-   Props: onOpenCalibrate() — калибровк нээх, onBack() — нүүр рүү буцах. */
+   Props: onOpenCalibrate() — калибровк нээх, onBack() — нүүр рүү буцах.
+
+   `ic` нь emoji биш, нэгдсэн icon-ийн НЭР (components/ui/Icon.tsx) — тайлбар текст
+   болон бусад хуудсуудтай ижил зузаан/өнгөтэй, OS-оос хамааралгүй болов. */
 const ITEMS = [
-  { ic: '🎵', t: 'Дуу сонгох', d: 'Картан дээр дарахад дуу тоглоно. Хайлт болон төрлийн шүүлтүүрээр хүссэн дуугаа ол.' },
-  { ic: '📳', t: 'Чичиргээ мэдрэх', d: 'Утсан дээр нээвэл дууны хэмнэлээр утас чичирнэ. Бас = урт хүчтэй, өндөр = богино түргэн.' },
-  { ic: '💡', t: 'Гэрлээр мэдрэх', d: 'Дэлгэцийн гэрэл дууны цохилтоор лугшина. ⛶ товчоор бүтэн дэлгэцийн «Мэдрэх горим» нээгдэнэ.' },
-  { ic: '🎛', t: 'Өөрт тааруулах', d: '⚙️ цэснээс чичиргээний хүч, гэрлийн эрчим, давтамжийн бүсээ тохируул. Калибровк дахин хийж болно.' },
-  { ic: '♥', t: 'Цуглуулга', d: 'Зүрх дарж дуртай дуугаа, 🔖 дарж дараа сонсох дуугаа хадгал. Зүүн самбарт цуглана.' },
-  { ic: '💳', t: 'PRO захиалга', d: 'Үнэгүй горимд 30 сек сонсоно. PRO бол бүрэн эрхтэй — профайл цэснээс захиалгаа удирдаарай.' },
+  { ic: 'music', t: 'Дуу сонгох', d: 'Картан дээр дарахад дуу тоглоно. Хайлт болон төрлийн шүүлтүүрээр хүссэн дуугаа ол.' },
+  { ic: 'vibrate', t: 'Чичиргээ мэдрэх', d: 'Утсан дээр нээвэл дууны хэмнэлээр утас чичирнэ. Бас = урт хүчтэй, өндөр = богино түргэн.' },
+  { ic: 'bulb', t: 'Гэрлээр мэдрэх', d: 'Дэлгэцийн гэрэл дууны цохилтоор лугшина. Бүтэн дэлгэцийн товчоор «Мэдрэх горим» нээгдэнэ.' },
+  { ic: 'settings', t: 'Өөрт тааруулах', d: 'Тохиргооны цэснээс чичиргээний хүч, гэрлийн эрчим, давтамжийн бүсээ тохируул. Калибровк дахин хийж болно.' },
+  { ic: 'heart', t: 'Цуглуулга', d: 'Зүрх дарж дуртай дуугаа, хавчуургаар дараа сонсох дуугаа хадгал. Зүүн самбарт цуглана.' },
+  { ic: 'card', t: 'PRO захиалга', d: 'Үнэгүй горимд 30 сек сонсоно. PRO бол бүрэн эрхтэй — профайл цэснээс захиалгаа удирдаарай.' },
 ]
 
 const FAQ = [
   { q: 'Компьютер дээр чичиргээ гарахгүй байна?', a: 'Веб браузер зөвхөн утасны чичиргээг дэмждэг. Android утас эсвэл gamepad холбоод туршаарай — компьютер дээр гэрлийн пульс болон визуалаар мэдэрнэ.' },
   { q: 'iPhone дээр яагаад чичрэхгүй байна вэ?', a: 'iOS Safari нь чичиргээний API-г дэмждэггүй. iPhone дээр визуал болон gamepad/хантаазаар мэдрэхийг зөвлөж байна.' },
-  { q: 'Калибровкоо буруу хийчихсэн бол?', a: 'Ямар ч үед ⚙️ тохиргоо эсвэл энэ хуудаснаас дахин калибровк хийж болно. Хуучин тохиргоо автоматаар шинэчлэгдэнэ.' },
+  { q: 'Калибровкоо буруу хийчихсэн бол?', a: 'Ямар ч үед тохиргооны цэс эсвэл энэ хуудаснаас дахин калибровк хийж болно. Хуучин тохиргоо автоматаар шинэчлэгдэнэ.' },
   { q: 'Дуу 30 секундэд тасарч байна?', a: 'Энэ бол үнэгүй горимын урьдчилан сонсголт. PRO захиалга авбал бүх дууг бүтнээр нь хязгааргүй сонсоно.' },
   { q: 'Хадгалсан дуу, тохиргоо минь алга болох уу?', a: 'Одоогийн демо хувилбар өгөгдлийг зөвхөн энэ төхөөрөмжид хадгална. Production хувилбарт бүртгэлээр олон төхөөрөмж хооронд sync хийгдэнэ.' },
 ]
@@ -29,11 +33,11 @@ export default function HelpView({ onOpenCalibrate, onBack }: { onOpenCalibrate:
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3.5">
         {ITEMS.map((x) => (
           <div
-            className="border border-line rounded-[13px] p-[22px] bg-[rgba(20,28,27,.4)] flex flex-col gap-[9px] transition-[border-color,transform] duration-300 hover:border-[rgba(56,232,206,.35)] hover:-translate-y-[3px]"
+            className="border border-line rounded-[13px] p-[22px] [background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))] shadow-[inset_0_1px_0_rgba(255,255,255,.05)] flex flex-col gap-2.5 transition-[border-color,transform] duration-300 hover:border-aqua/35 hover:-translate-y-[3px] motion-reduce:hover:translate-y-0"
             key={x.t}
           >
-            <span className="text-[26px]" aria-hidden="true">
-              {x.ic}
+            <span className="w-11 h-11 mb-1 rounded-xl flex items-center justify-center text-aqua bg-aqua/[.10] shadow-[inset_0_0_0_1px_rgba(56,232,206,.22)]" aria-hidden="true">
+              <Icon name={x.ic} size={22} />
             </span>
             <b className="text-[15.5px] font-semibold">{x.t}</b>
             <p className="text-dim text-[13px] leading-[1.55]">{x.d}</p>
@@ -61,16 +65,17 @@ export default function HelpView({ onOpenCalibrate, onBack }: { onOpenCalibrate:
         ))}
       </div>
 
-      <div className="mt-8 rounded-2xl p-6 max-nav:flex-col flex justify-between items-center gap-6 flex-wrap [background:linear-gradient(120deg,rgba(56,232,206,.14),rgba(14,92,83,.25)_55%,rgba(9,14,14,.4))]">
-        <div>
-          <b className="block font-display font-semibold text-[15px] mb-1">Мэдрэхүйн калибровк</b>
-          <p className="text-dim text-[13px] leading-[1.5]">Таны мэдрэх босгыг 1 минутын тестээр тодорхойлж, тохиргоог автоматаар тааруулна.</p>
+      <div className="mt-8 rounded-2xl p-6 max-nav:p-5 max-nav:flex-col max-nav:items-start flex justify-between items-center gap-6 flex-wrap border border-aqua/[.22] shadow-[inset_0_1px_0_rgba(255,255,255,.07)] [background:linear-gradient(120deg,rgba(56,232,206,.16),rgba(14,92,83,.26)_55%,rgba(9,14,14,.45))]">
+        <div className="min-w-0">
+          <b className="block font-display font-semibold text-[15.5px] tracking-[-.02em] mb-1.5">Мэдрэхүйн калибровк</b>
+          <p className="text-ink/70 text-[13px] leading-[1.55] max-w-[62ch]">Таны мэдрэх босгыг 1 минутын тестээр тодорхойлж, тохиргоог автоматаар тааруулна.</p>
         </div>
         <button
-          className="rounded-full text-[13.5px] font-semibold bg-aqua text-[#04100E] py-2.5 px-5 transition-[background,transform] duration-200 hover:bg-[#6FF3DE] active:scale-[.97] focus-visible:outline-none focus-visible:shadow-glow-aqua flex-none"
+          className="inline-flex items-center justify-center gap-2 rounded-full text-[13.5px] font-semibold bg-aqua text-[#04100E] py-2.5 px-5 min-h-[38px] shadow-[inset_0_1px_0_rgba(255,255,255,.35),0_4px_14px_-4px_rgba(56,232,206,.5)] transition-[background,transform] duration-200 hover:bg-[#6FF3DE] active:scale-[.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:shadow-glow-aqua flex-none"
           onClick={onOpenCalibrate}
         >
-          🎛 Калибровк эхлүүлэх
+          <Icon name="sliders" size={16} />
+          Калибровк эхлүүлэх
         </button>
       </div>
     </>

@@ -12,6 +12,7 @@ import { connectPhoneSocket, type BeatEvent, type TrackInfo } from "@/lib/socket
 import { getQrSession } from "@/lib/api/client";
 import { VIB_LEVELS } from "@/lib/player/constants";
 import type { Socket } from "socket.io-client";
+import Icon from "@/components/ui/Icon";
 
 type PageState = "loading" | "waiting" | "connected" | "expired" | "error";
 
@@ -136,8 +137,8 @@ export default function MobilePage() {
 
         {state === "error" && (
           <div className="flex flex-col items-center gap-2.5 py-10">
-            <span className="text-[40px]" aria-hidden="true">
-              ⚠️
+            <span className="w-16 h-16 rounded-full flex items-center justify-center text-[#FF8A8A] bg-[rgba(233,111,111,.12)] shadow-[inset_0_0_0_1px_rgba(233,111,111,.28)]" aria-hidden="true">
+              <Icon name="alert" size={28} />
             </span>
             <b className="text-ink font-display font-normal text-lg">Холбогдож чадсангүй</b>
             <p className="text-dim text-sm">Линк буруу эсвэл сесс олдсонгүй.</p>
@@ -159,8 +160,8 @@ export default function MobilePage() {
                 }
                 aria-hidden="true"
               ></span>
-              <span className="text-[46px]" aria-hidden="true">
-                📳
+              <span className="text-aqua" aria-hidden="true">
+                <Icon name="vibrate" size={46} strokeWidth={1.4} />
               </span>
             </div>
 
@@ -216,7 +217,10 @@ export default function MobilePage() {
                 onClick={testVibration}
                 disabled={!vibrateSupported}
               >
-                {vibrateSupported ? "📳 Турших" : "Энэ төхөөрөмж дэмжихгүй"}
+                <span className="inline-flex items-center justify-center gap-2">
+                  {vibrateSupported && <Icon name="vibrate" size={15} />}
+                  {vibrateSupported ? "Турших" : "Энэ төхөөрөмж дэмжихгүй"}
+                </span>
               </button>
             </div>
           </>

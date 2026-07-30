@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Empty } from "@/components/ui/States";
 import StatusBadge, { type StatusTone } from "@/components/ui/StatusBadge";
+import Icon from "@/components/ui/Icon";
 import { useToast } from "@/components/providers/ToastProvider";
 import ConfirmDialog from "./ConfirmDialog";
 import PaymentRequestDrawer from "./PaymentRequestDrawer";
@@ -99,18 +100,17 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
   return (
     <>
       <div className="grid grid-cols-4 max-viz:grid-cols-2 gap-3 my-5 mb-6">
-        <StatCard icon="👥" value={totalUsers} label="Нийт хэрэглэгч" tone="aqua" />
-        <StatCard icon="💎" value={proUsers} label="PRO хэрэглэгч" tone="warm" />
-        <StatCard icon="🟡" value={pendingCount} label="Хүлээгдэж буй" tone="warm" />
-        <StatCard icon="📈" value="—" label="Сарын орлого" tone="faint" />
+        <StatCard icon="users" value={totalUsers} label="Нийт хэрэглэгч" tone="aqua" />
+        <StatCard icon="crown" value={proUsers} label="PRO хэрэглэгч" tone="warm" />
+        <StatCard icon="hourglass" value={pendingCount} label="Хүлээгдэж буй" tone="warm" />
+        <StatCard icon="trend" value="—" label="Сарын орлого" tone="faint" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5 mb-4">
         <div className="relative flex-1 min-w-[180px]">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-faint pointer-events-none" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.5" y2="16.5" />
-          </svg>
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dim pointer-events-none flex" aria-hidden="true">
+            <Icon name="search" size={15} />
+          </span>
           <input
             className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/[.04] border border-white/[.08] text-ink text-[13.5px] transition-[border-color,box-shadow,background] duration-250 focus:bg-white/[.06] focus:border-aqua/60 focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint"
             placeholder="Нэр, имэйл, планаар хайх…"
@@ -142,7 +142,7 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
       </div>
 
       {filtered.length === 0 ? (
-        <Empty icon="💳" title="Одоогоор төлбөр байхгүй." hint={q || statusFilter !== "ALL" ? "Шүүлтэд тохирох хүсэлт алга" : "Хэрэглэгч PRO авахаар хүсэлт илгээмэгц энд харагдана"} />
+        <Empty icon="card" title="Одоогоор төлбөр байхгүй." hint={q || statusFilter !== "ALL" ? "Шүүлтэд тохирох хүсэлт алга" : "Хэрэглэгч PRO авахаар хүсэлт илгээмэгц энд харагдана"} />
       ) : (
         <>
           {/* Desktop — бүрэн 7 багана. Tablet (compact, max-viz ≤1020px) — Хэрэгсэл/Огноо
@@ -169,7 +169,7 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
                 <span className="text-dim truncate max-viz:hidden">{r.method}</span>
                 <span className="font-mono text-[11px] text-faint max-viz:hidden">{new Date(r.submittedAt).toLocaleDateString("mn-MN")}</span>
                 <StatusBadge label={STATUS_LABEL[r.status]} tone={STATUS_TONE[r.status]} />
-                <span className="text-faint text-[11px]">Дэлгэрэнгүй →</span>
+                <span className="text-dim text-[11px] inline-flex items-center gap-1">Дэлгэрэнгүй<Icon name="chevronRight" size={11} strokeWidth={2.2} /></span>
               </button>
             ))}
           </div>
@@ -216,16 +216,23 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
   );
 }
 
+/* Нийтлэг player/StatCard.tsx-тэй ижил визуал хэв маягт нийцүүлэв (ижил icon-tile
+   хэмжээ/радиус, inset hairline, tabular тоо, min-height) — `icon` prop-ийн төрөл
+   (string) хэвээр, зөвхөн emoji-ийн оронд нэгдсэн icon-ийн нэр дамжуулна. */
 function StatCard({ icon, value, label, tone }: { icon: string; value: number | string; label: string; tone: "aqua" | "warm" | "faint" }) {
-  const toneCls = { aqua: "bg-aqua/[.1] text-aqua", warm: "bg-warm/[.1] text-warm", faint: "bg-white/[.06] text-faint" }[tone];
+  const toneCls = {
+    aqua: "bg-aqua/[.10] text-aqua shadow-[inset_0_0_0_1px_rgba(56,232,206,.22)]",
+    warm: "bg-warm/[.10] text-warm shadow-[inset_0_0_0_1px_rgba(217,165,76,.24)]",
+    faint: "bg-white/[.06] text-dim shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]",
+  }[tone];
   return (
-    <div className="flex items-start gap-3 p-4 rounded-2xl border border-white/[.08] bg-white/[.03] transition-colors duration-200 hover:bg-white/[.05]">
-      <span className={"w-10 h-10 flex-none rounded-xl flex items-center justify-center text-[16px] " + toneCls} aria-hidden="true">
-        {icon}
+    <div className="group flex items-center gap-4 min-h-[88px] py-4 px-5 rounded-2xl border border-white/[.07] [background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012))] shadow-[inset_0_1px_0_rgba(255,255,255,.05)] transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(.16,.8,.24,1)] hover:-translate-y-[3px] hover:border-white/[.14] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.07),0_10px_28px_-8px_rgba(0,0,0,.55)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+      <span className={"w-[42px] h-[42px] flex-none rounded-[13px] flex items-center justify-center " + toneCls} aria-hidden="true">
+        <Icon name={icon} size={21} />
       </span>
       <div className="min-w-0">
-        <b className="block font-display text-[22px] leading-tight">{value}</b>
-        <span className="mono !text-[9px]">{label}</span>
+        <b className="block font-display font-bold text-[clamp(18px,1.8vw,23px)] leading-[1.1] tracking-[-.03em] tabular-nums truncate">{value}</b>
+        <span className="font-mono text-[9.5px] uppercase tracking-[.16em] leading-[1.4] text-dim">{label}</span>
       </div>
     </div>
   );

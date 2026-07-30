@@ -1,5 +1,7 @@
 "use client";
 
+import Icon from "@/components/ui/Icon";
+
 /* HistoryView.tsx-ийн хайлтын форм — премиум search field (icon + clear button) руу
    шинэчлэв. q/setQ/onSubmit бүгд хэвээр, зөвхөн визуал давхарга шинэчлэгдсэн. */
 export default function HistoryToolbar({ q, setQ, onSubmit }: { q: string; setQ: (v: string) => void; onSubmit: (e: React.FormEvent) => void }) {
@@ -34,7 +36,7 @@ export default function HistoryToolbar({ q, setQ, onSubmit }: { q: string; setQ:
             onClick={() => setQ("")}
             aria-label="Хайлт цэвэрлэх"
           >
-            ✕
+            <Icon name="close" size={13} />
           </button>
         )}
       </div>

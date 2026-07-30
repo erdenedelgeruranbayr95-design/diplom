@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import { useLatency, latencyQuality, type LatencyQuality } from "@/lib/socket/useLatency";
 import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
+import Icon from "@/components/ui/Icon";
 
 const QUALITY_LABEL: Record<Exclude<LatencyQuality, null>, string> = {
   excellent: "Маш сайн",
@@ -62,7 +63,7 @@ export default function DeviceCard({
         >
           <div className="rounded-[22.5px] p-5 bg-[rgba(13,19,18,.78)] backdrop-blur-2xl shadow-[0_18px_50px_rgba(0,0,0,.45)]">
             <div className="flex items-center justify-between mb-4">
-              <b className="font-display font-semibold text-[14px] text-ink">📱 Холбогдсон төхөөрөмж</b>
+              <b className="font-display font-semibold text-[14px] text-ink flex items-center gap-2"><span className="text-aqua flex" aria-hidden="true"><Icon name="device" size={15} /></span>Холбогдсон төхөөрөмж</b>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-aqua" aria-live="polite">
                 <motion.i
                   className="w-[7px] h-[7px] rounded-full bg-aqua flex-none"

@@ -11,6 +11,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useClosingTransition } from "@/lib/ui/useClosingTransition";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import type { SessionUser } from "@/types/auth";
+import Icon from "@/components/ui/Icon";
 
 const labelCls = "flex flex-col gap-1.5";
 const captionCls = "mono !text-[9px]";
@@ -159,7 +160,7 @@ export default function AuthModal({
           onClick={handleClose}
           aria-label="Хаах"
         >
-          ✕
+          <Icon name="close" size={15} />
         </button>
 
         <span className="mono block mb-4">МЭДРЭХ® / Хандалт</span>
@@ -240,7 +241,8 @@ export default function AuthModal({
           )}
 
           <ActionButton type="submit" variant="primary" disabled={busy}>
-            {mode === "login" ? "Нэвтрэх →" : "Бүртгүүлэх →"}
+            {mode === "login" ? "Нэвтрэх" : "Бүртгүүлэх"}
+            <Icon name="arrowRight" size={15} />
           </ActionButton>
         </form>
 

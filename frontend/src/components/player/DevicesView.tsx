@@ -7,6 +7,7 @@ import { SectionTitle } from "@/components/ui/PageHeader";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import { useToast } from "@/components/providers/ToastProvider";
 import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
+import Icon from "@/components/ui/Icon";
 
 /* Төхөөрөмж холбох — утас / gamepad / BLE хантааз + тест + давтамж→байрлал оноолт.
    Дизайн баримт §12-ийн device abstraction-ий UI хувилбар. Премиум dashboard дизайн руу
@@ -113,15 +114,15 @@ export default function DevicesView({
   }
 
   const devices = [
-    { key: 'phone', icon: '📱', name: 'Утас (чичиргээ)', desc: 'Android Chrome дээр шууд ажиллана. iOS дэмжихгүй.',
+    { key: 'phone', icon: 'device', name: 'Утас (чичиргээ)', desc: 'Android Chrome дээр шууд ажиллана. iOS дэмжихгүй.',
       status: canVibrate ? 'Бэлэн' : 'Дэмжигдэхгүй', ok: canVibrate, action: testPhone, actionLabel: 'Тест' },
-    { key: 'qr', icon: '🔗', name: 'QR-ээр холбох (алсаас)', desc: 'Гар утсаараа QR уншуулж, тоглуулж буй дуутай синхроноор чичирнэ.',
+    { key: 'qr', icon: 'link', name: 'QR-ээр холбох (алсаас)', desc: 'Гар утсаараа QR уншуулж, тоглуулж буй дуутай синхроноор чичирнэ.',
       status: qrStatusLabel[deviceSync.qrState], ok: deviceSync.qrState === 'connected', action: connectQr,
       actionLabel: deviceSync.qrState === 'connected' ? 'Холбогдсон' : deviceSync.qrState === 'idle' || deviceSync.qrState === 'error' ? 'Холбох' : 'Хүлээж байна…',
       disabled: deviceSync.qrState === 'connected' || deviceSync.qrState === 'loading' || deviceSync.qrState === 'waiting' },
-    { key: 'gamepad', icon: '🎮', name: 'Gamepad (rumble)', desc: 'USB/Bluetooth джойстик — 2 моторт, эрчимтэй чичиргээ.',
+    { key: 'gamepad', icon: 'gamepad', name: 'Gamepad (rumble)', desc: 'USB/Bluetooth джойстик — 2 моторт, эрчимтэй чичиргээ.',
       status: gamepad ? ('Холбогдсон: ' + (gamepad.id?.slice(0, 22) || 'gamepad')) : 'Холбогдоогүй', ok: !!gamepad, action: testGamepad, actionLabel: 'Тест' },
-    { key: 'ble', icon: '🦺', name: 'BLE хаптик хантааз', desc: 'Олон моторт хантааз/суудал — биеийн бүсээр tonotopic мэдрэмж.',
+    { key: 'ble', icon: 'vest', name: 'BLE хаптик хантааз', desc: 'Олон моторт хантааз/суудал — биеийн бүсээр tonotopic мэдрэмж.',
       status: (navigator as any).bluetooth ? 'Холбоход бэлэн' : 'Браузер дэмжихгүй', ok: !!(navigator as any).bluetooth, action: connectBLE, actionLabel: 'Холбох' },
   ]
 
@@ -140,7 +141,17 @@ export default function DevicesView({
               (d.ok ? "border-aqua/35" : "border-white/[.08]")
             }
           >
-            <span className="text-[30px] leading-none" aria-hidden="true">{d.icon}</span>
+            <span
+              className={
+                "w-11 h-11 mb-1 flex-none rounded-xl flex items-center justify-center transition-colors duration-250 " +
+                (d.ok
+                  ? "text-aqua bg-aqua/[.10] shadow-[inset_0_0_0_1px_rgba(56,232,206,.22)]"
+                  : "text-dim bg-white/[.06] shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]")
+              }
+              aria-hidden="true"
+            >
+              <Icon name={d.icon} size={22} />
+            </span>
             <b className="font-display font-normal text-[15px] text-ink">{d.name}</b>
             <p className="flex-1 m-0 text-dim text-[12.5px] leading-[1.5]">{d.desc}</p>
             <span className={"inline-flex items-center gap-[7px] font-mono text-[10.5px] transition-colors duration-300 " + (d.ok ? "text-aqua" : "text-dim")}>
@@ -178,11 +189,11 @@ export default function DevicesView({
               }
               aria-hidden="true"
             >
-              ✓
+              <Icon name="check" size={26} strokeWidth={2.4} />
             </span>
           )}
           <div>
-            <b className="block font-display font-semibold text-[15px] mb-1">{deviceSync.qrState === 'connected' ? '✓ Утас холбогдлоо' : 'Утсаараа QR кодыг уншуулна уу'}</b>
+            <b className="block font-display font-semibold text-[15px] mb-1">{deviceSync.qrState === 'connected' ? 'Утас холбогдлоо' : 'Утсаараа QR кодыг уншуулна уу'}</b>
             <p className="text-dim text-[13px] leading-[1.5]">{deviceSync.qrState === 'connected' ? 'Тоглуулж буй дуутай синхроноор чичирнэ.' : 'Камер апп нээгээд кодыг чиглүүлнэ үү — линк автоматаар нээгдэнэ.'}</p>
           </div>
         </div>
@@ -200,10 +211,12 @@ export default function DevicesView({
               onClick={() => testZone(band)}
               aria-label={BAND_LABEL[band] + ' туршиж үзэх'}
             >
-              ▶
+              <span className="flex items-center justify-center pl-0.5" aria-hidden="true">
+                <Icon name="chevronRight" size={16} strokeWidth={2.4} />
+              </span>
             </button>
             <span className="flex-1 text-sm text-ink">{BAND_LABEL[band]}</span>
-            <span className="text-faint" aria-hidden="true">→</span>
+            <span className="text-dim flex" aria-hidden="true"><Icon name="arrowRight" size={14} /></span>
             <select
               className="min-w-[130px] min-h-11 p-[12px_14px] rounded-lg bg-white/[.04] border border-white/[.08] text-ink text-[14.5px] font-[inherit] transition-[border-color,box-shadow] duration-300 focus:border-aqua focus-visible:outline-none focus-visible:shadow-glow-aqua"
               value={map[band]}

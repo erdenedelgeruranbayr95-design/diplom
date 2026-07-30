@@ -8,6 +8,7 @@
 import { Loading, Empty } from "@/components/ui/States";
 import StatusBadge from "@/components/ui/StatusBadge";
 import type { Song } from "@/types/song";
+import Icon from "@/components/ui/Icon";
 
 const labelCls = "flex flex-col gap-1.5";
 const captionCls = "mono !text-[9px]";
@@ -64,7 +65,7 @@ export default function SongLibraryPanel({
         </div>
 
         <label className={labelCls}>
-          <span className={captionCls}>🎵 Дууны файл (mp3) *</span>
+          <span className={captionCls + " inline-flex items-center gap-2"}><Icon name="music" size={13} />Дууны файл (mp3) *</span>
           <div className="border border-dashed border-white/[.14] rounded-xl p-4 bg-white/[.015] transition-colors duration-200 hover:border-aqua/40 [&_input]:text-[12px] [&_input]:text-dim [&_input::file-selector-button]:bg-aqua/[.12] [&_input::file-selector-button]:text-aqua [&_input::file-selector-button]:border [&_input::file-selector-button]:border-aqua/35 [&_input::file-selector-button]:rounded-full [&_input::file-selector-button]:py-1.5 [&_input::file-selector-button]:px-3.5 [&_input::file-selector-button]:mr-2.5 [&_input::file-selector-button]:font-body [&_input::file-selector-button]:text-[12px] [&_input::file-selector-button]:cursor-pointer">
             <input name="audio" type="file" accept="audio/*" />
           </div>
@@ -85,7 +86,7 @@ export default function SongLibraryPanel({
       </form>
 
       {loading && <Loading label="Дуунууд ачааллаж байна…" />}
-      {!loading && songs.length === 0 && <Empty icon="🎵" title="Backend-д нэмсэн дуу алга" hint="Дээрх формоор шинэ дуу нэмээрэй" />}
+      {!loading && songs.length === 0 && <Empty icon="music" title="Backend-д нэмсэн дуу алга" hint="Дээрх формоор шинэ дуу нэмээрэй" />}
       {!loading && songs.length > 0 && (
         <div className="border border-white/[.08] rounded-2xl max-h-[320px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]">
           <div className="grid grid-cols-[1.6fr_.8fr_.8fr_auto] max-[600px]:grid-cols-[1fr_auto] gap-3 items-center py-3 px-4 border-b border-white/[.08] text-[12.5px] bg-white/[.02] sticky top-0 z-[1]">

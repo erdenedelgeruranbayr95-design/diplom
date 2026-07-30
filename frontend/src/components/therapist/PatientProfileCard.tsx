@@ -9,6 +9,7 @@ import StatCard from "@/components/player/StatCard";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { ICONS } from "@/lib/player/constants";
 import type { AssignedPatient } from "@/types/therapy";
+import Icon from "@/components/ui/Icon";
 
 export default function PatientProfileCard({
   patient,
@@ -35,17 +36,18 @@ export default function PatientProfileCard({
           </div>
         </div>
         <button
-          className="rounded-full text-[13px] font-medium text-dim border border-white/[.1] py-2 px-4 whitespace-nowrap transition-colors duration-250 hover:text-aqua hover:border-aqua/40 focus-visible:outline-none focus-visible:shadow-glow-aqua flex-none"
+          className="inline-flex items-center gap-2 rounded-full text-[13px] font-medium text-dim border border-white/[.1] py-2 px-4 min-h-[36px] whitespace-nowrap transition-[color,border-color,background] duration-250 hover:text-aqua hover:border-aqua/40 hover:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua flex-none"
           onClick={onBack}
         >
-          ← Жагсаалт руу
+          <Icon name="arrowLeft" size={14} />
+          Жагсаалт руу
         </button>
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
-        <StatCard icon={ICONS.music} color="c-aqua" value={totalSessions} label="Нийт сесс" />
-        <StatCard icon={ICONS.star} color="c-gold" value={completedSessions} label="Дууссан сесс" />
-        <StatCard icon={ICONS.vibrate} color="c-rose" value={progressEntries} label="Ахицын бичлэг" />
+        <StatCard icon={ICONS.activity} color="c-aqua" value={totalSessions} label="Нийт сесс" />
+        <StatCard icon={ICONS.check} color="c-gold" value={completedSessions} label="Дууссан сесс" />
+        <StatCard icon={ICONS.trend} color="c-rose" value={progressEntries} label="Ахицын бичлэг" />
       </div>
     </>
   );

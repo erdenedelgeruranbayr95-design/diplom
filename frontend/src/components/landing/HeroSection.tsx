@@ -1,3 +1,5 @@
+import Icon from "@/components/ui/Icon";
+
 export default function HeroSection() {
   return (
     <header className="hero" id="hero">
@@ -94,7 +96,9 @@ export default function HeroSection() {
             <textPath href="#cp">ДООШ ГҮЙЛГЭЖ ҮЗ · ДООШ ГҮЙЛГЭЖ ҮЗ · </textPath>
           </text>
         </svg>
-        <span className="arw">↓</span>
+        <span className="arw">
+          <Icon name="arrowDown" size={17} strokeWidth={1.6} />
+        </span>
       </div>
     </header>
   );

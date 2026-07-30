@@ -2,6 +2,7 @@
 
 /* Апп даяар мэдэгдэл (alert()-ийн оронд). useToast().success/error/info */
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import Icon from "@/components/ui/Icon";
 
 type ToastType = "success" | "error" | "info";
 interface ToastItem {
@@ -44,7 +45,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     dismiss: remove,
   };
 
-  const icon: Record<ToastType, string> = { success: "✓", error: "⚠", info: "ℹ" };
+  /* toast-ийн icon: "✓ ⚠ ℹ" текст глиф → нэгдсэн SVG (шрифт/OS-оос хамааралгүй,
+     бусад icon-той ижил зузаан). ToastType-ийн утга/логик өөрчлөгдөөгүй. */
+  const icon: Record<ToastType, string> = { success: "check", error: "alert", info: "info" };
 
   return (
     <ToastCtx.Provider value={api}>
@@ -53,11 +56,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((t) => (
           <div key={t.id} className={"toast toast-" + t.type} role="status">
             <span className="toast-ic" aria-hidden="true">
-              {icon[t.type] || icon.info}
+              <Icon name={icon[t.type] || icon.info} size={13} strokeWidth={2.4} />
             </span>
             <p>{t.text}</p>
             <button className="toast-x focus-visible:outline-none focus-visible:shadow-glow-aqua" onClick={() => remove(t.id)} aria-label="Хаах">
-              ✕
+              <Icon name="close" size={13} strokeWidth={2.2} />
             </button>
           </div>
         ))}

@@ -5,6 +5,7 @@
    legacy CSS-ээс Tailwind руу хөрвүүлсэн. rows/page/totalPages/setPage/onOpenAnalysis/
    onRemove бүх prop/callback хэвээр, зөвхөн визуал давхарга шинэчлэгдсэн. */
 import type { ListenHistoryRow } from "@/types/song";
+import Icon from "@/components/ui/Icon";
 
 export default function HistoryTable({
   rows,
@@ -64,7 +65,7 @@ export default function HistoryTable({
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             aria-label="Өмнөх хуудас"
           >
-            ←
+            <Icon name="arrowLeft" size={15} />
           </button>
           <span className="mono !text-[10px]">
             {page} / {totalPages}
@@ -75,7 +76,7 @@ export default function HistoryTable({
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             aria-label="Дараах хуудас"
           >
-            →
+            <Icon name="arrowRight" size={15} />
           </button>
         </div>
       )}

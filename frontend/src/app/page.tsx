@@ -34,14 +34,17 @@ export default function Page() {
 
   const [authOpen, setAuthOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
-  /* нэвтэрсэн хэрэглэгч (сесс сэргээх/reload үед ч) шууд Player app руу орно —
-     landing/marketing нь зөвхөн зочдод зориулагдана */
-  const [playerOpen, setPlayerOpen] = useState(!!user);
-  const [subOpen, setSubOpen] = useState(false);
+  /* Landing нь ҮРГЭЛЖ эхэлж харагдана — нэвтэрсэн хэрэглэгчийн хувьд ч мөн адил.
+     Өмнө нь `useState(!!user)` + `useEffect(() => { if (user) setPlayerOpen(true) })`
+     гэсэн 2 газраас Player-ийг автоматаар нээдэг байсан тул сесстэй хэрэглэгч landing-ийг
+     хэзээ ч харах боломжгүй, reload хийх бүрд шууд Player дээр бууж байв.
 
-  useEffect(() => {
-    if (user) setPlayerOpen(true);
-  }, [user]);
+     Player руу орох замууд хэвээр:
+       · Dock-ийн «Тоглуулагч» товч → openPlayer()  (нэвтэрсэн үед л харагдана)
+       · Шинээр нэвтрэх/бүртгүүлэх   → handleAuth()  (AuthModal-ийн onAuth)
+     Player доторх ✕ товч буцаад landing руу гаргана (onClose). */
+  const [playerOpen, setPlayerOpen] = useState(false);
+  const [subOpen, setSubOpen] = useState(false);
 
   const handleAuth = () => {
     setPlayerOpen(true);

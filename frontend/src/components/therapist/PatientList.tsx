@@ -8,6 +8,7 @@ import { Loading, Empty, ErrorState } from "@/components/ui/States";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import type { AssignedPatient } from "@/types/therapy";
+import Icon from "@/components/ui/Icon";
 
 export default function PatientList({
   loading,
@@ -45,7 +46,7 @@ export default function PatientList({
       {loading && <Loading label="Хэрэглэгчид ачааллаж байна…" />}
       {!loading && err && <ErrorState title="Ачаалагдсангүй" hint={err} onRetry={onRetry} />}
       {!loading && !err && patients.length === 0 && (
-        <Empty icon="🧑‍⚕️" title="Томилогдсон хэрэглэгч алга" hint="Админ таныг хэрэглэгчид томилохыг хүлээнэ үү" />
+        <Empty icon="stethoscope" title="Томилогдсон хэрэглэгч алга" hint="Админ таныг хэрэглэгчид томилохыг хүлээнэ үү" />
       )}
 
       {!loading && !err && patients.length > 0 && (
@@ -68,7 +69,8 @@ export default function PatientList({
               <span className="text-dim whitespace-nowrap overflow-hidden text-ellipsis max-[760px]:hidden">{p.patient.email}</span>
               <span className="text-faint font-mono text-[11px]">{new Date(p.createdAt).toLocaleDateString("mn-MN")}</span>
               <ActionButton variant="primary" size="sm" className="justify-self-end" onClick={() => onSelect(p)}>
-                Нээх →
+                Нээх
+                <Icon name="arrowRight" size={13} />
               </ActionButton>
             </div>
           ))}

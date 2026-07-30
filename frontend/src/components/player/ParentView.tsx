@@ -19,6 +19,7 @@ import ProgressChartCard from "@/components/ui/ProgressChartCard";
 import RecommendationPanel from "@/components/parent/RecommendationPanel";
 import SessionHistoryTable from "@/components/parent/SessionHistoryTable";
 import type { LinkedChild, TherapySession, Progress } from "@/types/therapy";
+import Icon from "@/components/ui/Icon";
 
 export default function ParentView({ onGoHome }: { onGoHome: () => void }) {
   const [children, setChildren] = useState<LinkedChild[]>([]);
@@ -53,7 +54,7 @@ export default function ParentView({ onGoHome }: { onGoHome: () => void }) {
       {loading && <Loading label="Ачааллаж байна…" />}
       {!loading && err && <ErrorState title="Ачаалагдсангүй" hint={err} onRetry={load} />}
       {!loading && !err && children.length === 0 && (
-        <Empty icon="👨‍👩‍👧" title="Холбогдсон хүүхэд алга" hint="Админ таныг хүүхэдтэй холбохыг хүлээнэ үү" />
+        <Empty icon="family" title="Холбогдсон хүүхэд алга" hint="Админ таныг хүүхэдтэй холбохыг хүлээнэ үү" />
       )}
 
       {!loading && !err && children.length > 0 && (
@@ -76,7 +77,8 @@ export default function ParentView({ onGoHome }: { onGoHome: () => void }) {
               <span className="text-dim whitespace-nowrap overflow-hidden text-ellipsis max-[760px]:hidden">{c.child.email}</span>
               <span className="text-faint font-mono text-[11px]">{new Date(c.createdAt).toLocaleDateString("mn-MN")}</span>
               <ActionButton variant="primary" size="sm" className="justify-self-end" onClick={() => setSelected(c)}>
-                Нээх →
+                Нээх
+                <Icon name="arrowRight" size={13} />
               </ActionButton>
             </div>
           ))}
@@ -86,7 +88,7 @@ export default function ParentView({ onGoHome }: { onGoHome: () => void }) {
       <PromoBanner
         title="Тоглуулагч руу шилжих"
         description="Аппын бусад боломжуудыг үзээрэй."
-        actionLabel="🎧 Тоглуулагч нээх"
+        actionLabel="Тоглуулагч нээх"
         onAction={onGoHome}
       />
     </>

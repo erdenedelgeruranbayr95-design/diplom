@@ -8,6 +8,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import { useFocusTrap } from "@/lib/ui/useFocusTrap";
 import type { AdminPaymentRequest } from "@/lib/data/admin-payment-requests";
+import Icon from "@/components/ui/Icon";
 
 const STATUS_LABEL: Record<AdminPaymentRequest["status"], string> = {
   PENDING: "Хүлээгдэж байна",
@@ -77,7 +78,7 @@ export default function PaymentRequestDrawer({
                 onClick={onClose}
                 aria-label="Хаах"
               >
-                ✕
+                <Icon name="close" size={15} />
               </button>
             </div>
 

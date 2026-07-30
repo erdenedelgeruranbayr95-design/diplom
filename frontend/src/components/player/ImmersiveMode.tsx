@@ -8,6 +8,7 @@ import type { MutableRefObject } from "react";
 import type { Track } from "@/types/track";
 import Visualizer from "./Visualizer";
 import type { VizMode, VizLevels, BeatFlash } from "@/lib/player/visualizer-modes";
+import Icon from "@/components/ui/Icon";
 
 const MODES: { v: VizMode; label: string }[] = [
   { v: "bars", label: "Спектр" },
@@ -154,7 +155,7 @@ export default function ImmersiveMode({
           aria-pressed={viz.particles}
           title="Тоосонцор эффект"
         >
-          ✨ Тоосонцор
+          <Icon name="sparkle" size={14} /> Тоосонцор
         </button>
       </div>
 

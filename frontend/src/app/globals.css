@@ -1,11 +1,3 @@
-/* Эх сурвалж (React+Vite) CSS-ийг өөрчлөлтгүй импортолсон. Tailwind preflight
-   одоогийн handwritten reset (*{box-sizing:border-box;margin:0;padding:0} гэх мэт)-тэй
-   мөргөлддөг тул preflight.css-г зориудаар импортлоогүй (зөвхөн theme + utilities) —
-   UI-г "яг хэвээр" байлгах шаардлагыг эрхэмлэв. Энэ бол зөвхөн тохиргоо: доорх
-   @theme нь одоо байгаа --bg, --aqua, --radius-md, --shadow-sm, --sp-4 гэх мэт custom
-   property-уудыг Tailwind-ийн theme рүү mapping хийнэ (medreh.css:2-20-тэй ижил утгууд, шинээр
-   зохиогоогүй) — component-үүд Tailwind класс ашиглаж эхлээгүй байгаа тул
-   визуал өөрчлөлт байхгүй. */
 @import "tailwindcss/theme.css";
 @import "tailwindcss/utilities.css";
 @config "../../tailwind.config.ts";
@@ -14,7 +6,7 @@
   --color-bg: #070a0a;
   --color-ink: #f2f5f4;
   --color-dim: #778583;
-  --color-faint: #4e5b59;
+  --color-faint: #6e7c7a;
   --color-aqua: #38e8ce;
   --color-warm: #d9a54c;
   --color-purple: #b49cff;
@@ -60,3 +52,39 @@
 
 @import "./medreh.css";
 @import "./ui.css";
+@import "./polish.css";
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: #070a0a;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(1000px 520px at 15% -10%, rgba(56, 232, 206, 0.08), transparent 52%),
+    radial-gradient(900px 460px at 88% 10%, rgba(180, 156, 255, 0.05), transparent 54%),
+    #070a0a;
+  color: #f2f5f4;
+  font-family: var(--font-body);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(56, 232, 206, 0.24);
+  color: #f2f5f4;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+}

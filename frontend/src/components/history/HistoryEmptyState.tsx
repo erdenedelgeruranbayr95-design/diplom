@@ -5,5 +5,5 @@
 import { Empty } from "@/components/ui/States";
 
 export default function HistoryEmptyState() {
-  return <Empty icon="🕐" title="Түүх хоосон байна" hint="Дуу сонсоход энд бичлэг нэмэгдэнэ" />;
+  return <Empty icon="clock" title="Түүх хоосон байна" hint="Дуу сонсоход энд бичлэг нэмэгдэнэ" />;
 }

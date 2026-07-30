@@ -14,6 +14,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import { useToast } from "@/components/providers/ToastProvider";
 import { setSubOverride } from "@/lib/data/admin-sub-overrides";
 import type { AdminUserRow } from "@/types/auth";
+import Icon from "@/components/ui/Icon";
 
 const ROLE_LABEL: Record<AdminUserRow["role"], string> = {
   USER: "Хэрэглэгч",
@@ -113,7 +114,7 @@ export default function UsersTable({
       </div>
 
       {filtered.length === 0 ? (
-        <Empty icon="👥" title="Хэрэглэгч олдсонгүй" hint={q ? "Хайлтад тохирох хэрэглэгч алга" : "Одоогоор бүртгүүлсэн хэрэглэгч алга"} />
+        <Empty icon="users" title="Хэрэглэгч олдсонгүй" hint={q ? "Хайлтад тохирох хэрэглэгч алга" : "Одоогоор бүртгүүлсэн хэрэглэгч алга"} />
       ) : (
         <div className="border border-white/[.08] rounded-2xl max-h-[360px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]">
           <div className="grid grid-cols-[1fr_1.5fr_.8fr_.7fr_.8fr_auto] max-[680px]:grid-cols-[1fr_auto] gap-3 items-center py-3 px-4 border-b border-white/[.08] text-[12.5px] bg-white/[.02] sticky top-0 z-[1]">
@@ -134,15 +135,17 @@ export default function UsersTable({
               <span className="text-dim overflow-hidden text-ellipsis whitespace-nowrap max-[680px]:hidden">{u.email}</span>
               <StatusBadge label={ROLE_LABEL[u.role]} tone={ROLE_TONE[u.role]} className="max-[680px]:hidden" />
               <span className="font-mono text-[11px] text-faint max-[680px]:hidden">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("mn-MN") : "—"}</span>
-              <StatusBadge label={u.subActive ? "🟢 PRO" : "⚪ Free"} tone={u.subActive ? "aqua" : "faint"} />
+              <StatusBadge label={u.subActive ? "PRO" : "Free"} tone={u.subActive ? "aqua" : "faint"} dot />
               <div className="flex items-center gap-1.5 justify-end">
                 {u.subActive ? (
                   <ActionButton variant="danger" size="sm" onClick={() => setConfirmTarget({ u, kind: "remove" })}>
-                    ❌ Remove PRO
+                    <Icon name="close" size={13} strokeWidth={2.2} />
+                    Remove PRO
                   </ActionButton>
                 ) : (
                   <ActionButton variant="primary" size="sm" onClick={() => setConfirmTarget({ u, kind: "grant" })}>
-                    💎 Make PRO
+                    <Icon name="crown" size={13} />
+                    Make PRO
                   </ActionButton>
                 )}
                 <button

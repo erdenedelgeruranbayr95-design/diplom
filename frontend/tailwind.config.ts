@@ -21,7 +21,9 @@ const config: Config = {
         bg: "#070A0A",
         ink: "#F2F5F4",
         dim: "#778583",
-        faint: "#4E5B59",
+        /* #4E5B59 → #6E7C7A: жижиг mono шошгоны контрастыг AA хүртэл (2.8:1 → 4.6:1).
+           polish.css-ийн --faint / globals.css-ийн --color-faint-тай синк. */
+        faint: "#6E7C7A",
         aqua: "#38E8CE",
         warm: "#D9A54C",
         line: "rgba(242,245,244,.10)",

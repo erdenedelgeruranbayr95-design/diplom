@@ -29,6 +29,7 @@ import BillingView from "./BillingView";
 import HomeView from "./HomeView";
 import LibraryView from "./LibraryView";
 import NowPlayingPanel from "./NowPlayingPanel";
+import NowPlayingSidebar from "./NowPlayingSidebar";
 import PairingCard from "./PairingCard";
 import AnalysisView from "./AnalysisView";
 import HistoryView from "./HistoryView";
@@ -41,6 +42,7 @@ import { BeatScheduler } from "@/lib/audio/beat-scheduler";
 import { scoreRecommendations } from "@/lib/player/recommendations";
 import type { SessionUser } from "@/types/auth";
 import type { ListeningStats, Track } from "@/types/track";
+import Icon from "@/components/ui/Icon";
 
 export type PlayerTrack = Track & {
   custom?: boolean;
@@ -164,6 +166,7 @@ export default function Player({
   const immPulseRef = useRef<HTMLSpanElement | null>(null);
   const immFlashRef = useRef<HTMLSpanElement | null>(null);
   const feelBarsRef = useRef<(HTMLSpanElement | null)[]>([]); // Мэдрэх самбарын амьд 8 багана
+  const signalBarsRef = useRef<(HTMLSpanElement | null)[]>([]); // Дэлгэрэнгүй хуудасны "Signal" амьд багана
   const autoCalRef = useRef(false);
   prefsRef.current = prefs;
 
@@ -433,6 +436,18 @@ export default function Player({
           for (let k = start; k < end; k++) s += a.data[k];
           el.style.height = Math.max(5, (s / (end - start) / 255) * 100) + "%";
         });
+        /* Дэлгэрэнгүй хуудасны "Signal" карт — feelBars-тай ижил спектр дунджилалт,
+           зөвхөн багана нь илүү нягт (тоо нь DetailView-с хамаарна). Дуу тоглож
+           байх үед хэмнэл нь энд шууд харагдана. */
+        signalBarsRef.current.forEach((el, idx) => {
+          if (!el) return;
+          const lenS = signalBarsRef.current.length;
+          const start = Math.floor((idx / lenS) * n * 0.72);
+          const end = Math.max(start + 1, Math.floor(((idx + 1) / lenS) * n * 0.72));
+          let s = 0;
+          for (let k = start; k < end; k++) s += a.data[k];
+          el.style.height = Math.max(6, (s / (end - start) / 255) * 100) + "%";
+        });
       } else {
         vizRef.current.forEach((el) => {
           if (el) el.style.height = "3px";
@@ -440,6 +455,9 @@ export default function Player({
         if (immFlashRef.current) immFlashRef.current.style.opacity = "0";
         feelBarsRef.current.forEach((el) => {
           if (el) el.style.height = "5px";
+        });
+        signalBarsRef.current.forEach((el) => {
+          if (el) el.style.height = "6px";
         });
       }
     };
@@ -626,8 +644,12 @@ export default function Player({
     ensureCtx();
     setLimitHit(false);
     if (cur?.id === t.id) {
-      if (playing) el.pause();
-      else el.play();
+      if (playing) {
+        el.pause();
+        setPlaying(false);
+      } else {
+        void el.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      }
       return;
     }
     logCurrentToHistory();
@@ -636,7 +658,9 @@ export default function Player({
     curRef.current = t;
     setRecent((r) => [t.id, ...r.filter((id) => id !== t.id)].slice(0, 6));
     el.src = t.file || "";
-    el.play();
+    void el.play()
+      .then(() => setPlaying(true))
+      .catch(() => setPlaying(false));
 
     /* songId-тэй (backend Song, аналайз хийгдсэн) бол beatTimestamps-ийг татаж scheduler-т тохируулна;
        эс бол scheduler хоосорч, level-threshold fallback идэвхжинэ (§5). */
@@ -667,10 +691,13 @@ export default function Player({
     }
     ensureCtx();
     const el = audioRef.current!;
-    if (playing) el.pause();
+    if (playing) {
+      el.pause();
+      setPlaying(false);
+    }
     else {
       if (limitHit) return;
-      el.play();
+      void el.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     }
   }
   function seek(dt: number) {
@@ -790,7 +817,8 @@ export default function Player({
           onPlay={playTrack}
         />
 
-        <PageContainer>
+        <div className="flex min-w-0 flex-1 max-nav:flex-col">
+          <PageContainer>
           {view === "home" && (
             <HomeView
               genres={GENRES}
@@ -839,6 +867,7 @@ export default function Player({
               isCurrent={cur?.id === detail?.id}
               playing={playing}
               onPlay={() => playTrack(detail)}
+              onPlayTrack={playTrack}
               onFeelTest={() => feelTest(detail)}
               onBack={() => setView("home")}
               liked={likes.includes(detail?.id)}
@@ -852,6 +881,7 @@ export default function Player({
               }
               deviceSync={deviceSync}
               onOpenArtist={openArtist}
+              signalBarsRef={signalBarsRef}
             />
           )}
           {view === "artist" && artistId && (
@@ -892,7 +922,7 @@ export default function Player({
               onToggleSave={toggleSave}
               onInfo={openDetail}
               onBack={() => setView("home")}
-              emptyIcon="♥"
+              emptyIcon="heart"
               emptyTitle="Дуртай дуу алга"
               emptyHint="Дуу дээрх зүрхэн товчийг дарж дуртай дуугаа энд цуглуулаарай"
             />
@@ -910,7 +940,7 @@ export default function Player({
               onToggleSave={toggleSave}
               onInfo={openDetail}
               onBack={() => setView("home")}
-              emptyIcon="🔖"
+              emptyIcon="bookmark"
               emptyTitle="Хадгалсан дуу алга"
               emptyHint="Дуу дээрх хавчуургыг дарж дараа сонсох дуугаа хадгалаарай"
             />
@@ -928,21 +958,25 @@ export default function Player({
               onToggleSave={toggleSave}
               onInfo={openDetail}
               onBack={() => setView("home")}
-              emptyIcon="🕐"
+              emptyIcon="clock"
               emptyTitle="Түүх хоосон"
               emptyHint="Дуу сонсоход энд сонссон түүх чинь үлдэнэ"
             />
           )}
           {view === "history" && <HistoryView onBack={() => setView("home")} onOpenAnalysis={openAnalysis} />}
           {view === "analysis" && <AnalysisView songId={analysisSongId} onBack={() => setView("history")} />}
-        </PageContainer>
+          </PageContainer>
+
+          <NowPlayingSidebar track={cur} playing={playing} />
+        </div>
       </div>
 
       {limitHit && !subscribed && (
         <div className="absolute left-1/2 bottom-[108px] -translate-x-1/2 z-[5] flex items-center gap-4 flex-wrap justify-center border border-[rgba(217,165,76,.45)] bg-[rgba(20,16,7,.95)] rounded-xl p-[14px_20px] text-[13.5px] max-w-[min(92vw,560px)] [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)]">
           <p>Урьдчилан сонсголт дууслаа — бүтэн дуу сонсохын тулд PRO захиалга аваарай.</p>
           <ActionButton variant="primary" onClick={onSubscribe}>
-            Захиалга авах →
+            Захиалга авах
+            <Icon name="arrowRight" size={15} />
           </ActionButton>
         </div>
       )}

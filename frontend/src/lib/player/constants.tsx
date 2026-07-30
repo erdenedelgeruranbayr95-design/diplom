@@ -26,14 +26,13 @@ export const FEEL: Record<
 };
 export const FEEL_DEFAULT = { bass: 55, mid: 55, high: 45, pattern: [120, 70, 120], text: "Олон төрлийн давтамж холилдсон — дунд зэргийн хэмнэлтэй чичиргээ мэдрэгдэнэ." };
 
-/* ---------- статистикийн icon-ууд (SVG) ---------- */
-export const ICONS: Record<string, React.ReactNode> = {
-  users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>,
-  gem: <><path d="M6 3h12l4 6-10 12L2 9l4-6z" /><path d="M2 9h20" /><path d="m12 21-4-12 2.5-6" /><path d="m12 21 4-12-2.5-6" /></>,
-  money: <><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="3" /><path d="M6 10v4M18 10v4" /></>,
-  music: <><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></>,
-  phones: <><path d="M3 14v-2a9 9 0 0 1 18 0v2" /><rect x="3" y="14" width="4" height="6" rx="2" /><rect x="17" y="14" width="4" height="6" rx="2" /></>,
-  vibrate: <><rect x="8" y="3" width="8" height="18" rx="2" /><path d="M3 9v6M21 9v6" /><path d="M5.5 10.5v3M18.5 10.5v3" /></>,
-  star: <path d="m12 2 3 6.6 7 .9-5.2 4.8 1.4 7-6.2-3.6L5.8 21l1.4-7L2 9.5l7-.9z" />,
-  horn: <><path d="m3 10 16-5v14L3 14v-4z" /><path d="M7 14.5V18a2 2 0 0 0 4 0v-2.3" /><path d="M21 9v6" /></>,
-};
+/* ---------- статистикийн icon-ууд (SVG) ----------
+   Геометр нь одоо src/components/ui/Icon.tsx-ийн нэгдсэн систем дээр тулгуурлана
+   (24×24 grid, 1.75 stroke, round cap/join) — өмнө нь энд, Sidebar-т, TopBar-т 3
+   өөр зузаан/өнцгийн стандарт зэрэгцэн байсныг нэгтгэв. Хуучин 8 key (users/gem/
+   money/music/phones/vibrate/star/horn) БҮГД хэвээр, зөвхөн зураас цэвэршив; доор
+   семантик нь тодорхой шинэ key-үүд нэмэгдсэн (stethoscope=эмч, family=эцэг эх,
+   crown=PRO, disc=дууны сан гэх мэт) тул дуудагч файлууд эвдрэхгүй. */
+import { ICON_PATHS } from "@/components/ui/Icon";
+
+export const ICONS: Record<string, React.ReactNode> = ICON_PATHS;

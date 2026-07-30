@@ -40,7 +40,7 @@ export default function StatsView({
     <>
       <BackBar title="Миний статистик" onBack={onBack} />
       <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
-        <StatCard icon={ICONS.phones} color="c-aqua" value={fmtDur(s.total)} label="Нийт сонссон" />
+        <StatCard icon={ICONS.clock} color="c-aqua" value={fmtDur(s.total)} label="Нийт сонссон" />
         <StatCard icon={ICONS.vibrate} color="c-gold" value={s.vib.toLocaleString()} label="Мэдэрсэн чичиргээ" />
         <StatCard icon={ICONS.music} color="c-purple" value={Object.keys(s.byTrack).length} label="Сонссон дуу" />
         <StatCard icon={ICONS.star} color="c-rose" value={topGenre ? topGenre[0] : '—'} label="Топ төрөл" />
@@ -92,7 +92,7 @@ export default function StatsView({
           </div>
         </>
       )}
-      {s.total === 0 && <p className="text-faint text-[13.5px] text-center py-6 px-4">Дуу сонсож эхлэхэд статистик энд цуглана 🎶</p>}
+      {s.total === 0 && <p className="text-faint text-[13.5px] text-center py-6 px-4">Дуу сонсож эхлэхэд статистик энд цуглана</p>}
     </>
   )
 }

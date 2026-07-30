@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
+import Icon from "@/components/ui/Icon";
 
 export default function PairingCard({
   open,
@@ -51,13 +52,16 @@ export default function PairingCard({
             {deviceSync.qrState !== "connected" ? (
               <>
                 <div className="flex items-center justify-between mb-5">
-                  <b className="font-display font-semibold text-[16px] text-ink">📱 Утас холбох</b>
+                  <b className="font-display font-semibold text-[16px] text-ink flex items-center gap-2">
+                    <span className="text-aqua flex" aria-hidden="true"><Icon name="device" size={16} /></span>
+                    Утас холбох
+                  </b>
                   <button
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-dim hover:text-ink hover:bg-white/[.06] transition-colors duration-150 focus-visible:outline-none focus-visible:shadow-glow-aqua"
                     onClick={onClose}
                     aria-label="Хаах"
                   >
-                    ✕
+                    <Icon name="close" size={14} />
                   </button>
                 </div>
 
@@ -89,8 +93,14 @@ export default function PairingCard({
                 </div>
 
                 <div className="border-t border-white/[.08] pt-4 flex flex-col gap-1.5 mb-5">
-                  <span className="text-[12px] text-dim flex items-center gap-1.5">✓ Хөгжимтэй синхроноор чичирнэ</span>
-                  <span className="text-[12px] text-dim flex items-center gap-1.5">✓ Нэмэлт тохиргоо шаардахгүй</span>
+                  <span className="text-[12px] text-dim flex items-center gap-2">
+                    <span className="text-aqua flex flex-none" aria-hidden="true"><Icon name="check" size={12} strokeWidth={2.4} /></span>
+                    Хөгжимтэй синхроноор чичирнэ
+                  </span>
+                  <span className="text-[12px] text-dim flex items-center gap-2">
+                    <span className="text-aqua flex flex-none" aria-hidden="true"><Icon name="check" size={12} strokeWidth={2.4} /></span>
+                    Нэмэлт тохиргоо шаардахгүй
+                  </span>
                 </div>
 
                 <button
@@ -109,11 +119,14 @@ export default function PairingCard({
                   transition={{ type: "spring", stiffness: 260, damping: 16 }}
                   aria-hidden="true"
                 >
-                  🟢
+                  <Icon name="check" size={32} strokeWidth={2.2} />
                 </motion.span>
                 <b className="font-display font-semibold text-[16px] text-ink mb-1">Холбогдлоо</b>
                 <p className="text-dim text-[13px] mb-1">Гар утас</p>
-                <p className="text-aqua text-[12.5px] mb-6">Амжилттай холбогдлоо ✓</p>
+                <p className="text-aqua text-[12.5px] mb-6 flex items-center gap-1.5">
+                  <Icon name="check" size={13} strokeWidth={2.4} />
+                  Амжилттай холбогдлоо
+                </p>
 
                 <div className="flex items-center gap-2.5 w-full">
                   <button

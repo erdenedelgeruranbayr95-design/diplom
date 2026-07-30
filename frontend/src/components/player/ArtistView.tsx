@@ -13,6 +13,7 @@ import { SectionTitle } from "@/components/ui/PageHeader";
 import { Empty, Loading } from "@/components/ui/States";
 import { LikeBtn, SaveBtn } from "./TrackButtons";
 import type { PlayerTrack } from "./Player";
+import Icon from "@/components/ui/Icon";
 
 export default function ArtistView({
   artistId,
@@ -62,7 +63,7 @@ export default function ArtistView({
   }, [artistId]);
 
   if (loading) return <Loading label="Дуучны мэдээлэл ачааллаж байна…" />;
-  if (error || !artist) return <Empty icon="🎤" title="Дуучин олдсонгүй" hint={error} />;
+  if (error || !artist) return <Empty icon="mic" title="Дуучин олдсонгүй" hint={error} />;
 
   /* Backend Song id-ээр allTracks (songId/beat-scheduler/history бүрэн бэлэн PlayerTrack)-аас
      тохирох object-ыг олно — зөвхөн backend-ийн буцаасан мета (title/genre) дээр найдахгүй,
@@ -78,12 +79,12 @@ export default function ArtistView({
           {artist.photoUrl ? (
             <img src={artist.photoUrl} alt={artist.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-6xl" aria-hidden="true">🎤</span>
+            <span className="text-aqua/60" aria-hidden="true"><Icon name="mic" size={52} strokeWidth={1.4} /></span>
           )}
         </div>
         <div>
           <h2 className="text-[clamp(28px,3.8vw,44px)] font-extrabold tracking-[-.04em] mb-2">{artist.name}</h2>
-          <span className="mono text-dim">{songs.length} дуу</span>
+          <span className="mono !text-dim">{songs.length} дуу</span>
           {artist.bio && <p className="text-ink text-[14.5px] leading-[1.65] max-w-[62ch] mt-4">{artist.bio}</p>}
           {artist.careerInfo && (
             <div className="mt-5">
@@ -96,22 +97,30 @@ export default function ArtistView({
 
       <SectionTitle title={`${artist.name} — бүх дуунууд`} />
       {songs.length === 0 ? (
-        <Empty icon="🎵" title="Дуу алга" hint="Энэ дуучинд одоогоор дуу бүртгэгдээгүй байна" />
+        <Empty icon="music" title="Дуу алга" hint="Энэ дуучинд одоогоор дуу бүртгэгдээгүй байна" />
       ) : (
         <div className="flex flex-col gap-0.5 mt-3">
           {songs.map((t, i) => {
             const isCur = curId === t.id;
             return (
-              <button
+              <div
                 key={t.id}
                 className={
-                  "grid grid-cols-[34px_44px_1fr_auto_34px_34px] gap-3 items-center py-2.5 px-3 rounded-lg text-ink text-left transition-colors duration-250 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
-                  (isCur ? "bg-aqua/[.08]" : "hover:bg-white/[.04]")
+                  "grid grid-cols-[34px_44px_minmax(0,1fr)_auto_34px_34px] gap-3 items-center py-2.5 px-3 rounded-[18px] text-ink text-left transition-[background,border-color,transform,box-shadow] duration-250 border border-white/[.06] bg-[rgba(11,16,16,.56)] hover:bg-[rgba(17,24,23,.84)] hover:border-aqua/15 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+                  (isCur ? "bg-aqua/[.08] border-aqua/25" : "")
                 }
                 onClick={() => onPlay(t)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onPlay(t);
+                  }
+                }}
               >
                 <span className="mono !text-[10px]">{String(i + 1).padStart(2, "0")}</span>
-                <img className="w-11 h-11 rounded-md object-cover shadow-[0_4px_12px_rgba(0,0,0,.3)]" src={t.cover} alt="" loading="lazy" />
+                <img className="w-11 h-11 rounded-[14px] object-cover shadow-[0_4px_12px_rgba(0,0,0,.3)]" src={t.cover} alt="" loading="lazy" />
                 <span className="flex flex-col min-w-0">
                   <b className="font-semibold text-sm whitespace-nowrap overflow-hidden text-ellipsis">{t.title}</b>
                   <i className="not-italic text-xs text-dim">
@@ -132,7 +141,7 @@ export default function ArtistView({
                 </span>
                 <LikeBtn id={t.id} row active={likes.includes(t.id)} onToggle={() => onToggleLike(t.id)} />
                 <SaveBtn id={t.id} row active={saves.includes(t.id)} onToggle={() => onToggleSave(t.id)} />
-              </button>
+              </div>
             );
           })}
         </div>

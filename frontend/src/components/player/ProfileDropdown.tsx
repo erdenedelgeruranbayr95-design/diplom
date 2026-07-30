@@ -8,18 +8,25 @@ import type { SessionUser } from "@/types/auth";
 import type { ViewName } from "@/components/player/Player";
 import DropdownPanel from "@/components/ui/DropdownPanel";
 import UserAvatar from "@/components/ui/UserAvatar";
+import Icon from "@/components/ui/Icon";
 
+/* `icon` prop-ийн төрөл (string) хэвээр — зөвхөн дамжуулах утга emoji-оос нэгдсэн
+   icon-ийн нэр болов (жишээ нь "👤" → "user"). Ингэснээр цэсний мөрүүд бүгд ижил
+   зузаан/хэмжээтэй, OS/фонтоос хамааралгүй, өнгө нь мөрийн текстийг дагана. */
 function MenuItem({ icon, label, onClick, danger }: { icon: string; label: string; onClick: () => void; danger?: boolean }) {
   return (
     <button
       className={
-        "flex items-center gap-2.5 w-full text-left py-2.5 px-2.5 rounded-lg text-[13.5px] font-medium transition-colors duration-150 " +
+        "group flex items-center gap-3 w-full text-left py-2.5 px-2.5 rounded-lg text-[13.5px] font-medium transition-colors duration-150 " +
         (danger ? "text-[#E88A9B] hover:bg-[rgba(232,138,155,.09)]" : "text-ink hover:bg-white/[.06]")
       }
       onClick={onClick}
     >
-      <span className="w-4 text-center flex-none" aria-hidden="true">
-        {icon}
+      <span
+        className={"flex-none flex items-center justify-center transition-colors duration-150 " + (danger ? "" : "text-dim group-hover:text-aqua")}
+        aria-hidden="true"
+      >
+        <Icon name={icon} size={16} />
       </span>
       {label}
     </button>
@@ -110,24 +117,24 @@ export default function ProfileDropdown({
 
           <div className="h-px bg-white/[.06] my-1 mx-1" aria-hidden="true"></div>
 
-          <MenuItem icon="👤" label="Профайл засах" onClick={() => go("profile")} />
-          <MenuItem icon="🎧" label="Миний жагсаалт" onClick={() => go("playlists")} />
-          {subscribed && !isAdmin && <MenuItem icon="⬆️" label="Дуу нэмэх" onClick={() => go("upload")} />}
-          <MenuItem icon="📱" label="Төхөөрөмж холбох" onClick={() => go("devices")} />
-          <MenuItem icon="📊" label="Миний статистик" onClick={() => go("stats")} />
-          <MenuItem icon="🕐" label="Сонссон түүх" onClick={() => go("history")} />
-          <MenuItem icon="📈" label="Миний ахиц" onClick={() => go("progress")} />
-          <MenuItem icon="🏆" label="Амжилтууд" onClick={() => go("achievements")} />
-          <MenuItem icon="💳" label="Захиалга удирдах" onClick={() => go("billing")} />
-          <MenuItem icon="❓" label="Тусламж" onClick={() => go("help")} />
+          <MenuItem icon="user" label="Профайл засах" onClick={() => go("profile")} />
+          <MenuItem icon="playlist" label="Миний жагсаалт" onClick={() => go("playlists")} />
+          {subscribed && !isAdmin && <MenuItem icon="upload" label="Дуу нэмэх" onClick={() => go("upload")} />}
+          <MenuItem icon="device" label="Төхөөрөмж холбох" onClick={() => go("devices")} />
+          <MenuItem icon="chart" label="Миний статистик" onClick={() => go("stats")} />
+          <MenuItem icon="clock" label="Сонссон түүх" onClick={() => go("history")} />
+          <MenuItem icon="trend" label="Миний ахиц" onClick={() => go("progress")} />
+          <MenuItem icon="trophy" label="Амжилтууд" onClick={() => go("achievements")} />
+          <MenuItem icon="card" label="Захиалга удирдах" onClick={() => go("billing")} />
+          <MenuItem icon="help" label="Тусламж" onClick={() => go("help")} />
 
           {(isAdmin || isTherapist || isParent) && <div className="h-px bg-white/[.06] my-1 mx-1" aria-hidden="true"></div>}
-          {isAdmin && <MenuItem icon="🛠" label="Хяналтын самбар" onClick={() => go("admin")} />}
-          {isTherapist && <MenuItem icon="🧑‍⚕️" label="Эмчийн самбар" onClick={() => go("therapist")} />}
-          {isParent && <MenuItem icon="👨‍👩‍👧" label="Эцэг эхийн самбар" onClick={() => go("parent")} />}
+          {isAdmin && <MenuItem icon="grid" label="Хяналтын самбар" onClick={() => go("admin")} />}
+          {isTherapist && <MenuItem icon="stethoscope" label="Эмчийн самбар" onClick={() => go("therapist")} />}
+          {isParent && <MenuItem icon="family" label="Эцэг эхийн самбар" onClick={() => go("parent")} />}
 
           <div className="h-px bg-white/[.06] my-1 mx-1" aria-hidden="true"></div>
-          <MenuItem icon="↩" label="Гарах" onClick={onLogout} danger />
+          <MenuItem icon="logout" label="Гарах" onClick={onLogout} danger />
         </DropdownPanel>
       )}
     </div>

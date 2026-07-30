@@ -6,5 +6,5 @@
 import { Empty } from "@/components/ui/States";
 
 export default function ProgressSummary() {
-  return <Empty icon="📈" title="Ахицын бичлэг алга" hint="Эмчилгээний эмч танд ахиц бичихэд энд харагдана" />;
+  return <Empty icon="trend" title="Ахицын бичлэг алга" hint="Эмчилгээний эмч танд ахиц бичихэд энд харагдана" />;
 }

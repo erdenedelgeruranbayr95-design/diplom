@@ -16,9 +16,9 @@ export default function StatisticsCards({
 }) {
   return (
     <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
-      <StatCard icon={ICONS.star} color="c-gold" value={avgCompletion + "%"} label="Дундаж гүйцэтгэл" />
-      <StatCard icon={ICONS.vibrate} color="c-rose" value={avgEngagement} label="Дундаж оролцоо" />
-      <StatCard icon={ICONS.music} color="c-aqua" value={totalEntries} label="Нийт бичлэг" />
+      <StatCard icon={ICONS.target} color="c-gold" value={avgCompletion + "%"} label="Дундаж гүйцэтгэл" />
+      <StatCard icon={ICONS.activity} color="c-rose" value={avgEngagement} label="Дундаж оролцоо" />
+      <StatCard icon={ICONS.chart} color="c-aqua" value={totalEntries} label="Нийт бичлэг" />
     </div>
   );
 }

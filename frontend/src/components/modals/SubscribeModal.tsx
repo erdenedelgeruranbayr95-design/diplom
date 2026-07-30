@@ -18,6 +18,7 @@ import { useFocusTrap } from "@/lib/ui/useFocusTrap";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import { subscribeMe } from "@/lib/api/client";
 import type { SessionUser, UserSub } from "@/types/auth";
+import Icon from "@/components/ui/Icon";
 
 const PLAN = { name: "МЭДРЭХ PRO", price: "9'900₮", period: "сар бүр" };
 const QR_TTL_SEC = 300; // 05:00
@@ -180,14 +181,14 @@ export default function SubscribeModal({
               onClick={handleClose}
               aria-label="Хаах"
             >
-              ✕
+              <Icon name="close" size={15} />
             </button>
 
             <div className="text-center mb-6">
               <b id="subscribe-modal-title" className="font-display text-[19px] block mb-1">
                 PRO эрх авах
               </b>
-              <span className="mono text-purple">SocialPay Demo</span>
+              <span className="mono !text-purple">SocialPay Demo</span>
             </div>
 
             {payState === "success" ? (
@@ -199,7 +200,7 @@ export default function SubscribeModal({
                   transition={{ type: "spring", stiffness: 260, damping: 16 }}
                   aria-hidden="true"
                 >
-                  ✓
+                  <Icon name="check" size={32} strokeWidth={2.2} />
                 </motion.span>
                 <b className="font-display text-[18px] text-aqua block mb-1.5">Төлбөр амжилттай</b>
                 <p className="text-dim text-[13px]">МЭДРЭХ PRO идэвхжлээ — жагсаалт удахгүй шинэчлэгдэнэ.</p>
@@ -254,7 +255,7 @@ export default function SubscribeModal({
                       aria-hidden="true"
                     />
                   )}
-                  {expired ? "QR хугацаа дууссан" : "🟡 Төлбөр хүлээгдэж байна…"}
+                  {expired ? "QR хугацаа дууссан" : "Төлбөр хүлээгдэж байна…"}
                 </div>
               </>
             )}

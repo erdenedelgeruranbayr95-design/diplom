@@ -33,7 +33,7 @@ export default function SessionTimeline({ sessions, onMarkCompleted }: { session
         <SectionTitle title="Сессийн түүх" />
       </div>
       {sessions.length === 0 ? (
-        <Empty icon="📋" title="Одоогоор сесс алга" hint="Шинэ сесс үүсгэхэд энд харагдана" />
+        <Empty icon="clipboard" title="Одоогоор сесс алга" hint="Шинэ сесс үүсгэхэд энд харагдана" />
       ) : (
         <div className="flex flex-col gap-2.5">
           {sessions.map((s) => (

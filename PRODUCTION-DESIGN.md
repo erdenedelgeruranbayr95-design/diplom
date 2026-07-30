@@ -6,7 +6,15 @@
 > Энэ баримт бичиг нь одоо байгаа frontend прототип (`medreh-react`)-ийг **бодит production fullstack** бүтээгдэхүүн болгож хувиргах бүрэн төлөвлөгөө юм.
 > Агуулга: дүрүүд · дүр бүрийн UI · дуу/дата хаанаас яаж орж ирэх · дуу→мэдрэхүй хувиргалтын шинжлэх ухаан ба техник · архитектур · DB · API · төхөөрөмж · аюулгүй байдал · roadmap · дипломын хамгаалалт.
 
-**Хувилбар:** v1.0 · **Огноо:** 2026-07-24 · **Төлөв:** Диплом (production болгох төлөвлөгөө)
+**Хувилбар:** v1.1 · **Огноо:** 2026-07-30 · **Төлөв:** Диплом (production болгох төлөвлөгөө)
+
+> 📋 **Гүйцэтгэлийн төлөвлөгөө:** энэ баримт "юу барих вэ"-г тодорхойлно.
+> "Ямар дарааллаар барих вэ" (frontend-ээс эхлэх P0–P8 үе шатууд, бодит кодын
+> шинжилгээтэй) → **[`FRONTEND-PHASES.md`](./FRONTEND-PHASES.md)**
+>
+> ⚠️ §15 (замын зураг) ба §19 (кодын зураглал) нь **2026-07-30-нд шинэчлэгдсэн** —
+> M1 backend дууссан, Vite прототип Next.js-ээр солигдсоныг тусгав. Бусад бүлэг
+> (§1–§14, §16–§18) нь анхны дизайны зорилтыг хэвээр илэрхийлнэ.
 
 ---
 
@@ -845,17 +853,29 @@ gp?.vibrationActuator?.playEffect('dual-rumble', {
 
 ## 15. Хөгжүүлэлтийн замын зураг
 
-| Үе | Хугацаа | Гаралт |
-|---|---|---|
-| **M0 — Прототип** ✅ | Дууссан | Frontend UX, real-time 3-band, калибровк, mock auth/pay |
-| **M1 — Backend суурь** | 3–4 долоо хоног | Postgres, Auth (JWT/RBAC), tracks CRUD, S3 upload, localStorage→API нүүлгэлт |
-| **M2 — Analysis pipeline** | 3–4 д/х | Python worker, Haptic Score (8 бүс + beat), Curator UI, precomputed playback |
-| **M3 — Дүр ба payments** | 2–3 д/х | 5 дүр, Moderator, QPay захиалга, webhook, аналитик |
-| **M4 — Төхөөрөмж** | 2–3 д/х | Gamepad + Web Bluetooth хантааз, Android (Capacitor) амплитуд |
-| **M5 — Хүртээмж + polish** | 2 д/х | MSL видео, WCAG audit, offline PWA, олон төхөөрөмж sync |
-| **M6 — (Bonus)** | — | Stem separation, Haptic Designer editor, Therapist модуль |
+> 🔄 **Шинэчилсэн: 2026-07-30.** M0–M3-ын ихэнх нь аль хэдийн хийгдсэн — доорх хүснэгт
+> бодит төлөвийг харуулна. Frontend-ийн нарийвчилсан үе шатууд (P0–P8) тусдаа
+> баримтад: **[`FRONTEND-PHASES.md`](./FRONTEND-PHASES.md)**.
 
-**MVP (диплом хамгаалалтад хамгийн бага):** M1 + M2 + дор хаяж 4 дүр (Guest/Listener/Curator/Admin) + Gamepad эсвэл Android haptic демо.
+| Үе | Төлөв | Гаралт |
+|---|---|---|
+| **M0 — Прототип** | ✅ Дууссан | Vite/React прототип (одоо устсан, Next.js-ээр солигдсон) |
+| **M1 — Backend суурь** | ✅ **Дууссан** | NestJS 11 + Prisma 5 + PostgreSQL 16, JWT+RBAC, 9 модуль, 5 migration, seed |
+| **M2 — Analysis pipeline** | 🟡 **Хэсэгчлэн** | `Song`-д `beatTimestamps`/`waveformPeaks`/band energy талбар бий, `POST /songs/:id/analyze` endpoint бий. **Python worker хийгдээгүй** |
+| **M3 — Дүр ба payments** | 🟡 **Хэсэгчлэн** | 4 дүр ажиллаж байна (ADMIN/THERAPIST/USER/PARENT). Захиалга нь одоогоор mock |
+| **M4 — Төхөөрөмж** | 🟡 **Хэсэгчлэн** | QR-аар утас хослуулах + socket.io beat дамжуулалт ✅. Gamepad/Bluetooth хантааз ❌ |
+| **M5 — Хүртээмж + polish** | 🔵 **Явагдаж байна** | `polish.css` a11y давхарга бий. Бүрэн WCAG audit → `FRONTEND-PHASES.md` P3 |
+| **M6 — (Bonus)** | ⬜ Эхлээгүй | Stem separation, Haptic Designer editor |
+
+**Одоогийн бодит стек:**
+
+| Давхарга | Технологи | Порт |
+|---|---|---|
+| Frontend | Next.js 15.5 · React 19 · Tailwind v4 | 3001 |
+| Backend | NestJS 11 · Prisma 5 · socket.io | 3000 (`/api`) |
+| DB | PostgreSQL 16 (docker `medreh-pg`) | 5434 |
+
+**MVP (диплом хамгаалалтад хамгийн бага):** M1 ✅ + `FRONTEND-PHASES.md`-ийн **P0+P1+P2+P3** + утас (vibrate) демо.
 
 ---
 
@@ -903,23 +923,30 @@ gp?.vibrationActuator?.playEffect('dual-rumble', {
 
 ## 19. Хавсралт: одоогийн код → production зураглал
 
-| Одоогийн файл | Production дахь хувь заяа |
-|---|---|
-| `App.jsx` | Router + role-based layout болж задарна |
-| `engine.js` | Визуал хэсэг `packages/haptic-engine`-т; аудио логик scheduler-т |
-| `Player.jsx` — `AnalyserNode`/vibrate | **Haptic Score scheduler + device router**-оор солигдоно (real-time горим үлдэнэ) |
-| `Calibrate.jsx` | Хэвээр; үр дүн `PUT /me/sensory-profile`-руу |
-| `AuthModal.jsx` — `btoa`, localStorage | `POST /auth/*`, JWT, серверт hash |
-| `AdminPanel.jsx` | Curator (дуу) + Admin (хэрэглэгч/дүр) болж хуваагдана |
-| `tracks.js` | `GET /tracks` API-аар солигдоно |
-| `idb.js` | Offline cache-д үлдэнэ (PWA), эх сурвалж нь S3 |
-| `library.js` (stats/feed/pay) | `listen_events`, `notifications`, `payments` API |
+> 🔄 **Шинэчилсэн: 2026-07-30.** Хуучин Vite прототип (`App.jsx`, `engine.js`, …) устсан.
+> Доор нь **өнөөдрийн Next.js код** ба түүний production дахь хувь заяа.
 
-**Дараагийн бодит алхам (M1 эхлэл):**
-1. `apps/api` (NestJS) үүсгэж `users` + JWT auth хийх.
-2. `AuthModal`-ийг API руу залгах (localStorage-оос салгах).
-3. `tracks` API + S3 upload → `AdminPanel`-ийн дуу нэмэхийг backend-т залгах.
-4. Python worker + Haptic Score → `Player`-т precomputed playback нэмэх.
+| Одоогийн файл | Төлөв / хувь заяа |
+|---|---|
+| `frontend/src/components/player/Player.tsx` (1,070 мөр) | ✅ Ажиллаж байна. → hook болгон задлах (`FRONTEND-PHASES.md` P6) |
+| `lib/audio/analyze.ts` · `beat-scheduler.ts` | ✅ `beatTimestamps`-тай дууг timestamp-driven тоглуулна. Real-time fallback үлдэнэ |
+| `lib/player/visualizer-modes.ts` + `Visualizer.tsx` | ✅ Canvas 2D, 6 горим |
+| `components/player/Calibrate.tsx` | ✅ Хэвээр. Үр дүн одоогоор localStorage → `PUT /users/me/sensory-profile` руу нүүнэ |
+| `components/modals/AuthModal.tsx` | ✅ Backend `POST /api/auth/*` руу залгагдсан, JWT + refresh cookie |
+| `components/player/AdminView.tsx` + `admin/*` | ✅ Дуу/уран бүтээлч/хэрэглэгч удирдлага backend-тэй |
+| `lib/data/tracks.ts` (`TRACKS`) | 🟡 Статик seed үлдсэн — `GET /api/songs`-той зэрэгцэн ажиллаж байна. Бүрэн API руу шилжүүлэх |
+| `lib/data/idb.ts` | 🟡 Админы нэмсэн дуу IndexedDB-д. → S3/uploads руу бүрэн шилжүүлэх |
+| `lib/data/library.ts` (stats/feed/playlists) | 🟡 **localStorage хэвээр** → `listen_events` / `notifications` / `playlists` API |
+| `lib/socket/useDeviceSync.ts` | ✅ socket.io — QR хослуулалт, beat дамжуулалт ажиллаж байна |
+| `app/mobile/[token]/page.tsx` | ✅ Утасны хүлээн авагч дэлгэц |
+
+**Дараагийн бодит алхам:**
+
+1. **`FRONTEND-PHASES.md` P0** — build эвдэж буй 3 TS алдааг засах (`DetailView.tsx`).
+2. **P1–P3** — дизайн систем, дэлгэц бүрийн UI/UX, хүртээмж (дипломын хамгийн бага багц).
+3. **P4** — ажиллахгүй байгаа тохиргоог (`largeText`, `reducedMotion`) амьдруулах.
+4. `library.ts`-ийн localStorage → backend API (M1-ийн үлдэгдэл).
+5. Python analysis worker + Haptic Score (M2-ийн үлдэгдэл).
 
 ---
 

@@ -91,7 +91,7 @@ export default function AssignmentsPanel({
 
       {loading && <Loading label="Томилолт ачааллаж байна…" />}
       {!loading && assignments.length === 0 && (
-        <Empty icon="🧑‍⚕️" title="Одоогоор томилолт алга" hint="Дээрх формоор эмч-хэрэглэгч холбоос үүсгээрэй" />
+        <Empty icon="stethoscope" title="Одоогоор томилолт алга" hint="Дээрх формоор эмч-хэрэглэгч холбоос үүсгээрэй" />
       )}
       {!loading && assignments.length > 0 && (
         <div className="border border-white/[.08] rounded-2xl max-h-[320px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]">

@@ -76,10 +76,10 @@ export default function AnalysisView({
           ) : (
             <>
               <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
-                <StatCard icon={ICONS.music} color="c-aqua" value={song.analyzedBpm ?? song.bpm ?? "—"} label="BPM" />
+                <StatCard icon={ICONS.activity} color="c-aqua" value={song.analyzedBpm ?? song.bpm ?? "—"} label="BPM" />
                 <StatCard icon={ICONS.vibrate} color="c-gold" value={song.beatCount ?? "—"} label="Цохилтын тоо" />
-                <StatCard icon={ICONS.phones} color="c-purple" value={durationLabel} label="Үргэлжлэх хугацаа" />
-                <StatCard icon={ICONS.star} color="c-rose" value={song.peak !== null && song.peak !== undefined ? song.peak.toFixed(2) : "—"} label="Peak" />
+                <StatCard icon={ICONS.clock} color="c-purple" value={durationLabel} label="Үргэлжлэх хугацаа" />
+                <StatCard icon={ICONS.waveform} color="c-rose" value={song.peak !== null && song.peak !== undefined ? song.peak.toFixed(2) : "—"} label="Peak" />
               </div>
 
               <div className="mt-8">

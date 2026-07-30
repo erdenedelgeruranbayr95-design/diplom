@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 export default function PageContainer({ children }: { children: ReactNode }) {
   return (
     <main className="sp-main relative z-[2] flex-1 overflow-y-auto w-full">
-      <div className="max-w-[1180px] mx-auto p-8 max-nav:p-4">{children}</div>
+      <div className="w-full min-w-0">{children}</div>
     </main>
   );
 }

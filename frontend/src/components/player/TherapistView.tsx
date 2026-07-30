@@ -64,7 +64,7 @@ export default function TherapistView({ onGoHome }: { onGoHome: () => void }) {
       <PromoBanner
         title="Тоглуулагч руу шилжих"
         description="Хэрэглэгчийн нүдээр аппаа туршиж, дуу сонсож, мэдрэх горимыг шалгаарай."
-        actionLabel="🎧 Тоглуулагч нээх"
+        actionLabel="Тоглуулагч нээх"
         onAction={onGoHome}
       />
     </>

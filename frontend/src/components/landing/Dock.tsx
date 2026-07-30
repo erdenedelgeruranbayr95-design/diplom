@@ -1,4 +1,5 @@
 import type { SessionUser } from "@/types/auth";
+import Icon from "@/components/ui/Icon";
 
 export default function Dock({
   user,
@@ -36,8 +37,9 @@ export default function Dock({
       <div className="flex items-center gap-2">
         {/* нэвтэрсэн хэрэглэгч Player-ээ хаасан бол буцаж нээх зам */}
         {user && (
-          <button className={navLinkCls + " text-aqua"} onClick={onPlayer}>
-            ♫ Тоглуулагч
+          <button className={navLinkCls + " text-aqua inline-flex items-center gap-2"} onClick={onPlayer}>
+            <Icon name="music" size={14} />
+            Тоглуулагч
           </button>
         )}
         {isAdmin && (

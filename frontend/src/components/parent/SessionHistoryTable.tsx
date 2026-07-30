@@ -30,7 +30,7 @@ export default function SessionHistoryTable({ sessions }: { sessions: TherapySes
         <SectionTitle title="Дууссан сессүүд" />
       </div>
       {sessions.length === 0 ? (
-        <Empty icon="📋" title="Одоогоор сесс алга" hint="Эмч эмчилгээний сесс товлоход энд харагдана" />
+        <Empty icon="clipboard" title="Одоогоор сесс алга" hint="Эмч эмчилгээний сесс товлоход энд харагдана" />
       ) : (
         <div className="flex flex-col gap-2.5">
           {sessions.map((s) => (

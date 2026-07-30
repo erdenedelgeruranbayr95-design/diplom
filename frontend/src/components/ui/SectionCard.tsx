@@ -26,31 +26,33 @@ export default function SectionCard({
   className?: string;
   children: ReactNode;
 }) {
-  const padCls = padding === "sm" ? "p-5" : "p-6";
+  const padCls = padding === "sm" ? "p-5" : "p-6 max-nav:p-5";
+  /* Нэг гадаргуугийн хэв: дээд талын hairline highlight + зөөлөн gradient — өмнөх
+     хавтгай `bg-white/[.02]`-аас гүн харагдана, харин ямар ч layout хөндөгдөөгүй. */
   const accentCls =
     accent === "aqua"
-      ? "border-aqua/[.18] bg-aqua/[.04]"
+      ? "border-aqua/[.18] bg-aqua/[.04] shadow-[inset_0_1px_0_rgba(56,232,206,.12)]"
       : accent === "warm"
-        ? "border-warm/[.18] bg-warm/[.04]"
+        ? "border-warm/[.18] bg-warm/[.04] shadow-[inset_0_1px_0_rgba(217,165,76,.14)]"
         : accent === "rose"
-          ? "border-rose/[.18] bg-rose/[.04]"
-          : "border-white/[.08] bg-white/[.02] hover:border-white/[.14]";
+          ? "border-rose/[.18] bg-rose/[.04] shadow-[inset_0_1px_0_rgba(240,140,165,.14)]"
+          : "border-white/[.07] [background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))] shadow-[inset_0_1px_0_rgba(255,255,255,.05)] hover:border-white/[.14]";
 
   return (
     <div className={"border rounded-2xl transition-[border-color,box-shadow] duration-250 " + accentCls + " " + padCls + " " + className}>
       {(title || actions) && (
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
           {title && (
-            <div>
-              <b className="block font-display font-semibold text-[15px] text-ink">{title}</b>
-              {description && <p className="text-dim text-[12.5px] mt-0.5">{description}</p>}
+            <div className="min-w-0">
+              <b className="block font-display font-semibold text-[16.5px] tracking-[-.025em] text-ink">{title}</b>
+              {description && <p className="text-dim text-[13px] leading-[1.55] mt-1.5 max-w-[62ch]">{description}</p>}
             </div>
           )}
-          {actions && <div className="flex items-center gap-2 flex-none">{actions}</div>}
+          {actions && <div className="flex items-center gap-2 flex-none flex-wrap">{actions}</div>}
         </div>
       )}
       {children}
-      {footer && <div className="mt-4 pt-4 border-t border-white/[.07]">{footer}</div>}
+      {footer && <div className="mt-5 pt-4 border-t border-white/[.07]">{footer}</div>}
     </div>
   );
 }

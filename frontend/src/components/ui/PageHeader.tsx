@@ -20,14 +20,16 @@ export function PageHeader({
   breadcrumb?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-5 flex-wrap mb-7">
+    /* Гарчгийн блок ба action-ууд гарчгийн baseline-аар тэгширнэ (items-end), гарчгийн
+       хэмжээ viewport-д уян clamp — 360px-ээс 1440px+ хүртэл нэг хэмнэлтэй. */
+    <div className="flex items-end justify-between gap-x-6 gap-y-4 flex-wrap mb-8 max-nav:mb-6">
       <div className="min-w-0">
-        {breadcrumb && <div className="mb-1.5">{breadcrumb}</div>}
-        {eyebrow && <span className="mono block mb-2">{eyebrow}</span>}
-        <h1 className="font-display font-bold text-[26px] max-nav:text-[21px] tracking-[-.03em] leading-tight text-ink">{title}</h1>
-        {description && <p className="mt-1.5 text-dim text-[14px] leading-[1.5] max-w-[60ch]">{description}</p>}
+        {breadcrumb && <div className="mb-2">{breadcrumb}</div>}
+        {eyebrow && <span className="mono block mb-2.5">{eyebrow}</span>}
+        <h1 className="font-display font-bold text-[clamp(23px,2.8vw,32px)] tracking-[-.04em] leading-[1.12] text-ink text-balance">{title}</h1>
+        {description && <p className="mt-2.5 text-dim text-[15px] leading-[1.6] max-w-[62ch] text-pretty">{description}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2.5 flex-none">{actions}</div>}
+      {actions && <div className="flex items-center gap-2.5 flex-none flex-wrap">{actions}</div>}
     </div>
   );
 }
@@ -53,12 +55,12 @@ export function Breadcrumb({ items }: { items: { label: string; onClick?: () => 
 
 export function SectionTitle({ title, description, actions }: { title: ReactNode; description?: string; actions?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-      <div>
-        <h2 className="font-display font-semibold text-[17px] tracking-[-.02em] text-ink">{title}</h2>
-        {description && <p className="mt-1 text-dim text-[13px] leading-[1.5]">{description}</p>}
+    <div className="flex items-center justify-between gap-x-4 gap-y-2.5 flex-wrap mb-4">
+      <div className="min-w-0">
+        <h2 className="font-display font-semibold text-[18.5px] max-nav:text-[16px] tracking-[-.03em] leading-snug text-ink flex items-center">{title}</h2>
+        {description && <p className="mt-1.5 text-dim text-[13.5px] leading-[1.55] max-w-[62ch]">{description}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2 flex-none">{actions}</div>}
+      {actions && <div className="flex items-center gap-2 flex-none flex-wrap">{actions}</div>}
     </div>
   );
 }

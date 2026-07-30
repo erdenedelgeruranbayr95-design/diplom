@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ActionButton } from "@/components/ui/ActionGroup";
+import Icon from "@/components/ui/Icon";
 
 /* Мэдрэхүйн калибровк — хэрэглэгчийн мэдрэх босгыг 4 алхамтай тестээр тодорхойлж,
    чичиргээний хүч / гэрлийн эрчим / давтамжийн бүсийн тохиргоог автоматаар өгнө. */
@@ -137,8 +138,8 @@ export default function Calibrate({
 
         {step === 0 && (
           <div className="flex flex-col gap-4">
-            <span className="text-[44px] leading-none" aria-hidden="true">
-              🎛
+            <span className="w-14 h-14 rounded-2xl flex items-center justify-center text-aqua bg-aqua/[.10] shadow-[inset_0_0_0_1px_rgba(56,232,206,.22)]" aria-hidden="true">
+              <Icon name="sliders" size={26} />
             </span>
             <h2 className="text-[clamp(20px,2.6vw,27px)] font-extrabold tracking-[-.035em]">Мэдрэхүйн калибровк</h2>
             <p className="text-dim text-sm leading-[1.6]">
@@ -147,7 +148,8 @@ export default function Calibrate({
             </p>
             <div className="flex gap-3 flex-wrap mt-1.5">
               <ActionButton variant="primary" onClick={() => setStep(1)}>
-                Эхлэх →
+                Эхлэх
+                <Icon name="arrowRight" size={15} />
               </ActionButton>
               <ActionButton variant="secondary" onClick={onClose}>
                 Дараа хийе
@@ -172,7 +174,10 @@ export default function Calibrate({
               }
               onClick={tryVib}
             >
-              📳 {tried ? "Дахин туршиж үзэх" : "Туршиж үзэх"}
+              <span className="inline-flex items-center justify-center gap-2">
+                <Icon name="vibrate" size={16} />
+                {tried ? "Дахин туршиж үзэх" : "Туршиж үзэх"}
+              </span>
             </button>
             <div className="grid grid-cols-3 max-[560px]:grid-cols-1 gap-[9px]">
               {VIB_ANS.map((a) => (
@@ -254,14 +259,18 @@ export default function Calibrate({
                     onClick={() => toggleBand(s.key)}
                     aria-pressed={bandsSel[s.key]}
                   >
-                    {bandsSel[s.key] ? "✓ Мэдэрсэн" : "Мэдрээгүй"}
+                    <span className="inline-flex items-center justify-center gap-1.5">
+                      {bandsSel[s.key] && <Icon name="check" size={12} strokeWidth={2.4} />}
+                      {bandsSel[s.key] ? "Мэдэрсэн" : "Мэдрээгүй"}
+                    </span>
                   </button>
                 </div>
               ))}
             </div>
             <div className="flex gap-3 flex-wrap mt-1.5">
               <ActionButton variant="primary" onClick={() => setStep(4)}>
-                Үргэлжлүүлэх →
+                Үргэлжлүүлэх
+                <Icon name="arrowRight" size={15} />
               </ActionButton>
             </div>
           </div>
@@ -270,8 +279,8 @@ export default function Calibrate({
         {step === 4 && (
           <div className="flex flex-col gap-4">
             <span className="mono">4 / 4 · {stepTitles[4]}</span>
-            <span className="text-[44px] leading-none" aria-hidden="true">
-              ✓
+            <span className="w-14 h-14 rounded-full flex items-center justify-center text-aqua bg-aqua/[.12] shadow-[inset_0_0_0_1px_rgba(56,232,206,.26)]" aria-hidden="true">
+              <Icon name="check" size={28} strokeWidth={2.2} />
             </span>
             <h2 className="text-[clamp(20px,2.6vw,27px)] font-extrabold tracking-[-.035em]">Таны мэдрэхүйн профайл</h2>
             <div className="grid grid-cols-3 max-[560px]:grid-cols-1 gap-2.5">
@@ -288,10 +297,11 @@ export default function Calibrate({
                 <b className="text-sm text-aqua">{[bandsSel.bass && "Бас", bandsSel.mid && "Дунд", bandsSel.high && "Өндөр"].filter(Boolean).join(" · ")}</b>
               </div>
             </div>
-            <p className="text-faint text-xs">Тохиргоог хүссэн үедээ ⚙️ цэснээс өөрчилж, дахин калибровк хийж болно.</p>
+            <p className="text-dim text-xs leading-[1.55]">Тохиргоог хүссэн үедээ тохиргооны цэснээс өөрчилж, дахин калибровк хийж болно.</p>
             <div className="flex gap-3 flex-wrap mt-1.5">
               <ActionButton variant="primary" onClick={finish}>
-                Хадгалаад эхлэх →
+                Хадгалаад эхлэх
+                <Icon name="arrowRight" size={15} />
               </ActionButton>
             </div>
           </div>

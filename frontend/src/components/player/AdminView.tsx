@@ -19,6 +19,7 @@ import { ICONS } from "@/lib/player/constants";
 import { listUsers } from "@/lib/api/client";
 import { pushFeed } from "@/lib/data/library";
 import type { AdminUserRow } from "@/types/auth";
+import Icon from "@/components/ui/Icon";
 
 const ROLE_LABEL: Record<AdminUserRow["role"], string> = {
   USER: "Хэрэглэгч",
@@ -78,10 +79,11 @@ export default function AdminView({
     <>
       <PageHeader
         eyebrow="Хяналтын самбар"
-        title="Сайн уу, Админ 🛠"
+        title="Сайн уу, Админ"
         actions={
           <ActionButton variant="primary" onClick={onOpenAdmin}>
-            Хэрэглэгч · Дуу удирдах →
+            Хэрэглэгч · Дуу удирдах
+            <Icon name="arrowRight" size={15} />
           </ActionButton>
         }
       />
@@ -90,22 +92,25 @@ export default function AdminView({
       {!loading && err && <ErrorState title="Ачаалагдсангүй" hint={err} onRetry={load} />}
 
       {!loading && !err && (
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(196px,1fr))] gap-4">
+          {/* icon-ууд семантикаараа тааруулсан: эмч→стетоскоп, эцэг эх→том/жижиг дүр,
+              дууны сан→винил диск, PRO→титэм (өмнө нь эмч дээр наушник, эцэг эх дээр
+              алмаз байсан нь ойлгомжгүй байв) */}
           <StatCard icon={ICONS.users} color="c-aqua" value={regular.length} label="Нийт хэрэглэгч" />
-          <StatCard icon={ICONS.phones} color="c-purple" value={therapistCount} label="Эмч" />
-          <StatCard icon={ICONS.gem} color="c-gold" value={parentCount} label="Эцэг эх" />
-          <StatCard icon={ICONS.music} color="c-rose" value={allTracksCount} label="Дууны сан" />
-          <StatCard icon={ICONS.star} color="c-aqua" value={proCount} label="PRO захиалагч" />
+          <StatCard icon={ICONS.stethoscope} color="c-purple" value={therapistCount} label="Эмч" />
+          <StatCard icon={ICONS.family} color="c-gold" value={parentCount} label="Эцэг эх" />
+          <StatCard icon={ICONS.disc} color="c-rose" value={allTracksCount} label="Дууны сан" />
+          <StatCard icon={ICONS.crown} color="c-aqua" value={proCount} label="PRO захиалагч" />
         </div>
       )}
 
-      <div className="border border-white/[.08] rounded-2xl bg-white/[.02] p-6 mt-7 flex flex-col gap-4 transition-[box-shadow,border-color] duration-250 hover:border-white/[.14]">
+      <div className="border border-white/[.07] rounded-2xl [background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.008))] shadow-[inset_0_1px_0_rgba(255,255,255,.04)] p-6 mt-7 flex flex-col gap-4 transition-[box-shadow,border-color] duration-250 hover:border-white/[.14]">
         <div className="flex gap-4 items-start">
-          {/* .st-ico + .c-gold эх CSS-д source order-ийн улмаас .st-ico-ийн саарал өнгө gold-ийг бүрэн дарж,
-              gold tint харагдахгүй болсон бодит үзэгдэл — энэ visual bug-ийг яг хэвээр хадгалав (шинээр засаагүй) */}
-          <span className="w-11 h-11 rounded-xl text-[#9FB0AC] bg-white/5 flex items-center justify-center flex-none" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-              {ICONS.horn}
+          {/* KPI картуудтай ижил icon-tile хэв маяг: тунгалаг tint + нимгэн inset hairline
+              (өмнө нь саарал tile байсан нь зарлалын warm семантиктай зөрж байв) */}
+          <span className="w-[42px] h-[42px] rounded-[13px] text-warm bg-warm/[.10] shadow-[inset_0_0_0_1px_rgba(217,165,76,.24)] flex items-center justify-center flex-none" aria-hidden="true">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              {ICONS.megaphone}
             </svg>
           </span>
           <div>
@@ -142,7 +147,7 @@ export default function AdminView({
         <>
           <h3 className="font-display font-semibold text-[17px] tracking-[-.02em] text-ink mt-8 mb-4">Сүүлийн бүртгэлүүд</h3>
           {recentUsers.length === 0 ? (
-            <Empty icon="👥" title="Бүртгүүлсэн хэрэглэгч алга" hint="Шинэ хэрэглэгч бүртгүүлэхэд энд харагдана" />
+            <Empty icon="users" title="Бүртгүүлсэн хэрэглэгч алга" hint="Шинэ хэрэглэгч бүртгүүлэхэд энд харагдана" />
           ) : (
             <div className="border border-white/[.08] rounded-2xl overflow-hidden bg-white/[.015]">
               <div className="grid grid-cols-[1fr_1.4fr_.7fr_.8fr_.8fr] max-[760px]:grid-cols-[1fr_1fr_.7fr] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-white/[.02]">
@@ -164,7 +169,7 @@ export default function AdminView({
                   <span className="text-dim whitespace-nowrap overflow-hidden text-ellipsis max-[760px]:hidden">{u.email}</span>
                   <span>{ROLE_LABEL[u.role]}</span>
                   <span className="text-faint font-mono text-[11px] max-[760px]:hidden">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("mn-MN") : "—"}</span>
-                  <StatusBadge label={u.subActive ? "💎 PRO" : "Үнэгүй"} tone={u.subActive ? "aqua" : "faint"} />
+                  <StatusBadge label={u.subActive ? "PRO" : "Үнэгүй"} tone={u.subActive ? "aqua" : "faint"} dot />
                 </div>
               ))}
             </div>
@@ -175,7 +180,7 @@ export default function AdminView({
       <PromoBanner
         title="Тоглуулагч руу шилжих"
         description="Хэрэглэгчийн нүдээр аппаа туршиж, дуу сонсож, мэдрэх горимыг шалгаарай."
-        actionLabel="🎧 Тоглуулагч нээх"
+        actionLabel="Тоглуулагч нээх"
         onAction={onGoHome}
       />
     </>

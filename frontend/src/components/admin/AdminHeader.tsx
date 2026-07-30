@@ -1,5 +1,7 @@
 "use client";
 
+import Icon from "@/components/ui/Icon";
+
 /* AdminPanel.tsx-ийн толгой хэсэг (гарчиг + таб сэлгэгч) — премиум dashboard header
    (Supabase Studio/Linear tab pattern) руу шинэчлэв, .auth-x/.auth-tabs legacy CSS-ээс
    Tailwind руу хөрвүүлсэн (эх .auth-tabs нь grid-cols 2 байсан ч энд 3 таб байрлуулж байсан
@@ -12,7 +14,7 @@ export default function AdminHeader({ tab, setTab, onClose }: { tab: AdminTab; s
     { v: "users", label: "Хэрэглэгчид" },
     { v: "assign", label: "Эмч томилолт" },
     { v: "tracks", label: "Дууны сан" },
-    { v: "pro", label: "💎 PRO" },
+    { v: "pro", label: "PRO" },
   ];
   return (
     <div className="mb-1">
@@ -21,7 +23,7 @@ export default function AdminHeader({ tab, setTab, onClose }: { tab: AdminTab; s
         onClick={onClose}
         aria-label="Хаах"
       >
-        ✕
+        <Icon name="close" size={15} />
       </button>
 
       <span className="mono block mb-4">МЭДРЭХ® / Админ самбар</span>

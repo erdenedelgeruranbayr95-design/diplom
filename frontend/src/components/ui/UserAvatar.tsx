@@ -30,8 +30,15 @@ export default function UserAvatar({
   const initial = (name || "?").trim().charAt(0).toUpperCase();
   const { bg, text } = TONE_GRADIENT[tone];
   return (
+    /* Дотоод hairline ring: цайвар gradient бараан дэвсгэр дээр "хэрчигдэж" харагдахгүй,
+       үсэг дээр нимгэн highlight — жижиг хэмжээнд ч тод хэвээр. */
     <span
-      className={"flex-none rounded-full flex items-center justify-center font-display font-bold " + SIZE_CLS[size] + " " + className}
+      className={
+        "flex-none rounded-full flex items-center justify-center font-display font-bold leading-none select-none shadow-[inset_0_0_0_1px_rgba(255,255,255,.18),inset_0_1px_0_rgba(255,255,255,.3)] " +
+        SIZE_CLS[size] +
+        " " +
+        className
+      }
       style={{ background: bg, color: text }}
       aria-hidden="true"
     >

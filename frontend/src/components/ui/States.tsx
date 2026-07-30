@@ -2,6 +2,25 @@
    Ямар ч хуудсанд <Loading/>, <Skeleton .../>, <Empty .../>, <ErrorState .../> гэж ашиглана. */
 import type { ReactNode } from "react";
 import { ActionButton } from "@/components/ui/ActionGroup";
+import Icon, { ICON_PATHS } from "@/components/ui/Icon";
+
+/* `icon` prop нь emoji ("🎵") эсвэл нэгдсэн icon-ийн нэр ("disc") хоёуланг хүлээж авна:
+   нэр нь ICON_PATHS-д байвал цэвэрхэн SVG-ээр, байхгүй бол өмнөх шигээ текстээр зурна.
+   Ингэснээр аль ч дуудагч файл эвдрэхгүйгээр emoji-оос SVG рүү шат дараалан шилжинэ. */
+function StateIcon({ icon }: { icon: string }) {
+  if (ICON_PATHS[icon]) {
+    return (
+      <span className="state-ic" aria-hidden="true">
+        <Icon name={icon} size={28} strokeWidth={1.6} />
+      </span>
+    );
+  }
+  return (
+    <span className="state-ic" aria-hidden="true">
+      {icon}
+    </span>
+  );
+}
 
 export function Loading({ label = "Ачааллаж байна…" }: { label?: string }) {
   return (
@@ -43,7 +62,7 @@ export function Skeleton({
 }
 
 export function Empty({
-  icon = "🎵",
+  icon = "disc",
   title = "Хоосон байна",
   hint,
   action,
@@ -55,9 +74,7 @@ export function Empty({
 }) {
   return (
     <div className="state state-empty">
-      <span className="state-ic" aria-hidden="true">
-        {icon}
-      </span>
+      <StateIcon icon={icon} />
       <b>{title}</b>
       {hint && <p>{hint}</p>}
       {action}
@@ -76,9 +93,7 @@ export function ErrorState({
 }) {
   return (
     <div className="state state-error" role="alert">
-      <span className="state-ic" aria-hidden="true">
-        ⚠️
-      </span>
+      <StateIcon icon="alert" />
       <b>{title}</b>
       {hint && <p>{hint}</p>}
       {onRetry && (

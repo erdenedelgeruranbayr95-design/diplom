@@ -7,6 +7,7 @@
    button-ийн (onBack || onGoHome) логик хэвээр. */
 import UserAvatar from "@/components/ui/UserAvatar";
 import type { LinkedChild } from "@/types/therapy";
+import Icon from "@/components/ui/Icon";
 
 export default function ChildOverviewCard({
   child,
@@ -28,10 +29,13 @@ export default function ChildOverviewCard({
         </div>
       </div>
       <button
-        className="rounded-full text-[13px] font-medium text-dim border border-white/[.1] py-2 px-4 whitespace-nowrap transition-colors duration-250 hover:text-aqua hover:border-aqua/40 focus-visible:outline-none focus-visible:shadow-glow-aqua flex-none"
+        className="inline-flex items-center rounded-full text-[13px] font-medium text-dim border border-white/[.1] py-2 px-4 min-h-[36px] whitespace-nowrap transition-[color,border-color,background] duration-250 hover:text-aqua hover:border-aqua/40 hover:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua flex-none"
         onClick={onBack || onGoHome}
       >
-        {onBack ? "← Жагсаалт руу" : "🎧 Тоглуулагч руу"}
+        <span className="inline-flex items-center gap-2">
+          {onBack ? <Icon name="arrowLeft" size={14} /> : <Icon name="phones" size={14} />}
+          {onBack ? "Жагсаалт руу" : "Тоглуулагч руу"}
+        </span>
       </button>
     </div>
   );

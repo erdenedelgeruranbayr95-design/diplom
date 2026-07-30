@@ -9,6 +9,7 @@ import { useState } from "react";
 import BackBar from "./BackBar";
 import * as api from "@/lib/api/client";
 import { analyzeAudioFile } from "@/lib/audio/analyze";
+import Icon from "@/components/ui/Icon";
 
 const labelCls = "flex flex-col gap-1.5";
 const captionCls = "mono !text-[9px]";
@@ -136,14 +137,20 @@ export default function UploadSongView({ onBack }: { onBack: () => void }) {
 
         {mode === "file" ? (
           <label className={labelCls}>
-            <span className={captionCls}>🎵 Дууны файл (mp3) *</span>
+            <span className={captionCls + " inline-flex items-center gap-2"}>
+              <Icon name="music" size={13} />
+              Дууны файл (mp3) *
+            </span>
             <div className="border border-dashed border-white/[.14] rounded-xl p-4 bg-white/[.015] transition-colors duration-200 hover:border-aqua/40 [&_input]:text-[12px] [&_input]:text-dim [&_input::file-selector-button]:bg-aqua/[.12] [&_input::file-selector-button]:text-aqua [&_input::file-selector-button]:border [&_input::file-selector-button]:border-aqua/35 [&_input::file-selector-button]:rounded-full [&_input::file-selector-button]:py-1.5 [&_input::file-selector-button]:px-3.5 [&_input::file-selector-button]:mr-2.5 [&_input::file-selector-button]:font-body [&_input::file-selector-button]:text-[12px] [&_input::file-selector-button]:cursor-pointer">
               <input name="audio" type="file" accept="audio/*" />
             </div>
           </label>
         ) : (
           <label className={labelCls}>
-            <span className={captionCls}>🔗 Дууны холбоос (URL) *</span>
+            <span className={captionCls + " inline-flex items-center gap-2"}>
+              <Icon name="link" size={13} />
+              Дууны холбоос (URL) *
+            </span>
             <input className={inputCls} name="url" type="url" placeholder="https://example.com/song.mp3" />
           </label>
         )}

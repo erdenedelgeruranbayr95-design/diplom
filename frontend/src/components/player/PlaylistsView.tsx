@@ -15,6 +15,7 @@ import {
   loadPlaylists, createPlaylist, deletePlaylist,
   addToPlaylist, removeFromPlaylist,
 } from "@/lib/data/library";
+import Icon from "@/components/ui/Icon";
 
 export default function PlaylistsView({
   email, tracks, onPlay, curId, playing, onBack,
@@ -105,7 +106,7 @@ export default function PlaylistsView({
               />
             </div>
             <div className="flex flex-col gap-1 max-h-[360px] overflow-y-auto">
-              {candidates.length === 0 && <Empty icon="🔍" title="Нэмэх дуу алга" hint="Өөр түлхүүр үгээр хайж үзнэ үү" />}
+              {candidates.length === 0 && <Empty icon="search" title="Нэмэх дуу алга" hint="Өөр түлхүүр үгээр хайж үзнэ үү" />}
               {candidates.slice(0, 20).map((t) => (
                 <div key={t.id} className="flex items-center gap-3 py-2 px-2.5 rounded-lg text-ink text-left hover:bg-white/[.04] transition-colors duration-150">
                   <img className="w-10 h-10 rounded-md object-cover shadow-[0_4px_12px_rgba(0,0,0,.3)] flex-none" src={t.cover} alt="" loading="lazy" />
@@ -127,7 +128,7 @@ export default function PlaylistsView({
         )}
 
         {items.length === 0 ? (
-          <Empty icon="🎧" title="Жагсаалт хоосон" hint="«＋ Дуу нэмэх» товчоор дуу нэмээрэй" />
+          <Empty icon="phones" title="Жагсаалт хоосон" hint="«＋ Дуу нэмэх» товчоор дуу нэмээрэй" />
         ) : (
           <div className="flex flex-col gap-0.5">
             {items.map((t, i) => {
@@ -200,7 +201,7 @@ export default function PlaylistsView({
       </form>
 
       {lists.length === 0 ? (
-        <Empty icon="🎵" title="Жагсаалт алга" hint="Дээрээс шинэ жагсаалт үүсгээд, дуртай дуугаа цуглуулаарай" />
+        <Empty icon="music" title="Жагсаалт алга" hint="Дээрээс шинэ жагсаалт үүсгээд, дуртай дуугаа цуглуулаарай" />
       ) : (
         <>
           <SectionTitle title="Миний жагсаалтууд" description={`${lists.length} жагсаалт`} />
@@ -214,7 +215,7 @@ export default function PlaylistsView({
                 >
                   <button className="block w-full text-left bg-none border-none cursor-pointer p-3.5 focus-visible:outline-none focus-visible:shadow-glow-aqua" onClick={() => setOpenId(p.id)}>
                     <span className="grid place-items-center aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 [&>img]:w-full [&>img]:h-full [&>img]:object-cover shadow-[0_8px_22px_rgba(0,0,0,.35)]">
-                      {cover ? <img src={cover} alt="" loading="lazy" /> : <span className="text-[40px] text-faint" aria-hidden="true">♫</span>}
+                      {cover ? <img src={cover} alt="" loading="lazy" /> : <span className="text-dim" aria-hidden="true"><Icon name="music" size={36} strokeWidth={1.4} /></span>}
                     </span>
                     <b className="block text-[14.5px] font-semibold text-ink whitespace-nowrap overflow-hidden text-ellipsis">{p.name}</b>
                     <i className="block not-italic text-xs text-dim mt-0.5">{p.tracks.length} дуу</i>
@@ -226,14 +227,14 @@ export default function PlaylistsView({
                       disabled={!p.tracks.length}
                       aria-label="Тоглуулах"
                     >
-                      ▶
+                      <span className="pl-0.5 flex" aria-hidden="true"><Icon name="chevronRight" size={15} strokeWidth={2.4} /></span>
                     </button>
                     <button
                       className="w-9 h-9 rounded-full border-none bg-[rgba(4,16,14,.8)] text-[#ff8a8a] cursor-pointer backdrop-blur-sm flex items-center justify-center transition-transform duration-150 hover:scale-110 focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(232,138,155,.3)]"
                       onClick={() => remove(p)}
                       aria-label="Устгах"
                     >
-                      🗑
+                      <Icon name="trash" size={15} />
                     </button>
                   </div>
                 </div>
