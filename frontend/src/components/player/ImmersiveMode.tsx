@@ -54,14 +54,16 @@ export default function ImmersiveMode({
       }
       onClick={onClose}
       role="dialog"
-      aria-label="Мэдрэх горим"
+      aria-modal="true"
+      aria-label="Мэдрэх горим — хаахын тулд Esc дарна уу"
+      aria-describedby="immersive-exit-hint"
     >
       <img
         className="absolute -inset-10 w-[calc(100%+80px)] h-[calc(100%+80px)] object-cover [filter:blur(60px)_brightness(.4)_saturate(1.3)]"
         src={track.cover}
         alt=""
         aria-hidden="true"
-      />
+      loading="lazy" decoding="async" />
       <div
         className="absolute inset-0 [background:radial-gradient(ellipse_at_50%_45%,transparent_0%,rgba(4,7,7,.72)_78%)]"
         aria-hidden="true"
@@ -106,12 +108,12 @@ export default function ImmersiveMode({
           className="relative w-[230px] h-[230px] max-[700px]:w-[170px] max-[700px]:h-[170px] rounded-lg object-cover shadow-[0_24px_80px_rgba(0,0,0,.7)]"
           src={track.cover}
           alt=""
-        />
+        loading="lazy" decoding="async" />
       </div>
       <div className="relative text-center z-[2]">
         <span className="mono">Мэдрэх горим</span>
         <h2 className="text-[clamp(26px,4vw,42px)] font-extrabold tracking-[-.04em] mt-3">{track.title}</h2>
-        <p className="text-dim text-[14.5px] mt-1.5">
+        <p className="text-dim text-copy mt-1.5">
           {track.artist} · {track.genre}
         </p>
       </div>
@@ -119,7 +121,7 @@ export default function ImmersiveMode({
         {Array.from({ length: 28 }).map((_, i) => (
           <i
             key={i}
-            className="flex-1 [background:linear-gradient(180deg,rgba(56,232,206,.85),rgba(56,232,206,.08))] rounded-t-[4px] h-[2%] transition-[height] duration-[90ms] ease-linear"
+            className="flex-1 [background:linear-gradient(180deg,rgba(56,232,206,.85),rgba(56,232,206,.08))] rounded-t-bar h-[2%] transition-[height] duration-[90ms] ease-linear"
             ref={(el) => {
               barsRef.current[i] = el;
             }}
@@ -137,7 +139,7 @@ export default function ImmersiveMode({
           <button
             key={m.v}
             className={
-              "py-[7px] px-[13px] max-[700px]:py-1.5 max-[700px]:px-2.5 rounded-full text-[12.5px] max-[700px]:text-[11.5px] font-semibold cursor-pointer border border-line bg-[rgba(20,28,27,.55)] text-[rgba(242,245,244,.65)] backdrop-blur-sm transition-[color,border-color,background,box-shadow] duration-150 hover:text-ink hover:border-[rgba(56,232,206,.35)] focus-visible:shadow-glow-aqua " +
+              "py-[7px] px-[13px] max-[700px]:py-1.5 max-[700px]:px-2.5 rounded-full text-note max-[700px]:text-caption font-semibold cursor-pointer border border-line bg-[rgba(20,28,27,.55)] text-[rgba(242,245,244,.65)] backdrop-blur-sm transition-[color,border-color,background,box-shadow] duration-150 hover:text-ink hover:border-[rgba(56,232,206,.35)] focus-visible:shadow-glow-aqua " +
               (viz.mode === m.v ? "!text-[#040707] !bg-[rgba(56,232,206,.85)] !border-[rgba(56,232,206,.85)]" : "")
             }
             onClick={() => onUpdateViz({ mode: m.v })}
@@ -148,7 +150,7 @@ export default function ImmersiveMode({
         ))}
         <button
           className={
-            "py-[7px] px-[13px] max-[700px]:py-1.5 max-[700px]:px-2.5 rounded-full text-[12.5px] max-[700px]:text-[11.5px] font-semibold cursor-pointer border border-line bg-[rgba(20,28,27,.55)] text-[rgba(242,245,244,.65)] backdrop-blur-sm transition-[color,border-color,background,box-shadow] duration-150 hover:text-ink hover:border-[rgba(56,232,206,.35)] focus-visible:shadow-glow-aqua " +
+            "py-[7px] px-[13px] max-[700px]:py-1.5 max-[700px]:px-2.5 rounded-full text-note max-[700px]:text-caption font-semibold cursor-pointer border border-line bg-[rgba(20,28,27,.55)] text-[rgba(242,245,244,.65)] backdrop-blur-sm transition-[color,border-color,background,box-shadow] duration-150 hover:text-ink hover:border-[rgba(56,232,206,.35)] focus-visible:shadow-glow-aqua " +
             (viz.particles ? "!text-[#040707] !bg-[rgba(56,232,206,.85)] !border-[rgba(56,232,206,.85)]" : "")
           }
           onClick={() => onUpdateViz({ particles: !viz.particles })}
@@ -159,9 +161,28 @@ export default function ImmersiveMode({
         </button>
       </div>
 
-      <span className="mono absolute left-0 right-0 bottom-5 text-center z-[3] !text-[rgba(242,245,244,.4)]">
+      {/* Гарах заавар — өмнө нь зөвхөн ХАРАГДАХ текст байсан бөгөөд ханд нь бүдэг
+          (.4 alpha ≈ 2.4:1, AA хангахгүй). Одоо: контрастыг .62 болгож, дээрээс нь
+          `aria-describedby`-аар модалын тайлбар болгон дэлгэц уншигчид ч дуулгана.
+          Гарах ганц гарц нь Esc тул түүнийг мэдэгдэх нь заавал (WCAG 3.3.2). */}
+      <span
+        id="immersive-exit-hint"
+        className="mono absolute left-0 right-0 bottom-5 text-center z-[3] !text-[rgba(242,245,244,.62)]"
+      >
         ESC эсвэл дэлгэц дээр дарж гарна
       </span>
+      {/* Гар талбарын хэрэглэгчид зориулсан бодит фокуслах боломжтой гарах товч —
+          дэлгэц дээр дарах нь хулгана шаарддаг, Esc-ийг мэдэхгүй байж болно. */}
+      <button
+        className="absolute top-[22px] right-6 z-[5] w-11 h-11 rounded-full flex items-center justify-center border border-line bg-[rgba(20,28,27,.55)] text-[rgba(242,245,244,.8)] backdrop-blur-sm transition-colors duration-150 hover:text-ink hover:border-aqua/40 focus-visible:outline-none focus-visible:shadow-glow-aqua"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-label="Мэдрэх горимоос гарах"
+      >
+        <Icon name="close" size={18} />
+      </button>
     </div>
   );
 }

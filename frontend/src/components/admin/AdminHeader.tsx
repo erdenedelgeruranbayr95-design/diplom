@@ -35,8 +35,8 @@ export default function AdminHeader({ tab, setTab, onClose }: { tab: AdminTab; s
             role="tab"
             aria-selected={tab === t.v}
             className={
-              "font-display text-[12px] tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
-              (tab === t.v ? "bg-aqua text-[#04100E] font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
+              "font-display text-note tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+              (tab === t.v ? "bg-aqua text-on-aqua font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
             }
             onClick={() => setTab(t.v)}
           >

@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 
 export default function PageContainer({ children }: { children: ReactNode }) {
   return (
-    <main className="sp-main relative z-[2] flex-1 overflow-y-auto w-full">
+    <main id="main" tabIndex={-1} className="sp-main relative z-[2] flex-1 overflow-y-auto w-full">
       <div className="w-full min-w-0">{children}</div>
     </main>
   );

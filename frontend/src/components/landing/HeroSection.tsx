@@ -11,7 +11,7 @@ export default function HeroSection() {
 
       <div className="fc fc1" data-sp="0.12">
         <div className="fr">
-          <img src="/gallery/gal-02.jpg" alt="Концертын танхим, гэрэлтсэн тайз" loading="lazy" />
+          <img src="/gallery/gal-02.jpg" alt="Концертын танхим, гэрэлтсэн тайз" loading="lazy" decoding="async" />
           <div className="tint t-warm"></div>
         </div>
         <span className="cap">Тайз / 40 Hz</span>

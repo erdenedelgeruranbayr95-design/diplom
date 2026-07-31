@@ -6,8 +6,10 @@ import Link from "next/link";
 import { getArtist, getSong } from "@/lib/api/client";
 import type { ArtistWithSongs, Song } from "@/types/song";
 import Icon from "@/components/ui/Icon";
-import { fmtDur } from "@/lib/player/format";
+/* fmt() — нэг дууны урт (3:44), fmtDur() — цуглуулгын нийт урт (34 мин). */
+import { fmt, fmtDur } from "@/lib/player/format";
 import { SectionTitle } from "@/components/ui/PageHeader";
+import { Panel } from "@/components/ui/Surface";
 
 type PageState = "loading" | "ready" | "error";
 
@@ -115,7 +117,7 @@ export default function SongPage() {
       <audio ref={audioRef} />
       <div className="mx-auto max-w-[1280px]">
         <div className="mb-6 flex items-center justify-between gap-3">
-          <Link href="/" className="inline-flex items-center gap-2 rounded-full border border-white/[.1] bg-white/[.04] px-4 py-2 text-[13px] font-semibold text-ink transition-colors duration-150 hover:bg-white/[.08] focus-visible:outline-none focus-visible:shadow-glow-aqua">
+          <Link href="/" className="inline-flex items-center gap-2 rounded-full border border-white/[.1] bg-white/[.04] px-4 py-2 text-body font-semibold text-ink transition-colors duration-150 hover:bg-white/[.08] focus-visible:outline-none focus-visible:shadow-glow-aqua">
             <Icon name="arrowLeft" size={15} />
             Буцах
           </Link>
@@ -142,13 +144,13 @@ export default function SongPage() {
         {state === "ready" && hero && (
           <div className="grid grid-cols-[minmax(300px,360px)_1fr] max-nav:grid-cols-1 gap-8 items-start">
             <div className="flex flex-col gap-4">
-              <div className="relative overflow-hidden rounded-[30px] border border-white/[.08] bg-[linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015))] shadow-[0_20px_60px_rgba(0,0,0,.55)]">
+              <div className="relative overflow-hidden rounded-card border border-white/[.08] bg-[linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015))] shadow-[0_20px_60px_rgba(0,0,0,.55)]">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,232,206,.16),transparent_40%),radial-gradient(circle_at_85%_10%,rgba(217,165,76,.12),transparent_34%)]" />
-                <img className="relative z-[1] w-full aspect-square object-cover" src={hero.cover} alt={hero.title} />
+                <img className="relative z-[1] w-full aspect-square object-cover" src={hero.cover} alt={hero.title} loading="lazy" decoding="async" />
               </div>
 
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-aqua text-[#04100E] px-5 py-3 text-[13px] font-semibold transition-transform duration-200 hover:scale-[1.01] active:scale-[.98] focus-visible:outline-none focus-visible:shadow-glow-aqua"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-aqua text-on-aqua px-5 py-3 text-body font-semibold transition-transform duration-200 hover:scale-[1.01] active:scale-[.98] focus-visible:outline-none focus-visible:shadow-glow-aqua"
                 onClick={() => playRow(rows[0])}
               >
                 <span aria-hidden="true">{currentId === rows[0]?.id && playing ? "⏸" : "▶"}</span>
@@ -156,11 +158,11 @@ export default function SongPage() {
               </button>
 
               {artist?.bio || artist?.careerInfo ? (
-                <section className="rounded-[28px] border border-white/[.08] bg-white/[.03] p-4">
+                <Panel as="section">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-14 h-14 rounded-2xl overflow-hidden flex-none border border-white/[.08] bg-white/[.04]">
                       {artist.photoUrl ? (
-                        <img src={artist.photoUrl} alt={artist.name} className="w-full h-full object-cover" />
+                        <img src={artist.photoUrl} alt={artist.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       ) : (
                         <div className="w-full h-full grid place-items-center text-aqua">
                           <Icon name="user" size={22} />
@@ -168,60 +170,59 @@ export default function SongPage() {
                       )}
                     </div>
                     <div>
-                      <b className="block font-semibold text-[13.5px] text-ink">{artist.name}</b>
-                      <span className="block text-[12px] text-dim">{artist._count?.songs || rows.length} songs</span>
+                      <b className="block font-semibold text-body text-ink">{artist.name}</b>
+                      <span className="block text-note text-dim">{artist._count?.songs || rows.length} songs</span>
                     </div>
                   </div>
-                  <p className="text-[12.5px] leading-[1.7] text-dim">{artist.bio || artist.careerInfo}</p>
-                </section>
+                  <p className="text-note leading-[1.7] text-dim">{artist.bio || artist.careerInfo}</p>
+                </Panel>
               ) : null}
             </div>
 
             <div className="min-w-0">
-              <span className="w-fit inline-block text-[13px] font-semibold rounded-full py-2 px-4 bg-aqua text-[#04100E]">
+              <span className="w-fit inline-block text-body font-semibold rounded-full py-2 px-4 bg-aqua text-on-aqua">
                 {hero.genre}
               </span>
-              <h1 className="text-[clamp(30px,4.2vw,52px)] font-extrabold tracking-[-.05em] mt-3 leading-[1.02]">
-                {artist?.name || hero.title}
+              {/* Шатлал: төрөл → ДУУНЫ НЭР → уран бүтээлч ба мета (DetailView-тэй ижил).
+                  Өмнө нь h1 нь уран бүтээлчийн нэрийг харуулж, дууны нэр хаана ч байхгүй байв. */}
+              <h1 className="text-[clamp(26px,4.2vw,52px)] font-extrabold tracking-[-.05em] mt-3 leading-[1.02] text-balance">
+                {hero.title}
               </h1>
-              <p className="text-dim text-[14.5px] mt-2 leading-[1.6] max-w-[70ch]">
-                {hero.artist}
+              <p className="text-dim text-copy mt-2 leading-[1.6] max-w-[70ch]">
+                {artist?.name || hero.artist}
                 {hero.releaseYear ? ` · ${hero.releaseYear}` : ""}
-                {rows.length > 0 ? ` · ${rows.length} songs` : ""}
+                {rows.length > 0 ? ` · ${rows.length} дуу` : ""}
                 {totalDuration > 0 ? ` · ${fmtDur(totalDuration)}` : ""}
               </p>
-              {song?.description && <p className="text-ink/90 text-[14.5px] leading-[1.7] max-w-[68ch] mt-3">{song.description}</p>}
+              {song?.description && <p className="text-ink/90 text-copy leading-[1.7] max-w-[68ch] mt-3">{song.description}</p>}
 
-              <div className="mt-5 flex flex-wrap gap-2.5">
-                <button
-                  className="inline-flex items-center gap-2 rounded-full bg-aqua text-[#04100E] px-5 py-2.5 text-[13px] font-semibold transition-transform duration-200 hover:scale-[1.01] active:scale-[.98] focus-visible:outline-none focus-visible:shadow-glow-aqua"
-                  onClick={() => playRow(rows[0])}
-                >
-                  <span aria-hidden="true">▶</span>
-                  Play all
-                </button>
-                <button
-                  className="inline-flex items-center gap-2 rounded-full border border-white/[.1] bg-white/[.04] px-5 py-2.5 text-[13px] font-semibold text-ink transition-colors duration-150 hover:bg-white/[.08] focus-visible:outline-none focus-visible:shadow-glow-aqua"
-                  onClick={() => {
-                    const pick = rows[Math.floor(Math.random() * rows.length)];
-                    if (pick) playRow(pick);
-                  }}
-                >
-                  <span aria-hidden="true">↻</span>
-                  Shuffle
-                </button>
-              </div>
+              {/* "Тоглуулах" нь зүүн баганад аль хэдийн байгаа тул энд давхардуулахгүй —
+                  зөвхөн санамсаргүй тоглуулалт үлдэнэ. */}
+              {rows.length > 1 && (
+                <div className="mt-5">
+                  <button
+                    className="inline-flex items-center gap-2 rounded-full border border-white/[.1] bg-white/[.04] px-5 py-2.5 min-h-11 text-body font-semibold text-ink transition-colors duration-150 hover:bg-white/[.08] active:scale-[.98] focus-visible:outline-none focus-visible:shadow-glow-aqua"
+                    onClick={() => {
+                      const pick = rows[Math.floor(Math.random() * rows.length)];
+                      if (pick) playRow(pick);
+                    }}
+                  >
+                    <Icon name="shuffle" size={15} />
+                    Санамсаргүй
+                  </button>
+                </div>
+              )}
 
               <div className="mt-8">
                 <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-                  <SectionTitle title="Tracks" description="Мөр дээр дарж тухайн дууг шууд тоглуулна." />
-                  <span className="mono">{rows.length} дуунууд</span>
+                  <SectionTitle title="Дуунууд" description="Мөр дээр дарж тухайн дууг шууд тоглуулна." />
+                  <span className="mono flex-none">{rows.length} дуу</span>
                 </div>
-                <div className="overflow-hidden rounded-[28px] border border-white/[.08] bg-white/[.03]">
-                  <div className="grid grid-cols-[64px_1fr_90px] max-nav:grid-cols-[52px_1fr_70px] gap-3 px-5 py-3 border-b border-white/[.06] text-[11px] uppercase tracking-[.2em] text-faint font-mono">
+                <div className="overflow-hidden rounded-card border border-white/[.08] bg-white/[.03]">
+                  <div className="grid grid-cols-[44px_1fr_64px] max-nav:grid-cols-[34px_1fr_54px] gap-3 px-5 max-nav:px-3.5 py-3 border-b border-white/[.06] text-caption uppercase tracking-[.2em] text-faint font-mono">
                     <span>#</span>
-                    <span>Title</span>
-                    <span className="text-right">⏱</span>
+                    <span>Нэр</span>
+                    <span className="text-right" aria-label="Үргэлжлэх хугацаа">⏱</span>
                   </div>
                   <div className="flex flex-col">
                     {rows.map((row, index) => {
@@ -230,9 +231,12 @@ export default function SongPage() {
                         <button
                           key={row.id}
                           type="button"
+                          aria-current={active ? "true" : undefined}
                           className={
-                            "grid grid-cols-[64px_1fr_90px] max-nav:grid-cols-[52px_1fr_70px] gap-3 items-center px-5 py-4 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:shadow-glow-aqua border-t border-white/[.05] " +
-                            (active ? "bg-aqua/[.08]" : "hover:bg-white/[.04]")
+                            /* Идэвхтэй мөр: DetailView-тэй ижил — зүүн aqua зураас + өнгө */
+                            "relative grid grid-cols-[44px_1fr_64px] max-nav:grid-cols-[34px_1fr_54px] gap-3 items-center px-5 max-nav:px-3.5 py-4 min-h-11 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:shadow-glow-aqua border-t border-white/[.05] " +
+                            "before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-aqua before:transition-transform before:duration-200 before:origin-center " +
+                            (active ? "bg-aqua/[.08] before:scale-y-100" : "hover:bg-white/[.04] before:scale-y-0")
                           }
                           onClick={() => {
                             if (active && playing) {
@@ -250,14 +254,14 @@ export default function SongPage() {
                             setCurrentId(row.id);
                           }}
                         >
-                          <span className="mono text-[11px] text-dim">{String(index + 1).padStart(2, "0")}</span>
+                          <span className={"mono text-caption " + (active ? "text-aqua" : "text-dim")}>{String(index + 1).padStart(2, "0")}</span>
                           <span className="min-w-0">
-                            <b className="block font-semibold text-[14.5px] whitespace-nowrap overflow-hidden text-ellipsis">{row.title}</b>
-                            <i className="not-italic text-[12.5px] text-dim whitespace-nowrap overflow-hidden text-ellipsis block">
+                            <b className={"block font-semibold text-copy truncate " + (active ? "text-aqua" : "")}>{row.title}</b>
+                            <i className="not-italic text-note text-dim truncate block">
                               {row.artist}
                             </i>
                           </span>
-                          <span className="mono text-[11px] text-right text-dim">{row.duration ? fmtDur(row.duration) : "—"}</span>
+                          <span className="mono text-caption text-right text-dim tabular-nums">{row.duration ? fmt(row.duration) : "—"}</span>
                         </button>
                       );
                     })}

@@ -5,7 +5,7 @@
    нэмэгдээгүй — зөвхөн визуал давхарга шинэчлэгдсэн (icon-той мөрүүд, groups, илүү зай). */
 import { PREVIEW_SEC } from "@/lib/player/constants";
 import type { SessionUser } from "@/types/auth";
-import type { ViewName } from "@/components/player/Player";
+import type { ViewName } from "@/types/player";
 import DropdownPanel from "@/components/ui/DropdownPanel";
 import UserAvatar from "@/components/ui/UserAvatar";
 import Icon from "@/components/ui/Icon";
@@ -17,8 +17,8 @@ function MenuItem({ icon, label, onClick, danger }: { icon: string; label: strin
   return (
     <button
       className={
-        "group flex items-center gap-3 w-full text-left py-2.5 px-2.5 rounded-lg text-[13.5px] font-medium transition-colors duration-150 " +
-        (danger ? "text-[#E88A9B] hover:bg-[rgba(232,138,155,.09)]" : "text-ink hover:bg-white/[.06]")
+        "group flex items-center gap-3 w-full text-left py-2.5 px-2.5 rounded-lg text-body font-medium transition-colors duration-150 " +
+        (danger ? "text-danger hover:bg-[rgba(232,138,155,.09)]" : "text-ink hover:bg-white/[.06]")
       }
       onClick={onClick}
     >
@@ -67,11 +67,11 @@ export default function ProfileDropdown({
     <div className="relative">
       <button
         className={
-          "w-[42px] h-[42px] flex-none rounded-full flex items-center justify-center font-display font-bold text-[15px] transition-[box-shadow,transform] duration-250 " +
+          "w-[42px] h-[42px] flex-none rounded-full flex items-center justify-center font-display font-bold text-lead transition-[box-shadow,transform] duration-250 " +
           (isAdmin
             ? "bg-[linear-gradient(135deg,var(--warm),#A8742B)] text-[#140D02] " +
               (open ? "shadow-[0_0_0_3px_rgba(217,165,76,.35)]" : "hover:shadow-[0_0_0_3px_rgba(217,165,76,.35)]")
-            : "bg-[linear-gradient(135deg,var(--aqua),#1FA893)] text-[#04100E] " +
+            : "bg-[linear-gradient(135deg,var(--aqua),#1FA893)] text-on-aqua " +
               (open ? "shadow-[0_0_0_3px_rgba(56,232,206,.4)]" : "hover:shadow-[0_0_0_3px_rgba(56,232,206,.25)]"))
         }
         onClick={onToggle}
@@ -82,11 +82,11 @@ export default function ProfileDropdown({
         {initial}
       </button>
       {open && (
-        <DropdownPanel label="Профайл" width={300}>
+        <DropdownPanel label="Профайл" width={300} onClose={onToggle}>
           <div className="flex items-center gap-3 px-1.5 py-1.5">
             <UserAvatar name={user?.name || "?"} size="md" tone={isAdmin ? "warm" : "aqua"} />
             <div className="min-w-0">
-              <b className="block text-[15px] font-semibold truncate">{user?.name}</b>
+              <b className="block text-lead font-semibold truncate">{user?.name}</b>
               <i className="not-italic text-xs text-dim break-all">{user?.email}</i>
             </div>
           </div>
@@ -99,17 +99,17 @@ export default function ProfileDropdown({
           >
             {isAdmin ? (
               <>
-                <b className="text-[13.5px] font-semibold text-ink">Админ эрх</b>
+                <b className="text-body font-semibold text-ink">Админ эрх</b>
                 <span className="text-xs text-dim">Бүх боломж нээлттэй</span>
               </>
             ) : subscribed ? (
               <>
-                <b className="text-[13.5px] font-semibold text-aqua">PRO идэвхтэй</b>
+                <b className="text-body font-semibold text-aqua">PRO идэвхтэй</b>
                 <span className="text-xs text-dim">Дараагийн төлбөр: {renewDate}</span>
               </>
             ) : (
               <>
-                <b className="text-[13.5px] font-semibold text-ink">Үнэгүй горим</b>
+                <b className="text-body font-semibold text-ink">Үнэгүй горим</b>
                 <span className="text-xs text-dim">Дуу тус бүрээс {PREVIEW_SEC} сек</span>
               </>
             )}

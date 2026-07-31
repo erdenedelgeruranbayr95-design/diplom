@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
+import MotionProvider from "@/components/providers/MotionProvider";
+import { fontVariables } from "./fonts";
 
 export const metadata: Metadata = {
   title: "МЭДРЭХ® — хөгжмийг арьсаараа",
@@ -17,19 +19,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="mn">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;700;800&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    /* Шрифтийн CSS хувьсагчийг <html>-д тавина — globals.css-ийн @theme эдгээрийг уншина.
+       Гуравдагч домэйн руу хүсэлт байхгүй (next/font build үед өөрийн домэйнд байрлуулсан). */
+    <html lang="mn" className={fontVariables}>
       <body id="top">
-        <AuthProvider>
-          <ToastProvider>{children}</ToastProvider>
-        </AuthProvider>
+        {/* Гар талбараар шууд агуулга руу үсрэх холбоос — Tab дарахад л харагдана.
+            Үүнгүй бол гар ашигладаг хэрэглэгч бүр хуудас ачаалах болгонд TopBar-ийн
+            бүх товчийг дамжих шаардлагатай болдог (WCAG 2.4.1 Bypass Blocks). */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[10050] focus:rounded-full focus:bg-aqua focus:text-on-aqua focus:px-5 focus:py-3 focus:text-body focus:font-semibold focus:shadow-lg"
+        >
+          Шууд агуулга руу очих
+        </a>
+        <MotionProvider>
+          <AuthProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </AuthProvider>
+        </MotionProvider>
       </body>
     </html>
   );

@@ -44,8 +44,8 @@ export default function SectionCard({
         <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
           {title && (
             <div className="min-w-0">
-              <b className="block font-display font-semibold text-[16.5px] tracking-[-.025em] text-ink">{title}</b>
-              {description && <p className="text-dim text-[13px] leading-[1.55] mt-1.5 max-w-[62ch]">{description}</p>}
+              <b className="block font-display font-semibold text-title tracking-[-.025em] text-ink">{title}</b>
+              {description && <p className="text-dim text-body leading-[1.55] mt-1.5 max-w-[62ch]">{description}</p>}
             </div>
           )}
           {actions && <div className="flex items-center gap-2 flex-none flex-wrap">{actions}</div>}

@@ -36,15 +36,15 @@ export default function NotificationDropdown({
           <path d="M13.7 21a2 2 0 0 1-3.4 0" />
         </svg>
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-[9px] bg-aqua text-[#04100E] text-[10.5px] font-bold flex items-center justify-center px-1 border-2 border-[#0A100F]">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-chip bg-aqua text-on-aqua text-meta font-bold flex items-center justify-center px-1 border-2 border-[#0A100F]">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
       </button>
       {open && (
-        <DropdownPanel label="Мэдэгдлүүд" width={340}>
-          <span className="mono !text-[10px] px-2 pt-1 pb-2">Мэдэгдэл</span>
-          {feed.length === 0 && <p className="text-faint text-[12.5px] leading-[1.5] px-2 py-3">Мэдэгдэл алга</p>}
+        <DropdownPanel label="Мэдэгдлүүд" width={340} onClose={onToggle}>
+          <span className="mono !text-meta px-2 pt-1 pb-2">Мэдэгдэл</span>
+          {feed.length === 0 && <p className="text-faint text-note leading-[1.5] px-2 py-3">Мэдэгдэл алга</p>}
           {feed.map((f) => (
             <div
               className={
@@ -57,8 +57,8 @@ export default function NotificationDropdown({
                 {f.icon}
               </span>
               <div className="min-w-0">
-                <p className="text-[13px] leading-[1.45] text-ink">{f.text}</p>
-                <span className="mono !text-[9px]">{relTime(f.date)}</span>
+                <p className="text-body leading-[1.45] text-ink">{f.text}</p>
+                <span className="mono !text-micro">{relTime(f.date)}</span>
               </div>
             </div>
           ))}

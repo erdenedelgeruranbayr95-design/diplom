@@ -42,6 +42,7 @@ export interface Song {
 }
 
 export interface AnalyzeSongPayload {
+  duration?: number;
   bpm?: number;
   beatCount?: number;
   beatTimestamps?: number[];

@@ -18,7 +18,7 @@ export default function HowItWorksSection() {
               <i>Дуу хэрхэн мэдрэмж болдог вэ?</i>
             </span>
           </h2>
-          <p className="mt-[22px] text-dim max-w-[46ch] text-[15.5px]">
+          <p className="mt-[22px] text-dim max-w-[46ch] text-lead">
             Сонсголгүй хүн хөгжмийг чихээрээ биш — гараараа, нүдээрээ мэдэрнэ. Энэ нь ердөө 4 алхмаар болдог:
           </p>
         </div>
@@ -28,13 +28,13 @@ export default function HowItWorksSection() {
               className="group relative grid grid-cols-[76px_1fr_1.15fr] max-[760px]:grid-cols-[36px_1fr] max-[760px]:[grid-template-areas:'n_h3'_'._p'] gap-6 max-[760px]:gap-x-3.5 max-[760px]:gap-y-1 py-8 border-b border-line items-baseline transition-[background,border-color] duration-[400ms] hover:bg-[linear-gradient(90deg,rgba(56,232,206,.06),transparent_60%)] hover:border-[rgba(56,232,206,.3)] before:content-[''] before:absolute before:left-0 before:top-0 before:-bottom-px before:w-0.5 before:bg-aqua before:scale-y-0 before:origin-bottom before:transition-transform before:duration-[400ms] before:ease-[cubic-bezier(.16,.8,.24,1)] hover:before:scale-y-100 hover:before:origin-top"
               key={s.n}
             >
-              <span className="max-[760px]:[grid-area:n] font-mono text-[11px] tracking-[.2em] text-faint text-right transition-colors duration-[400ms] group-hover:text-aqua">
+              <span className="max-[760px]:[grid-area:n] font-mono text-caption tracking-[.2em] text-faint text-right transition-colors duration-[400ms] group-hover:text-aqua">
                 {s.n}
               </span>
               <h3 className="max-[760px]:[grid-area:h3] text-[clamp(21px,2.6vw,32px)] font-normal tracking-[-.035em] transition-colors duration-[400ms] group-hover:text-aqua">
                 {s.name}
               </h3>
-              <p className="max-[760px]:[grid-area:p] text-dim text-[15px]">{s.text}</p>
+              <p className="max-[760px]:[grid-area:p] text-dim text-lead">{s.text}</p>
             </div>
           ))}
         </div>

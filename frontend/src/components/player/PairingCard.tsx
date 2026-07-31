@@ -8,6 +8,8 @@ import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
+import { ActionButton } from "@/components/ui/ActionGroup";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import Icon from "@/components/ui/Icon";
 
 export default function PairingCard({
@@ -19,6 +21,8 @@ export default function PairingCard({
   onClose: () => void;
   deviceSync: ReturnType<typeof useDeviceSync>;
 }) {
+  const trapRef = useFocusTrap(open);
+
   /* Холбогдсоны дараа 3 секундын дараа картыг автоматаар хаана — "🟢 Phone
      Connected" индикатор Now Playing/Header дотор хэвээр үлдэнэ. */
   useEffect(() => {
@@ -40,19 +44,21 @@ export default function PairingCard({
           role="presentation"
         >
           <motion.div
-            className="w-full max-w-[380px] mb-[110px] max-nav:mb-[96px] rounded-[24px] p-7 bg-[rgba(14,20,19,.72)] backdrop-blur-2xl border border-white/[.12] shadow-[0_24px_70px_rgba(0,0,0,.55)]"
+            className="w-full max-w-[380px] mb-[110px] max-nav:mb-[96px] rounded-panel p-7 bg-[rgba(14,20,19,.72)] backdrop-blur-2xl border border-white/[.12] shadow-[0_24px_70px_rgba(0,0,0,.55)]"
             initial={{ opacity: 0, scale: 0.92, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 12 }}
             transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            ref={trapRef}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
+            aria-modal="true"
             aria-label="Утас холбох"
           >
             {deviceSync.qrState !== "connected" ? (
               <>
                 <div className="flex items-center justify-between mb-5">
-                  <b className="font-display font-semibold text-[16px] text-ink flex items-center gap-2">
+                  <b className="font-display font-semibold text-title text-ink flex items-center gap-2">
                     <span className="text-aqua flex" aria-hidden="true"><Icon name="device" size={16} /></span>
                     Утас холбох
                   </b>
@@ -65,7 +71,7 @@ export default function PairingCard({
                   </button>
                 </div>
 
-                <p className="text-dim text-[13px] leading-[1.5] mb-5">MEDREH Mobile-оор доорх QR кодыг уншуулна уу</p>
+                <p className="text-dim text-body leading-[1.5] mb-5">MEDREH Mobile-оор доорх QR кодыг уншуулна уу</p>
 
                 <div className="flex justify-center mb-5">
                   <motion.span
@@ -82,7 +88,7 @@ export default function PairingCard({
                   </motion.span>
                 </div>
 
-                <div className="flex items-center justify-center gap-2 text-dim text-[12.5px] mb-5">
+                <div className="flex items-center justify-center gap-2 text-dim text-note mb-5">
                   <motion.i
                     className="w-[7px] h-[7px] rounded-full bg-aqua flex-none"
                     animate={{ opacity: [1, 0.3, 1] }}
@@ -93,22 +99,19 @@ export default function PairingCard({
                 </div>
 
                 <div className="border-t border-white/[.08] pt-4 flex flex-col gap-1.5 mb-5">
-                  <span className="text-[12px] text-dim flex items-center gap-2">
+                  <span className="text-note text-dim flex items-center gap-2">
                     <span className="text-aqua flex flex-none" aria-hidden="true"><Icon name="check" size={12} strokeWidth={2.4} /></span>
                     Хөгжимтэй синхроноор чичирнэ
                   </span>
-                  <span className="text-[12px] text-dim flex items-center gap-2">
+                  <span className="text-note text-dim flex items-center gap-2">
                     <span className="text-aqua flex flex-none" aria-hidden="true"><Icon name="check" size={12} strokeWidth={2.4} /></span>
                     Нэмэлт тохиргоо шаардахгүй
                   </span>
                 </div>
 
-                <button
-                  className="w-full rounded-full text-[13px] font-semibold border border-white/[.14] text-dim py-2.5 hover:text-ink hover:bg-white/[.06] transition-colors duration-150 focus-visible:outline-none focus-visible:shadow-glow-aqua"
-                  onClick={onClose}
-                >
+                <ActionButton variant="secondary" className="w-full" onClick={onClose}>
                   Цуцлах
-                </button>
+                </ActionButton>
               </>
             ) : (
               <div className="flex flex-col items-center text-center py-2">
@@ -121,29 +124,27 @@ export default function PairingCard({
                 >
                   <Icon name="check" size={32} strokeWidth={2.2} />
                 </motion.span>
-                <b className="font-display font-semibold text-[16px] text-ink mb-1">Холбогдлоо</b>
-                <p className="text-dim text-[13px] mb-1">Гар утас</p>
-                <p className="text-aqua text-[12.5px] mb-6 flex items-center gap-1.5">
+                <b className="font-display font-semibold text-title text-ink mb-1">Холбогдлоо</b>
+                <p className="text-dim text-body mb-1">Гар утас</p>
+                <p className="text-aqua text-note mb-6 flex items-center gap-1.5">
                   <Icon name="check" size={13} strokeWidth={2.4} />
                   Амжилттай холбогдлоо
                 </p>
 
                 <div className="flex items-center gap-2.5 w-full">
-                  <button
-                    className="flex-1 rounded-full text-[13px] font-semibold border border-[rgba(232,138,155,.3)] text-[#E88A9B] py-2.5 hover:bg-[#E88A9B] hover:text-[#140306] transition-colors duration-150 focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(232,138,155,.3)]"
+                  <ActionButton
+                    variant="danger"
+                    className="flex-1"
                     onClick={() => {
                       deviceSync.disconnect();
                       onClose();
                     }}
                   >
                     Салгах
-                  </button>
-                  <button
-                    className="flex-1 rounded-full text-[13px] font-semibold bg-aqua text-[#04100E] py-2.5 hover:bg-[#6FF3DE] transition-colors duration-150 focus-visible:outline-none focus-visible:shadow-glow-aqua"
-                    onClick={onClose}
-                  >
+                  </ActionButton>
+                  <ActionButton variant="primary" className="flex-1" onClick={onClose}>
                     Нуух
-                  </button>
+                  </ActionButton>
                 </div>
               </div>
             )}

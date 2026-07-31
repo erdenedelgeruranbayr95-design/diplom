@@ -31,6 +31,9 @@ export async function analyzeAudioFile(fileUrl: string): Promise<AnalyzeSongPayl
   const { bassEnergy, midEnergy, trebleEnergy } = computeBandEnergy(channel, sampleRate);
 
   return {
+    /* Дууны урт — decodeAudioData()-ийн буцаасан бодит утга. Дуу бүрийн duration-ийг
+       backend-д бичих ганц эх сурвалж энэ (upload формд гараар оруулдаггүй). */
+    duration: Math.round(buffer.duration),
     bpm: bpm ?? undefined,
     beatCount,
     beatTimestamps,

@@ -3,14 +3,14 @@
 /* TopBar-ийн мэдрэхүйн тохиргооны dropdown — премиум dropdown каркас (DropdownPanel) руу
    шинэчлэв. State/props/updatePrefs логик бүхэлдээ хэвээр — зөвхөн визуал давхарга шинэчлэгдсэн. */
 import { VIB_LEVELS, LIGHT_LEVELS } from "@/lib/player/constants";
-import type { Prefs } from "@/components/player/Player";
+import type { Prefs } from "@/types/player";
 import DropdownPanel from "@/components/ui/DropdownPanel";
 import Icon from "@/components/ui/Icon";
 
 /* Хэсгийн гарчиг — emoji-ийн оронд нэгдсэн icon, бүгд ижил зузаан/өнгөтэй */
 function FieldLabel({ icon, children }: { icon: string; children: React.ReactNode }) {
   return (
-    <label className="flex items-center gap-2 text-[13px] text-ink font-medium mt-2 px-2">
+    <label className="flex items-center gap-2 text-body text-ink font-medium mt-2 px-2">
       <span className="text-aqua flex" aria-hidden="true">
         <Icon name={icon} size={14} />
       </span>
@@ -20,8 +20,8 @@ function FieldLabel({ icon, children }: { icon: string; children: React.ReactNod
 }
 
 const segBtnCls =
-  "py-2.5 px-1 text-[12.5px] font-medium text-dim bg-[#101817] transition-colors duration-150 first:rounded-l-[9px] last:rounded-r-[9px] focus-visible:outline-none focus-visible:relative focus-visible:z-[1] focus-visible:shadow-glow-aqua";
-const segBtnOnCls = "bg-aqua text-[#04100E] font-semibold";
+  "py-2.5 px-1 text-note font-medium text-dim bg-surface-2 transition-colors duration-150 first:rounded-l-chip last:rounded-r-chip focus-visible:outline-none focus-visible:relative focus-visible:z-[1] focus-visible:shadow-glow-aqua";
+const segBtnOnCls = "bg-aqua text-on-aqua font-semibold";
 
 export default function SettingsDropdown({
   open,
@@ -51,11 +51,11 @@ export default function SettingsDropdown({
         <Icon name="settings" size={19} />
       </button>
       {open && (
-        <DropdownPanel label="Мэдрэхүйн тохиргоо" width={300}>
-          <span className="mono !text-[10px] px-2 pt-1 pb-2">Мэдрэхүйн тохиргоо</span>
+        <DropdownPanel label="Мэдрэхүйн тохиргоо" width={300} onClose={onToggle}>
+          <span className="mono !text-meta px-2 pt-1 pb-2">Мэдрэхүйн тохиргоо</span>
 
           <FieldLabel icon="vibrate">Чичиргээний хүч</FieldLabel>
-          <div className="grid grid-cols-3 gap-px bg-white/10 rounded-[9px] overflow-hidden mx-2 mb-1" role="group" aria-label="Чичиргээний хүч">
+          <div className="grid grid-cols-3 gap-px bg-white/10 rounded-chip overflow-hidden mx-2 mb-1" role="group" aria-label="Чичиргээний хүч">
             {VIB_LEVELS.map((v, i) => (
               <button
                 key={v.label}
@@ -69,7 +69,7 @@ export default function SettingsDropdown({
           </div>
 
           <FieldLabel icon="bulb">Гэрлийн эрчим</FieldLabel>
-          <div className="grid grid-cols-3 gap-px bg-white/10 rounded-[9px] overflow-hidden mx-2 mb-1" role="group" aria-label="Гэрлийн эрчим">
+          <div className="grid grid-cols-3 gap-px bg-white/10 rounded-chip overflow-hidden mx-2 mb-1" role="group" aria-label="Гэрлийн эрчим">
             {LIGHT_LEVELS.map((v, i) => (
               <button
                 key={v.label}
@@ -94,7 +94,7 @@ export default function SettingsDropdown({
               <button
                 key={k}
                 className={
-                  "inline-flex items-center justify-center gap-1.5 py-2.5 px-1 text-[12.5px] text-dim border border-line rounded-lg transition-colors duration-150 " +
+                  "inline-flex items-center justify-center gap-1.5 py-2.5 px-1 text-note text-dim border border-line rounded-lg transition-colors duration-150 " +
                   (prefs.bands[k] ? "text-aqua border-aqua/50 bg-aqua/[.07]" : "hover:border-white/20 hover:text-ink")
                 }
                 onClick={() => updatePrefs({ bands: { [k]: !prefs.bands[k] } })}
@@ -107,13 +107,13 @@ export default function SettingsDropdown({
           </div>
 
           <button
-            className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg text-[13.5px] font-medium border border-line text-ink transition-colors duration-150 hover:bg-white/[.06] hover:border-white/[.2] focus-visible:outline-none focus-visible:shadow-glow-aqua mt-2"
+            className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg text-body font-medium border border-line text-ink transition-colors duration-150 hover:bg-white/[.06] hover:border-white/[.2] focus-visible:outline-none focus-visible:shadow-glow-aqua mt-2"
             onClick={onCalibrate}
           >
             <Icon name="sliders" size={15} />
             Калибровк дахин хийх
           </button>
-          <p className="text-[11.5px] text-faint leading-[1.5] px-2 pt-1 pb-0.5">Сонсголын мэдрэмж хүн бүрд өөр — тохиргоо автоматаар хадгалагдана.</p>
+          <p className="text-caption text-faint leading-[1.5] px-2 pt-1 pb-0.5">Сонсголын мэдрэмж хүн бүрд өөр — тохиргоо автоматаар хадгалагдана.</p>
         </DropdownPanel>
       )}
     </div>

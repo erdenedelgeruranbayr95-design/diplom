@@ -1,55 +1,17 @@
 /* ============================================================================
-   ҮЕ 3 — ГАДААД ТӨРХИЙН НЭГТГЭЛ (polish layer)
+   polish.css — ГЛОБАЛ ӨНГӨЛГӨӨ (cascade-ийн хамгийн сүүлд)
 
-   globals.css-д medreh.css → ui.css-ийн ДАРАА импортлогддог тул энэ файл нь
-   cascade-ийн хамгийн сүүлд бичигдэж, өмнөх дүрмүүдийг ЗӨВХӨН дүр төрхийн
-   (өнгө · зай · шрифт · сүүдэр · хүрээ) хэмжээнд өнгөлнө.
+   ХАМРАХ ХҮРЭЭ: зөвхөн ЭЛЕМЕНТ ба ПСЕВДО-СЕЛЕКТОР дээрх глобал дүрэм —
+   typography · focus · scrollbar · формын элемент · хэрэглэгчийн системийн
+   тохиргоо (reduced-motion / contrast / touch / print).
 
-   ХАТУУ ХЯЗГААР: display/position/grid-template/flex-direction зэрэг layout-ийн
-   бүтэц, ямар нэг selector-ийн visibility (none↔block) энд ӨӨРЧЛӨГДӨӨГҮЙ — иймд
-   ямар ч компонентын зан төлөв, урсгал, hit-target бүтэц хөндөгдөхгүй.
-
-   Бүлгүүд:
-     01 · токен өнгөлгөө (контраст/шугам/elevation)
-     02 · шрифт · typography
-     03 · focus · selection (a11y)
-     04 · scrollbar
-     05 · хэмжээ · зай (responsive rhythm)
-     06 · гадаргуу · карт · хүснэгт
-     07 · формын элемент
-     08 · төлөв (loading/empty/error/toast/skeleton)
-     09 · тоглуулагчийн нарийн өнгөлгөө
-     10 · нэмэлт хэрэглэгчийн тохиргоо (reduced-motion / contrast / touch)
+   ХАТУУ ХЯЗГААР:
+     · Токен энд зарлагдахгүй  → globals.css @theme
+     · Класс-селектор энд байхгүй → тухайн компонентын Tailwind эсвэл ui.css
+     · layout (display/position/grid/flex-direction) энд хөндөгдөхгүй
    ============================================================================ */
 
-/* ---------------------------------------------------------------- 01 токен -- */
-:root {
-  /* --faint-ийн контраст засвар medreh.css:3-д (эх сурвалж) хийгдсэн — тайлбарыг
-     тэндээс уншина. Энд дахин зарлаагүй: нэг токен = нэг эх сурвалж. */
-
-  /* нэг хайрцгийн зузаан = 1 hairline. Өмнө нь .08/.09/.1/.12/.13/.16 гэсэн 6 өөр
-     alpha зэрэгцэн байсныг 3 шатлал болгов. */
-  --line: rgba(242, 245, 244, .11);
-  --line-2: rgba(242, 245, 244, .16);
-  --line-3: rgba(242, 245, 244, .24);
-
-  /* гадаргуугийн шатлал — карт/панел/dropdown-д нийтлэг */
-  --surf-1: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .012));
-  --surf-2: linear-gradient(180deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .022));
-  --hairline-top: inset 0 1px 0 rgba(255, 255, 255, .05);
-
-  /* elevation — сүүдрийг "жинтэй" болгохын тулд spread-ийг сөрөг болгож зөөлрүүлэв */
-  --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, .45);
-  --shadow-md: 0 10px 28px -8px rgba(0, 0, 0, .55);
-  --shadow-lg: 0 22px 56px -12px rgba(0, 0, 0, .7);
-
-  /* focus ring — 2px цөм + 4px халуун ореол, бараан дэвсгэр дээр тод харагдана */
-  --ring: 0 0 0 2px rgba(56, 232, 206, .6), 0 0 0 5px rgba(56, 232, 206, .16);
-  --glow-aqua: var(--ring);
-  --glow-warm: 0 0 0 2px rgba(217, 165, 76, .62), 0 0 0 5px rgba(217, 165, 76, .18);
-}
-
-/* ------------------------------------------------------- 02 typography ----- */
+/* ------------------------------------------------------- typography -------- */
 body {
   /* kerning/ligature — Golos Text-ийн кирилл хэлбэрүүд илүү тэгш эгнэнэ */
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
@@ -69,37 +31,29 @@ body {
 }
 
 /* урт догол мөрийн уншигдац: хэт өргөн мөрийг optical хязгаарлана */
-.head p, .step p, .sp-banner p {
+.head p, .step p {
   max-width: 62ch;
   text-wrap: pretty;
 }
 
 /* гарчиг мөр тасрах алдаа (orphan) багасгана */
-h1, h2, h3, .disp {
+h1, h2, h3 {
   text-wrap: balance;
 }
 
-/* ------------------------------------------------ 03 focus · selection ----- */
+/* ------------------------------------------------ focus · selection -------- */
 /* medreh.css-ийн :focus-visible дүрмээс `border-radius:4px`-ийг хассан (тэр файлд
-   тайлбартай) — энд зөвхөн зузаан/зайг тогтооно. Гол нь outline элементийн ӨӨРИЙН
-   радиусыг дагах ёстой, focus авсан pill товч дөрвөлжин болох ёсгүй. */
+   тайлбартай) — outline нь элементийн ӨӨРИЙН радиусыг дагах ёстой, focus авсан
+   pill товч дөрвөлжин болох ёсгүй. */
 :focus-visible {
   outline: 2px solid var(--aqua);
   outline-offset: 3px;
 }
-
-::selection {
-  background: rgba(56, 232, 206, .3);
-  color: var(--ink);
-}
-
-/* "skip to content"-гүй ч гэсэн keyboard хэрэглэгч оролт хаана байгааг мэдэхийн тулд
-   focus-within үед хайлтын талбар мэдэгдэхүйц болно (TopBar-д Tailwind-аар бас бий) */
 input:focus-visible, textarea:focus-visible, select:focus-visible {
   outline-offset: 2px;
 }
 
-/* ------------------------------------------------------- 04 scrollbar ------ */
+/* ------------------------------------------------------- scrollbar --------- */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(242, 245, 244, .16) transparent;
@@ -118,59 +72,34 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 }
 ::-webkit-scrollbar-corner { background: transparent; }
 
-/* --------------------------------------------------- 05 зай · хэмжээ ------- */
+/* --------------------------------------------------- зай · хэмжээ ---------- */
 /* Хатуу 32px padding / 100px section → viewport-д уян. Мобайл дээр 32px хэт
    их зай эзэлж, 1440px+ дээр хэт нягт харагдаж байсныг тэнцвэржүүлэв. */
-.wrap {
-  padding-inline: clamp(20px, 4vw, 32px);
-}
-section {
-  padding-block: clamp(64px, 9vw, 104px);
-}
-footer {
-  padding-block: clamp(28px, 4vw, 40px);
-}
+.wrap { padding-inline: clamp(20px, 4vw, 32px); }
+section { padding-block: clamp(64px, 9vw, 104px); }
+footer { padding-block: clamp(28px, 4vw, 40px); }
 
-/* тоглуулагчийн үндсэн талбай — өргөн дэлгэцэнд агаартай, жижигт нягт */
-.sp-main {
-  padding: clamp(20px, 2.2vw, 32px) clamp(14px, 2vw, 24px) clamp(28px, 3.2vw, 42px);
-}
-
-/* --------------------------------------- 06 гадаргуу · карт · хүснэгт ------ */
-/* Нэг картын "хэв" — hairline highlight + зөөлөн gradient. Компонентууд Tailwind-ээр
-   өөрийн дэвсгэрийг зааж байгаа тул энд зөвхөн legacy CSS-ийн картуудыг тэгшитгэв. */
-.ab-card, .dv-maprow {
-  box-shadow: var(--hairline-top);
-}
-.ab-card {
-  background: var(--surf-1);
-  border-color: var(--line);
-}
-.ab-card:hover {
-  border-color: var(--line-2);
-}
-
-/* хүснэгтийн мөр — hover нь илүү мэдэгдэхүйц, тэгшилгээ нь тайван */
-.bil-row:not(.bil-head):hover, .crow:hover {
-  background: rgba(255, 255, 255, .04);
-}
+/* --------------------------------------------------- хүснэгт · мөр --------- */
+.crow:hover { background: rgba(255, 255, 255, .04); }
 .c-top {
   background: rgba(255, 255, 255, .025);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
-/* нэмэлт accent tint-үүд (StatCard-ийн .c-* legacy хувилбар) — бүдэг outer glow-ийг
-   тод inset hairline болгож, KPI картын шинэ хэв маягтай нэгтгэв */
-.c-aqua { color: var(--aqua); background: rgba(56, 232, 206, .10); box-shadow: inset 0 0 0 1px rgba(56, 232, 206, .22); }
-.c-gold { color: var(--warm); background: rgba(217, 165, 76, .10); box-shadow: inset 0 0 0 1px rgba(217, 165, 76, .24); }
-.c-purple { color: #B49CFF; background: rgba(180, 156, 255, .11); box-shadow: inset 0 0 0 1px rgba(180, 156, 255, .24); }
-.c-rose { color: #F08CA5; background: rgba(240, 140, 165, .10); box-shadow: inset 0 0 0 1px rgba(240, 140, 165, .24); }
-
-/* ------------------------------------------------- 07 формын элемент ------- */
+/* ------------------------------------------------- формын элемент ---------- */
 input, textarea, select, button {
   font-family: inherit;
   letter-spacing: inherit;
+}
+/* WCAG 1.4.11 — оролтын талбарын хүрээ нь дэвсгэрээсээ ≥3:1 байх ёстой (талбар хаана
+   эхэлж дуусахыг ХАРАХАД шаардлагатай мэдээлэл). Компонентууд Tailwind-аар
+   `border-white/[.08]` гэх мэт бүдэг хүрээ өгдөг тул энд global-аар давхарлана.
+   Зөвхөн ФОРМЫН элемент — карт/хуваагчийн чимэглэлийн хүрээ хэвээр. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+textarea,
+select {
+  border-color: var(--color-line-field);
 }
 input[type="checkbox"], input[type="radio"], progress {
   accent-color: var(--aqua);
@@ -184,7 +113,7 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
   -webkit-text-fill-color: var(--ink);
-  -webkit-box-shadow: 0 0 0 1000px #101817 inset;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-surface-2) inset;
   caret-color: var(--ink);
 }
 /* хайлтын талбарын натив "х" товч — өөрийн UI-тай зөрчилддөг тул нуув */
@@ -195,119 +124,40 @@ input[type="search"]::-webkit-search-decoration {
 }
 /* алдаатай оролт: зөвхөн өнгө биш, тод хүрээгээр ч дамжуулна (өнгө сохор хэрэглэгч) */
 [aria-invalid="true"] {
-  border-color: #E88A9B !important;
+  border-color: var(--color-danger) !important;
 }
 
-/* -------------------------------------------------------- 08 төлөвүүд ----- */
-/* Loading / Empty / Error — icon хайрцгийг жижиг, тайван, гэрэлтэлгүй болгов */
-.state {
-  padding: clamp(36px, 6vw, 56px) 24px;
-  gap: 16px;
-}
-.state-ic {
-  width: 64px;
-  height: 64px;
-  font-size: 30px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, .03);
-  color: var(--dim);
-}
-.state-empty .state-ic {
-  background: radial-gradient(circle at 50% 40%, rgba(56, 232, 206, .1), transparent 70%);
-  border-color: rgba(56, 232, 206, .18);
-  color: var(--aqua);
-}
-.state-error .state-ic {
-  background: radial-gradient(circle at 50% 40%, rgba(233, 111, 111, .13), transparent 70%);
-  border-color: rgba(233, 111, 111, .28);
-  color: #FF8A8A;
-}
-.state b { font-size: 17px; letter-spacing: -.02em; }
-.state p { color: var(--dim); max-width: 42ch; }
-.state-spinner {
-  width: 30px; height: 30px; border-width: 2.5px;
-  border-color: var(--line-2); border-top-color: var(--aqua);
-}
-
-/* Toast — илүү нягт, гүн, доод захаас зөөлөн орж ирнэ */
-.toast {
-  padding: 12px 14px;
-  gap: 11px;
-  border-radius: var(--radius-lg);
-  background: rgba(13, 19, 18, .93);
-  border-color: var(--line-2);
-  box-shadow: var(--shadow-lg);
-}
-.toast p { font-size: 13.5px; }
-.toast-ic { width: 24px; height: 24px; flex-basis: 24px; font-size: 12.5px; }
-.toast-x { border-radius: var(--radius-sm); }
-
-/* Skeleton — гялалзалт нь бага контрасттай, нүд цочроохгүй */
-.skel {
-  background: linear-gradient(90deg,
-    rgba(255, 255, 255, .035) 25%,
-    rgba(255, 255, 255, .075) 50%,
-    rgba(255, 255, 255, .035) 75%);
-  background-size: 200% 100%;
-}
-
-/* 404 */
-.nf-code { letter-spacing: -.05em; }
-.nf p { color: var(--dim); }
-
-/* ------------------------------------- 09 тоглуулагчийн нарийн өнгөлгөө ---- */
-/* дээд баар · доод баар — шилний эффект нэг зузаанд */
-.sp-bar {
-  border-color: var(--line);
-}
-.sp-side {
-  border-color: var(--line);
-}
-
-/* icon товч — hover/active-ийн хариу үйлдэл нэг хэмнэлд */
-.sp-icbtn {
-  background: rgba(255, 255, 255, .055);
-  transition: color .2s, background .2s, box-shadow .2s, transform .15s;
-}
-.sp-icbtn:hover { background: rgba(255, 255, 255, .11); }
-.sp-icbtn:active { transform: scale(.94); }
-
-/* progress bar — цохилтын мөр тод, knob-ын сүүдэр гүн */
-.pl-fill { box-shadow: 0 0 10px rgba(56, 232, 206, .45); }
-
-/* dropdown-ийн гадаргуу нэг өнгөнд (legacy .sp-dd + Tailwind DropdownPanel) */
-.sp-dd {
-  border-color: var(--line-2);
-  box-shadow: var(--shadow-lg);
-}
-
-/* ------------------------------- 10 хэрэглэгчийн системийн тохиргоо -------- */
+/* ------------------------------- хэрэглэгчийн системийн тохиргоо ----------- */
 /* Илүү контраст хүссэн хэрэглэгчид (Windows/macOS-ийн "increase contrast") */
 @media (prefers-contrast: more) {
   :root {
-    --dim: #AEBAB8;
-    --faint: #8E9C99;
-    --line: rgba(242, 245, 244, .26);
-    --line-2: rgba(242, 245, 244, .34);
+    --dim: #aebab8;
+    --faint: #8e9c99;
+    /* .26 нь дэвсгэр дээр ердөө ~2.2:1 байсан — "илүү контраст" сонгосон хэрэглэгчид
+       ч WCAG 1.4.11-ийн 3:1-д хүрэхгүй байв. .40 → ~3.4:1. */
+    --line: rgba(242, 245, 244, .40);
+    --line-2: rgba(242, 245, 244, .52);
   }
   .mono { color: var(--dim); }
-  .state p { color: #C4CFCD; }
+  .state p { color: #c4cfcd; }
+  /* Хүрээ дан ганц бүдэг өнгөөр биш, бодит зузаанаар ялгарна */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    border-color: var(--line-2);
+  }
+  :focus-visible { outline-width: 3px; }
 }
 
 /* Хөдөлгөөн багасгах — medreh.css-ийн блокийг нөхөж, transform-той hover-уудыг ч
    тайвшруулна (зөвхөн хөдөлгөөн, ямар ч агуулга нуугдахгүй) */
 @media (prefers-reduced-motion: reduce) {
-  .skel { animation: none; background: rgba(255, 255, 255, .05); }
   .disc.spin, .badge svg { animation: none !important; }
 }
 
-/* Хүрэлцэх төхөөрөмж — жижиг icon товчнуудын hit-area 44px хүртэл (WCAG 2.5.8).
-   Зөвхөн padding/min-size, layout-ийн бүтэц хэвээр. */
+/* Хүрэлцэх төхөөрөмж — жижиг icon товчнуудын hit-area 44px хүртэл (WCAG 2.5.8) */
 @media (hover: none) and (pointer: coarse) {
-  .toast-x, .auth-x {
-    min-width: 44px;
-    min-height: 44px;
-  }
+  .toast-x { min-width: 44px; min-height: 44px; }
 }
 
 /* Хэвлэх — бараан дэвсгэр цаас/бэхийг дэмий үрэхгүй */

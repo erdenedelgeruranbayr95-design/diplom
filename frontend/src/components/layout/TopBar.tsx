@@ -4,11 +4,12 @@
    ялгаа, цэвэр search pill, icon товчнуудын нийцтэй зай). notifOpen/settingsOpen/
    profileOpen 3 dropdown-ийн state/ESC-handler логик бүхэлдээ хэвээр — зөвхөн визуал
    давхарга шинэчлэгдсэн, ямар ч prop/callback/wiring өөрчлөгдөөгүй. */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { MutableRefObject } from "react";
+import { useWindowEvent } from "@/hooks/useWindowEvent";
 import type { SessionUser } from "@/types/auth";
 import type { FeedItem } from "@/types/track";
-import type { ViewName, Prefs } from "@/components/player/Player";
+import type { ViewName, Prefs } from "@/types/player";
 import NotificationDropdown from "@/components/player/NotificationDropdown";
 import SettingsDropdown from "@/components/player/SettingsDropdown";
 import ProfileDropdown from "@/components/player/ProfileDropdown";
@@ -69,16 +70,15 @@ export default function TopBar({
   /* ESC дарахад энэ dropdown-уудыг эхэлж хаана — Player.tsx-ийн глобал ESC handler-т хүрэхээс
      өмнө stopPropagation хийж, "Нүүр рүү буцах"/цонх хаах шатанд шилжихгүй байхыг баталгаажуулна
      (dropdown нээлттэй үеийн өмнөх зан төлөвийг хадгална). */
-  useEffect(() => {
-    if (dropdown === null) return;
-    const onKey = (e: KeyboardEvent) => {
+  useWindowEvent(
+    "keydown",
+    (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       e.stopPropagation();
       setDropdown(null);
-    };
-    addEventListener("keydown", onKey, { capture: true });
-    return () => removeEventListener("keydown", onKey, { capture: true });
-  }, [dropdown]);
+    },
+    { enabled: dropdown !== null, capture: true },
+  );
 
   function toggleNotifs() {
     const opening = dropdown !== "notifs";
@@ -89,10 +89,10 @@ export default function TopBar({
   return (
     <>
       <header className="relative z-[6] flex items-center gap-6 max-nav:gap-3 h-[70px] px-6 max-nav:px-4 bg-[rgba(9,12,12,.78)] backdrop-blur-3xl [backdrop-filter:blur(22px)_saturate(1.2)] border-b border-white/[.07]">
-        <span className="font-display font-extrabold text-[19px] max-nav:text-[15px] tracking-[-.04em] whitespace-nowrap [&>sup]:font-body [&>sup]:text-[9px] [&>sup]:font-medium [&>sup]:ml-0.5">
+        <span className="font-display font-extrabold text-heading max-nav:text-lead tracking-[-.04em] whitespace-nowrap [&>sup]:font-body [&>sup]:text-micro [&>sup]:font-medium [&>sup]:ml-0.5">
           МЭДРЭХ<sup>®</sup>
           {isAdmin && (
-            <em className="not-italic font-mono text-[8.5px] tracking-[.2em] text-warm border border-warm/45 rounded-full py-[3px] px-[9px] ml-2.5 align-[3px]">
+            <em className="not-italic font-mono text-micro tracking-[.2em] text-warm border border-warm/45 rounded-full py-[3px] px-[9px] ml-2.5 align-[3px]">
               АДМИН
             </em>
           )}
@@ -120,14 +120,14 @@ export default function TopBar({
               onFocus={() => setView("home")}
               onChange={(e) => setQuery(e.target.value)}
               aria-label="Дуу хайх"
-              className="flex-1 bg-transparent border-none text-ink font-body text-[14.5px] cursor-none outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden appearance-none"
+              className="flex-1 bg-transparent border-none text-ink font-body text-copy cursor-none outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden appearance-none"
             />
           </div>
           <div className="max-viz:hidden flex items-end gap-[3px] h-6 w-[34px] flex-none" aria-hidden="true">
             {[0, 1, 2, 3, 4].map((i) => (
               <i
                 key={i}
-                className="flex-1 bg-aqua rounded-[2px] h-[3px] opacity-85 transition-[height] duration-100 ease-linear"
+                className="flex-1 bg-aqua rounded-bar h-[3px] opacity-85 transition-[height] duration-100 ease-linear"
                 ref={(el) => {
                   vizRef.current[i] = el;
                 }}
@@ -139,7 +139,7 @@ export default function TopBar({
         <div className="flex items-center gap-3.5">
           {!subscribed && (
             <button
-              className="rounded-full text-[13.5px] font-semibold border border-aqua bg-aqua text-[#04100E] transition-[background,color,border-color,box-shadow,transform] duration-300 py-2.5 px-[22px] will-change-transform cursor-none hover:bg-[#6FF3DE] hover:border-[#6FF3DE] hover:text-[#04100E] hover:shadow-sm hover:-translate-y-px active:translate-y-0 focus-visible:outline-none focus-visible:shadow-glow-aqua"
+              className="rounded-full text-body font-semibold border border-aqua bg-aqua text-on-aqua transition-[background,color,border-color,box-shadow,transform] duration-300 py-2.5 px-[22px] will-change-transform cursor-none hover:bg-aqua-hover hover:border-aqua-hover hover:text-on-aqua hover:shadow-sm hover:-translate-y-px active:translate-y-0 focus-visible:outline-none focus-visible:shadow-glow-aqua"
               onClick={onSubscribe}
             >
               Захиалга авах

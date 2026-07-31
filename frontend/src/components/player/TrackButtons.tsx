@@ -1,9 +1,73 @@
+"use client";
+
+import type { ReactNode } from "react";
 import type { Track } from "@/types/track";
 import Icon from "@/components/ui/Icon";
 
-const likeBase =
-  "absolute top-[10px] right-[10px] w-[34px] h-[34px] rounded-full flex items-center justify-center text-[17px] text-ink bg-[rgba(7,10,10,.72)] border border-white/[.08] backdrop-blur-md opacity-0 transition-[opacity,color,transform,border-color,background] duration-[250ms] z-[2] hover:scale-[1.08] hover:border-aqua/35 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:shadow-glow-aqua";
-const likeRow = "!static !w-[32px] !h-[32px] !rounded-[12px] !bg-white/[.03] !border-white/[.08] !opacity-100 text-faint !text-[15px]";
+/* Дууны карт/мөр дээрх жижиг үйлдлийн товчнууд — Дуртай · Хадгалах · Дэлгэрэнгүй.
+
+   ⚠️ Энэ файлын `aria-label`-ууд өмнө нь ДАВХАР КОДЛОГДСОН UTF-8 хэлбэрээр
+   хадгалагдсан байв ("Ð”ÑƒÑ€Ñ‚Ð°Ð¹Ð´ Ð½ÑÐ¼ÑÑ…" = "Дуртайд нэмэх") тул дэлгэц уншигч
+   утгагүй текст уншиж байсан — deaf-first төсөлд ялангуяа эмзэг алдаа. Зассан.
+
+   `row` горим нь хүснэгтийн мөрд (ArtistView) ашиглагдана: `<button>` дотор `<button>`
+   орохоос сэргийлж `role="button"`-той `<span>` болж хувирна. */
+
+const BASE =
+  "absolute top-[10px] right-[10px] w-[34px] h-[34px] rounded-full flex items-center justify-center text-title text-ink bg-[rgba(7,10,10,.72)] border border-white/[.08] backdrop-blur-md opacity-0 transition-[opacity,color,transform,border-color,background] duration-[250ms] z-[2] hover:scale-[1.08] hover:border-aqua/35 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:shadow-glow-aqua";
+const ROW = "!static !w-[32px] !h-[32px] !rounded-xl !bg-white/[.03] !border-white/[.08] !opacity-100 text-faint !text-lead";
+
+/** Товч эсвэл мөр доторх span — үйлдэл нэг, зөвхөн элемент өөр. */
+function ActionButton({
+  className,
+  label,
+  row,
+  onActivate,
+  children,
+}: {
+  className: string;
+  label: string;
+  row?: boolean;
+  onActivate: () => void;
+  children: ReactNode;
+}) {
+  if (row) {
+    return (
+      <span
+        className={className}
+        role="button"
+        tabIndex={0}
+        aria-label={label}
+        onClick={(e) => {
+          e.stopPropagation();
+          onActivate();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.stopPropagation();
+            onActivate();
+          }
+        }}
+      >
+        {children}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className={className}
+      aria-label={label}
+      onClick={(e) => {
+        e.stopPropagation();
+        onActivate();
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 export function LikeBtn({
   row,
@@ -15,43 +79,12 @@ export function LikeBtn({
   active: boolean;
   onToggle: () => void;
 }) {
-  const className = likeBase + (row ? " " + likeRow : "") + (active ? " !opacity-100 text-aqua" : "");
-
-  if (row) {
-    return (
-      <span
-        className={className}
-        role="button"
-        tabIndex={0}
-        aria-label={active ? "Ð”ÑƒÑ€Ñ‚Ð°Ð¹Ð³Ð°Ð°Ñ Ñ…Ð°ÑÐ°Ñ…" : "Ð”ÑƒÑ€Ñ‚Ð°Ð¹Ð´ Ð½ÑÐ¼ÑÑ…"}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.stopPropagation();
-            onToggle();
-          }
-        }}
-      >
-        <Icon name="heart" size={16} variant={active ? "fill" : "stroke"} />
-      </span>
-    );
-  }
+  const className = BASE + (row ? " " + ROW : "") + (active ? " !opacity-100 text-aqua" : "");
 
   return (
-    <button
-      type="button"
-      className={className}
-      aria-label={active ? "Ð”ÑƒÑ€Ñ‚Ð°Ð¹Ð³Ð°Ð°Ñ Ñ…Ð°ÑÐ°Ñ…" : "Ð”ÑƒÑ€Ñ‚Ð°Ð¹Ð´ Ð½ÑÐ¼ÑÑ…"}
-      onClick={(e) => {
-        e.stopPropagation();
-        onToggle();
-      }}
-    >
+    <ActionButton className={className} row={row} label={active ? "Дуртайгаас хасах" : "Дуртайд нэмэх"} onActivate={onToggle}>
       <Icon name="heart" size={16} variant={active ? "fill" : "stroke"} />
-    </button>
+    </ActionButton>
   );
 }
 
@@ -65,54 +98,13 @@ export function SaveBtn({
   active: boolean;
   onToggle: () => void;
 }) {
-  const className = likeBase + (row ? " " + likeRow : " !top-12") + (active ? " !opacity-100 text-warm" : "");
-
-  if (row) {
-    return (
-      <span
-        className={className}
-        role="button"
-        tabIndex={0}
-        aria-label={active ? "Ð¥Ð°Ð´Ð³Ð°Ð»ÑÐ½Ð°Ð°Ñ Ñ…Ð°ÑÐ°Ñ…" : "Ð¥Ð°Ð´Ð³Ð°Ð»Ð°Ñ…"}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.stopPropagation();
-            onToggle();
-          }
-        }}
-      >
-        <svg
-          width={14}
-          height={14}
-          viewBox="0 0 24 24"
-          fill={active ? "currentColor" : "none"}
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        >
-          <path d="M6 3h12v18l-6-3.6L6 21V3z" />
-        </svg>
-      </span>
-    );
-  }
+  const className = BASE + (row ? " " + ROW : " !top-12") + (active ? " !opacity-100 text-warm" : "");
 
   return (
-    <button
-      type="button"
-      className={className}
-      aria-label={active ? "Ð¥Ð°Ð´Ð³Ð°Ð»ÑÐ½Ð°Ð°Ñ Ñ…Ð°ÑÐ°Ñ…" : "Ð¥Ð°Ð´Ð³Ð°Ð»Ð°Ñ…"}
-      onClick={(e) => {
-        e.stopPropagation();
-        onToggle();
-      }}
-    >
+    <ActionButton className={className} row={row} label={active ? "Хадгалснаас хасах" : "Хадгалах"} onActivate={onToggle}>
       <svg
-        width={15}
-        height={15}
+        width={row ? 14 : 15}
+        height={row ? 14 : 15}
         viewBox="0 0 24 24"
         fill={active ? "currentColor" : "none"}
         stroke="currentColor"
@@ -121,47 +113,16 @@ export function SaveBtn({
       >
         <path d="M6 3h12v18l-6-3.6L6 21V3z" />
       </svg>
-    </button>
+    </ActionButton>
   );
 }
 
 export function InfoBtn({ t, row, onInfo }: { t: Track; row?: boolean; onInfo: () => void }) {
-  const className = likeBase + (row ? " " + likeRow : " !top-[57px]");
-
-  if (row) {
-    return (
-      <span
-        className={className}
-        role="button"
-        tabIndex={0}
-        aria-label={t.title + " — Ð´ÑÐ»Ð³ÑÑ€ÑÐ½Ð³Ò¯Ð¹"}
-        onClick={(e) => {
-          e.stopPropagation();
-          onInfo();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.stopPropagation();
-            onInfo();
-          }
-        }}
-      >
-        <Icon name="info" size={15} />
-      </span>
-    );
-  }
+  const className = BASE + (row ? " " + ROW : " !top-[57px]");
 
   return (
-    <button
-      type="button"
-      className={className}
-      aria-label={t.title + " — Ð´ÑÐ»Ð³ÑÑ€ÑÐ½Ð³Ò¯Ð¹"}
-      onClick={(e) => {
-        e.stopPropagation();
-        onInfo();
-      }}
-    >
+    <ActionButton className={className} row={row} label={t.title + " — дэлгэрэнгүй"} onActivate={onInfo}>
       <Icon name="info" size={15} />
-    </button>
+    </ActionButton>
   );
 }

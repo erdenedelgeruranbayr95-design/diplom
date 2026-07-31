@@ -5,6 +5,7 @@
    loop-той (Player-ийн DOM-bar RAF loop-той тусдаа) — canvas resize/particle/cleanup өөрөө удирдана. */
 import { useEffect, useRef } from "react";
 import type { MutableRefObject } from "react";
+import { readMotionPreference } from "@/hooks/useAppPreferences";
 import {
   drawWaveform,
   drawBars,
@@ -54,7 +55,12 @@ export default function Visualizer({
     if (!ctx2d) return;
     const ctx: CanvasRenderingContext2D = ctx2d;
 
-    const reducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    /* Хоёр эх сурвалж: үйлдлийн системийн тохиргоо ба апп доторх "Хөдөлгөөн багасгах"
+       шилжүүлэгч. Урьд нь зөвхөн эхнийхийг уншдаг байсан тул апп доторх тохиргоо
+       визуалайзерт огт нөлөөлдөггүй байв. */
+    const reducedMotion =
+      (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) ||
+      readMotionPreference();
     const particlePool = new ParticlePool();
     const freqData = new Uint8Array(1024);
     const timeData = new Uint8Array(1024);
@@ -79,6 +85,13 @@ export default function Visualizer({
 
     function frame(now: number) {
       raf = requestAnimationFrame(frame);
+      /* Нуугдсан таб дээр canvas зурах нь цэвэр дэмий ажил (GPU + CPU). Гарахдаа
+         `last`-ыг шинэчилж байгаа нь чухал — эс бол буцаж ирэхэд dt асар том болж,
+         тоосонцор нэг фрэймд "үсэрч" харагдана. */
+      if (document.visibilityState === "hidden") {
+        last = now;
+        return;
+      }
       const dt = now - last;
       last = now;
       if (!canvas) return;

@@ -3,16 +3,21 @@ import Icon from "@/components/ui/Icon";
 
 export default function Dock({
   user,
+  isRoot,
   isAdmin,
   onLogin,
   onLogout,
+  onRoot,
   onAdmin,
   onPlayer,
 }: {
   user: SessionUser | null;
+  /** Систем эзэмшигч — Root Panel-ийн товч зөвхөн түүнд харагдана. */
+  isRoot: boolean;
   isAdmin: boolean;
   onLogin: () => void;
   onLogout: () => void;
+  onRoot: () => void;
   onAdmin: () => void;
   onPlayer: () => void;
 }) {
@@ -28,7 +33,7 @@ export default function Dock({
         <button className="disc" id="disc" aria-label="Дуу эхлүүлэх"></button>
         <a
           href="#top"
-          className="keep font-display font-extrabold text-[17px] tracking-[-.04em] text-ink whitespace-nowrap hover:text-aqua [&>sup]:font-body [&>sup]:text-[9px] [&>sup]:font-medium [&>sup]:ml-0.5"
+          className="keep font-display font-extrabold text-title tracking-[-.04em] text-ink whitespace-nowrap hover:text-aqua [&>sup]:font-body [&>sup]:text-micro [&>sup]:font-medium [&>sup]:ml-0.5"
         >
           МЭДРЭХ<sup>®</sup>
         </a>
@@ -42,9 +47,19 @@ export default function Dock({
             Тоглуулагч
           </button>
         )}
+        {/* ROOT — систем эзэмшигчийн самбар (ADMIN-аас дээр зэрэглэлтэй) */}
+        {isRoot && (
+          <button
+            className="keep text-body py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 focus-visible:shadow-glow-aqua text-rose border border-rose/40 hover:bg-rose hover:text-[#1A0A0F] inline-flex items-center gap-2"
+            onClick={onRoot}
+          >
+            <Icon name="shield" size={14} />
+            ROOT
+          </button>
+        )}
         {isAdmin && (
           <button
-            className="keep text-[13.5px] py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 focus-visible:shadow-glow-aqua text-warm border border-[rgba(217,165,76,.4)] hover:bg-warm hover:text-[#140D02]"
+            className="keep text-body py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 focus-visible:shadow-glow-aqua text-warm border border-[rgba(217,165,76,.4)] hover:bg-warm hover:text-[#140D02]"
             onClick={onAdmin}
           >
             Админ
@@ -52,7 +67,7 @@ export default function Dock({
         )}
         {user ? (
           <button
-            className="keep text-[13.5px] text-aqua py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 hover:text-[#04100E] hover:bg-aqua focus-visible:shadow-glow-aqua"
+            className="keep text-body text-aqua py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 hover:text-on-aqua hover:bg-aqua focus-visible:shadow-glow-aqua"
             onClick={onLogout}
             title={user.email + " · Гарах"}
           >
@@ -60,7 +75,7 @@ export default function Dock({
           </button>
         ) : (
           <button
-            className="keep text-[13.5px] text-aqua py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 hover:text-[#04100E] hover:bg-aqua focus-visible:shadow-glow-aqua"
+            className="keep text-body text-aqua py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 hover:text-on-aqua hover:bg-aqua focus-visible:shadow-glow-aqua"
             onClick={onLogin}
           >
             Нэвтрэх

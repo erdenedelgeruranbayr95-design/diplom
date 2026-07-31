@@ -19,7 +19,7 @@ export default function AdminStats({ total, proCount }: { total: number; proCoun
         </span>
         <div className="min-w-0">
           <b className="block font-display text-[24px] leading-tight">{total}</b>
-          <span className="mono !text-[9px]">Нийт бүртгэл</span>
+          <span className="mono !text-micro">Нийт бүртгэл</span>
         </div>
       </div>
       <div className="flex items-start gap-3 p-4 rounded-2xl border border-white/[.08] bg-white/[.03] transition-colors duration-200 hover:bg-white/[.05]">
@@ -30,7 +30,7 @@ export default function AdminStats({ total, proCount }: { total: number; proCoun
         </span>
         <div className="min-w-0">
           <b className="block font-display text-[24px] leading-tight">{proCount}</b>
-          <span className="mono !text-[9px]">PRO захиалагч</span>
+          <span className="mono !text-micro">PRO захиалагч</span>
         </div>
       </div>
       <div className="flex items-start gap-3 p-4 rounded-2xl border border-white/[.08] bg-white/[.03] transition-colors duration-200 hover:bg-white/[.05]">
@@ -41,7 +41,7 @@ export default function AdminStats({ total, proCount }: { total: number; proCoun
         </span>
         <div className="min-w-0">
           <b className="block font-display text-[24px] leading-tight">{freeCount}</b>
-          <span className="mono !text-[9px]">Free хэрэглэгч</span>
+          <span className="mono !text-micro">Free хэрэглэгч</span>
         </div>
       </div>
     </div>

@@ -8,6 +8,9 @@
    demo record-ийн статусыг өөрчилнө. SubscribeModal-ийн бодит автомат-success урсгал
    (localStorage LegacyUser.sub + pushPayment) энэ модультай ЗЭРЭГЦЭЭ, тусад нь ажиллана —
    субscription-ийн жинхэнэ логикт хүрэлгүй. Backend/JWT/DB огт хөндөгдөөгүй. */
+import { APP_EVENTS, emitAppEvent } from "./events";
+import { readJson, writeJson } from "./storage";
+
 export type PaymentRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface AdminPaymentRequest {
@@ -27,16 +30,12 @@ export interface AdminPaymentRequest {
 const KEY = "medreh_admin_payment_requests";
 
 export function loadPaymentRequests(): AdminPaymentRequest[] {
-  try {
-    return JSON.parse(localStorage.getItem(KEY) || "[]") || [];
-  } catch {
-    return [];
-  }
+  return readJson<AdminPaymentRequest[]>(KEY, []);
 }
 
 function save(list: AdminPaymentRequest[]) {
-  localStorage.setItem(KEY, JSON.stringify(list));
-  dispatchEvent(new CustomEvent("medreh:payment-requests-changed"));
+  writeJson(KEY, list);
+  emitAppEvent(APP_EVENTS.paymentRequestsChanged);
 }
 
 export function pushPaymentRequest(entry: Omit<AdminPaymentRequest, "id" | "submittedAt" | "status">) {

@@ -28,8 +28,8 @@ export default function ProfileHeader({
       </span>
       <div className="min-w-0">
         <b className="block font-display font-semibold text-[21px] text-ink tracking-[-.02em]">{name || "—"}</b>
-        <i className="block not-italic text-dim text-[13.5px] mt-1 break-all">{email}</i>
-        <span className="inline-flex items-center mt-2.5 py-1 px-3 rounded-full font-mono text-[10px] tracking-[.1em] uppercase text-aqua border border-aqua/30 bg-aqua/[.06]">
+        <i className="block not-italic text-dim text-body mt-1 break-all">{email}</i>
+        <span className="inline-flex items-center mt-2.5 py-1 px-3 rounded-full font-mono text-meta tracking-[.1em] uppercase text-aqua border border-aqua/30 bg-aqua/[.06]">
           {roleLabel}
         </span>
       </div>

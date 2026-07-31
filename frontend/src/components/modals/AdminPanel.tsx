@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import * as api from "@/lib/api/client";
-import { analyzeAudioFile } from "@/lib/audio/analyze";
-import { useClosingTransition } from "@/lib/ui/useClosingTransition";
+import { uploadSongWithAnalysis } from "@/lib/songs/upload";
+import { useModalShell } from "@/hooks/useModalShell";
 import AdminHeader from "@/components/admin/AdminHeader";
 import type { AdminTab } from "@/components/admin/AdminHeader";
 import AdminStats from "@/components/admin/AdminStats";
@@ -12,7 +12,6 @@ import StaffCreationForm from "@/components/admin/StaffCreationForm";
 import AssignmentsPanel from "@/components/admin/AssignmentsPanel";
 import SongLibraryPanel from "@/components/admin/SongLibraryPanel";
 import ProManagementPanel from "@/components/admin/ProManagementPanel";
-import { applySubOverrides } from "@/lib/data/admin-sub-overrides";
 import type { AdminUserRow, SessionUser } from "@/types/auth";
 import type { Song } from "@/types/song";
 import type { TherapistAssignmentRow } from "@/types/therapy";
@@ -60,11 +59,7 @@ export default function AdminPanel({
     setUserErr("");
     api
       .listUsers()
-      /* Backend дээр subActive/subPlan бичих endpoint байхгүй тул UsersTable-ийн
-         Grant/Remove PRO нь зөвхөн localStorage demo-override хадгалдаг
-         (admin-sub-overrides.ts) — жинхэнэ GET /users үр дүн дээр энд client талд
-         л merge хийж харуулна. */
-      .then((rows) => setUsers(applySubOverrides(rows)))
+      .then(setUsers)
       .catch((e) => setUserErr(e.message))
       .finally(() => setUsersLoading(false));
   }
@@ -77,7 +72,8 @@ export default function AdminPanel({
       .finally(() => setAssignLoading(false));
   }
 
-  const { closing, handleClose } = useClosingTransition(onClose);
+  /* Гарах animation · Escape · focus trap · backdrop-click — дөрвүүлээ нэг hook-т. */
+  const { closing, handleClose, trapRef, backdropProps } = useModalShell({ open, onClose });
 
   useEffect(() => {
     if (!open) return;
@@ -85,13 +81,7 @@ export default function AdminPanel({
     loadSongs();
     loadAssignments();
     setMsg("");
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    addEventListener("keydown", onKey);
-    return () => removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, onClose]);
+  }, [open]);
 
   const filteredUsers = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -203,27 +193,11 @@ export default function AdminPanel({
 
     setBusy(true);
     try {
-      const uploadForm = new FormData();
-      uploadForm.set("title", title);
-      uploadForm.set("artist", singer);
-      if (composer) uploadForm.set("composer", composer);
-      uploadForm.set("genre", genre);
-      uploadForm.set("file", audio);
-
-      const song = await api.uploadSong(uploadForm);
-      setMsg("✅ «" + title + "» амжилттай нэмэгдлээ. Анализ хийгдэж байна…");
-      loadSongs();
+      const { analyzed, analyzeError } = await uploadSongWithAnalysis({ title, artist: singer, composer, genre, file: audio });
       form.reset();
-
-      /* Upload дуусмагц шууд, автоматаар client-side (browser) анализ эхэлнэ. */
-      try {
-        const result = await analyzeAudioFile(song.fileUrl);
-        await api.submitAnalysis(song.id, result);
-        setMsg("✅ «" + title + "» нэмэгдэж, анализ дууслаа.");
-        loadSongs();
-      } catch (analyzeErr) {
-        setMsg("⚠️ «" + title + "» нэмэгдсэн ч анализ амжилтгүй боллоо: " + (analyzeErr as Error).message);
-      }
+      loadSongs();
+      if (analyzed) setMsg("✅ «" + title + "» нэмэгдэж, анализ дууслаа.");
+      else setMsg("⚠️ «" + title + "» нэмэгдсэн ч анализ амжилтгүй боллоо: " + analyzeError?.message);
     } catch (err) {
       setMsg("❌ Хадгалахад алдаа гарлаа: " + (err as Error).message);
     }
@@ -240,11 +214,10 @@ export default function AdminPanel({
         "fixed inset-0 z-[10000] bg-[rgba(4,7,7,.72)] backdrop-blur-lg flex items-center justify-center p-6 " +
         (closing ? "[animation:aov-out_.2s_ease_forwards]" : "[animation:aov_.3s_ease]")
       }
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) handleClose();
-      }}
+      {...backdropProps}
     >
       <div
+        ref={trapRef}
         className="relative w-full max-w-[720px] max-h-[88vh] overflow-y-auto bg-[rgba(9,14,14,.97)] border border-white/[.1] rounded-2xl p-[30px_30px_24px] shadow-lg [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)]"
         role="dialog"
         aria-modal="true"
@@ -292,7 +265,7 @@ export default function AdminPanel({
 
         {tab === "pro" && <ProManagementPanel users={users} />}
 
-        <p className="mt-6 pt-4 border-t border-white/[.07] mono !text-[9px]">Нэвтэрсэн: {currentUser?.email}</p>
+        <p className="mt-6 pt-4 border-t border-white/[.07] mono !text-micro">Нэвтэрсэн: {currentUser?.email}</p>
       </div>
     </div>
   );

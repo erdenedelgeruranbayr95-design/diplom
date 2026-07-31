@@ -4,7 +4,16 @@
    давхардаж байсан ижил компонентуудыг нэгтгэв (эх код бүгд ижил байсан тул
    CSS/behavior өөрчлөгдөөгүй, зөвхөн ялгаатай байсан хэсгүүдийг (өндөр, margin,
    хоосон үеийн зан төлөв) props болгосон). */
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+/* Recharts бол ~7 MB-ийн сан (bundle-д ~100 KB+). Энэ график нь ЗӨВХӨН
+   Ахиц/Эцэг эх/Эмчийн дэлгэцэнд харагддаг тул үндсэн bundle-д байх шаардлагагүй.
+   `dynamic({ ssr: false })` — тухайн дэлгэц нээгдэх үед л татагдана.
+   Түр байрыг ижил өндрөөр эзэлдэг тул CLS үүсгэхгүй. */
+import dynamic from "next/dynamic";
+
+const ProgressLineChart = dynamic(() => import("./ProgressLineChart"), {
+  ssr: false,
+  loading: () => <div className="skel w-full !rounded-lg" style={{ height: 240 }} role="status" aria-label="График ачааллаж байна" />,
+});
 
 export interface ProgressChartPoint {
   date: string;
@@ -31,22 +40,10 @@ export default function ProgressChartCard({
       <div className="flex gap-4 items-start">
         <div>
           <b className="text-base font-semibold block mb-1">Ахицын график</b>
-          <p className="text-dim text-[13px] leading-[1.5] max-w-[60ch]">Гүйцэтгэл (%) болон оролцооны онооны цаг хугацааны хандлага.</p>
+          <p className="text-dim text-body leading-[1.5] max-w-[60ch]">Гүйцэтгэл (%) болон оролцооны онооны цаг хугацааны хандлага.</p>
         </div>
       </div>
-      <div style={{ width: "100%", height, marginTop: 16 }}>
-        <ResponsiveContainer>
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.08)" />
-            <XAxis dataKey="date" stroke="var(--faint)" fontSize={12} />
-            <YAxis stroke="var(--faint)" fontSize={12} domain={[0, 100]} />
-            <Tooltip contentStyle={{ background: "#101615", border: "1px solid var(--line)", borderRadius: "var(--radius-sm)" }} />
-            <Legend />
-            <Line type="monotone" dataKey="completionPct" name="Гүйцэтгэл %" stroke="var(--aqua, #38e8ce)" strokeWidth={2} dot={{ r: 3 }} />
-            <Line type="monotone" dataKey="engagementScore" name="Оролцоо" stroke="#c58cff" strokeWidth={2} dot={{ r: 3 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      <ProgressLineChart data={data} height={height} />
     </div>
   );
 }

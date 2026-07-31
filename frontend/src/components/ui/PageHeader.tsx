@@ -27,7 +27,7 @@ export function PageHeader({
         {breadcrumb && <div className="mb-2">{breadcrumb}</div>}
         {eyebrow && <span className="mono block mb-2.5">{eyebrow}</span>}
         <h1 className="font-display font-bold text-[clamp(23px,2.8vw,32px)] tracking-[-.04em] leading-[1.12] text-ink text-balance">{title}</h1>
-        {description && <p className="mt-2.5 text-dim text-[15px] leading-[1.6] max-w-[62ch] text-pretty">{description}</p>}
+        {description && <p className="mt-2.5 text-dim text-lead leading-[1.6] max-w-[62ch] text-pretty">{description}</p>}
       </div>
       {actions && <div className="flex items-center gap-2.5 flex-none flex-wrap">{actions}</div>}
     </div>
@@ -36,7 +36,7 @@ export function PageHeader({
 
 export function Breadcrumb({ items }: { items: { label: string; onClick?: () => void }[] }) {
   return (
-    <nav className="flex items-center gap-1.5 text-[12.5px] text-faint" aria-label="Замчлал">
+    <nav className="flex items-center gap-1.5 text-note text-faint" aria-label="Замчлал">
       {items.map((item, i) => (
         <span key={i} className="flex items-center gap-1.5">
           {i > 0 && <span aria-hidden="true">/</span>}
@@ -57,8 +57,8 @@ export function SectionTitle({ title, description, actions }: { title: ReactNode
   return (
     <div className="flex items-center justify-between gap-x-4 gap-y-2.5 flex-wrap mb-4">
       <div className="min-w-0">
-        <h2 className="font-display font-semibold text-[18.5px] max-nav:text-[16px] tracking-[-.03em] leading-snug text-ink flex items-center">{title}</h2>
-        {description && <p className="mt-1.5 text-dim text-[13.5px] leading-[1.55] max-w-[62ch]">{description}</p>}
+        <h2 className="font-display font-semibold text-heading max-nav:text-title tracking-[-.03em] leading-snug text-ink flex items-center">{title}</h2>
+        {description && <p className="mt-1.5 text-dim text-body leading-[1.55] max-w-[62ch]">{description}</p>}
       </div>
       {actions && <div className="flex items-center gap-2 flex-none flex-wrap">{actions}</div>}
     </div>

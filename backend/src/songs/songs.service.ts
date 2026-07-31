@@ -85,6 +85,8 @@ export class SongsService {
     return this.prisma.song.update({
       where: { id },
       data: {
+        /* dto.duration нь undefined бол Prisma энэ талбарыг хөндөхгүй (хуучин утга хэвээр). */
+        duration: dto.duration,
         analyzedBpm: dto.bpm,
         beatCount: dto.beatCount,
         beatTimestamps: dto.beatTimestamps,

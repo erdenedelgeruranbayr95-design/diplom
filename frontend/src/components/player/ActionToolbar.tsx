@@ -21,7 +21,7 @@ export default function ActionToolbar({
     <div className="flex justify-end items-center gap-2.5 max-nav:hidden">
       <button
         className={
-          "flex items-center gap-1.5 text-[12.5px] font-medium rounded-full border py-2.5 px-4 whitespace-nowrap transition-[border-color,color,background] duration-300 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+          "flex items-center gap-1.5 text-note font-medium rounded-full border py-2.5 px-4 whitespace-nowrap transition-[border-color,color,background] duration-300 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
           (vibro ? "border-aqua/45 text-aqua bg-aqua/[.06]" : "border-line text-dim hover:text-ink hover:bg-white/[.04]")
         }
         onClick={onToggleVibro}

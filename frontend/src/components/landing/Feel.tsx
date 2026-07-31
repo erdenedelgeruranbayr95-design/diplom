@@ -20,7 +20,7 @@ export default function Feel() {
               <i>Дараад үз.</i>
             </span>
           </h2>
-          <p className="mt-[22px] text-dim max-w-[46ch] text-[15.5px]">
+          <p className="mt-[22px] text-dim max-w-[46ch] text-lead">
             Давтамжийн гурван бүс, тус бүр өөрийн хаптик хэлбэртэй. Мөр дээр дарахад утас нь тэр хэлбэрээр чичрэнэ.
           </p>
         </div>
@@ -56,7 +56,7 @@ export default function Feel() {
         </div>
 
         <div className="rv border border-line border-t-0 p-[22px_26px_18px] grid grid-cols-[40px_1fr] gap-3.5">
-          <div className="flex flex-col justify-between font-mono text-[8.5px] text-faint tracking-[.1em] h-[108px]">
+          <div className="flex flex-col justify-between font-mono text-micro text-faint tracking-[.1em] h-[108px]">
             <span>0 dB</span>
             <span>−20</span>
             <span>−40</span>

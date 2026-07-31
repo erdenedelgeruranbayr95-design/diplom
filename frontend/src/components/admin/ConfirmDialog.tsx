@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ActionButton } from "@/components/ui/ActionGroup";
-import { useFocusTrap } from "@/lib/ui/useFocusTrap";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 export default function ConfirmDialog({
   open,
@@ -57,16 +57,16 @@ export default function ConfirmDialog({
               if (e.key === "Escape") onCancel();
             }}
           >
-            <b id="confirm-dialog-title" className="font-display text-[16px] block mb-2">
+            <b id="confirm-dialog-title" className="font-display text-title block mb-2">
               {title}
             </b>
-            <p className="text-dim text-[13px] leading-[1.5] mb-4">{description}</p>
+            <p className="text-dim text-body leading-[1.5] mb-4">{description}</p>
 
             {requireReason && (
               <label className="flex flex-col gap-1.5 mb-4">
-                <span className="mono !text-[9px]">Шалтгаан</span>
+                <span className="mono !text-micro">Шалтгаан</span>
                 <textarea
-                  className="bg-white/[.04] border border-white/[.08] text-ink font-body text-[13.5px] p-[10px_12px] rounded-lg min-h-[80px] resize-none transition-[border-color,background,box-shadow] duration-250 focus:border-aqua focus:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint"
+                  className="bg-white/[.04] border border-white/[.08] text-ink font-body text-body p-[10px_12px] rounded-lg min-h-[80px] resize-none transition-[border-color,background,box-shadow] duration-250 focus:border-aqua focus:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint"
                   placeholder="Татгалзсан шалтгаанаа бичнэ үү…"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}

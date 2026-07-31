@@ -10,7 +10,9 @@
    "Сарын орлого" backend дээр бодитоор тооцох боломжгүй (Payment бүхэлдээ per-user
    localStorage, cross-user aggregation хийх сервер тал байхгүй) тул "—" харуулна —
    хуурамч тоо зохиомжлохгүй. */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useWindowEvents } from "@/hooks/useWindowEvent";
+import { APP_EVENTS } from "@/lib/data/events";
 import { Empty } from "@/components/ui/States";
 import StatusBadge, { type StatusTone } from "@/components/ui/StatusBadge";
 import Icon from "@/components/ui/Icon";
@@ -24,6 +26,8 @@ import {
   type PaymentRequestStatus,
 } from "@/lib/data/admin-payment-requests";
 import type { AdminUserRow } from "@/types/auth";
+import { TableCard } from "@/components/ui/Surface";
+import StatCard from "@/components/player/StatCard";
 
 const STATUS_LABEL: Record<PaymentRequestStatus, string> = {
   PENDING: "Хүлээгдэж байна",
@@ -47,20 +51,14 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ req: AdminPaymentRequest; kind: "approve" | "reject" } | null>(null);
 
-  function reload() {
-    setRequests(loadPaymentRequests());
-  }
+  const reload = useCallback(() => setRequests(loadPaymentRequests()), []);
 
   useEffect(() => {
     reload();
-    const onChange = () => reload();
-    addEventListener("medreh:payment-requests-changed", onChange);
-    addEventListener("storage", onChange);
-    return () => {
-      removeEventListener("medreh:payment-requests-changed", onChange);
-      removeEventListener("storage", onChange);
-    };
-  }, []);
+  }, [reload]);
+
+  /* `storage` event нь өөр tab дээрх өөрчлөлтийг, `payment-requests-changed` нь энэ tab-ынхыг барина. */
+  useWindowEvents([APP_EVENTS.paymentRequestsChanged, "storage"], reload);
 
   const totalUsers = users.filter((u) => u.role !== "ADMIN").length;
   const proUsers = users.filter((u) => u.subActive).length;
@@ -100,10 +98,10 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
   return (
     <>
       <div className="grid grid-cols-4 max-viz:grid-cols-2 gap-3 my-5 mb-6">
-        <StatCard icon="users" value={totalUsers} label="Нийт хэрэглэгч" tone="aqua" />
-        <StatCard icon="crown" value={proUsers} label="PRO хэрэглэгч" tone="warm" />
-        <StatCard icon="hourglass" value={pendingCount} label="Хүлээгдэж буй" tone="warm" />
-        <StatCard icon="trend" value="—" label="Сарын орлого" tone="faint" />
+        <StatCard icon="users" value={totalUsers} label="Нийт хэрэглэгч" color="c-aqua" />
+        <StatCard icon="crown" value={proUsers} label="PRO хэрэглэгч" color="c-gold" />
+        <StatCard icon="hourglass" value={pendingCount} label="Хүлээгдэж буй" color="c-gold" />
+        <StatCard icon="trend" value="—" label="Сарын орлого" color="" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5 mb-4">
@@ -112,7 +110,7 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
             <Icon name="search" size={15} />
           </span>
           <input
-            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/[.04] border border-white/[.08] text-ink text-[13.5px] transition-[border-color,box-shadow,background] duration-250 focus:bg-white/[.06] focus:border-aqua/60 focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint"
+            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/[.04] border border-white/[.08] text-ink text-body transition-[border-color,box-shadow,background] duration-250 focus:bg-white/[.06] focus:border-aqua/60 focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint"
             placeholder="Нэр, имэйл, планаар хайх…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -120,24 +118,24 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
           />
         </div>
         <select
-          className="py-2.5 px-3.5 rounded-full bg-white/[.04] border border-white/[.08] text-ink text-[12.5px] font-mono transition-[border-color,box-shadow] duration-250 focus:border-aqua focus-visible:outline-none focus-visible:shadow-glow-aqua"
+          className="py-2.5 px-3.5 rounded-full bg-white/[.04] border border-white/[.08] text-ink text-note font-mono transition-[border-color,box-shadow] duration-250 focus:border-aqua focus-visible:outline-none focus-visible:shadow-glow-aqua"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
           aria-label="Төлөвөөр шүүх"
         >
-          <option className="bg-[#0D1414] text-ink" value="ALL">Бүгд</option>
-          <option className="bg-[#0D1414] text-ink" value="PENDING">Хүлээгдэж байна</option>
-          <option className="bg-[#0D1414] text-ink" value="APPROVED">Зөвшөөрсөн</option>
-          <option className="bg-[#0D1414] text-ink" value="REJECTED">Татгалзсан</option>
+          <option className="bg-surface text-ink" value="ALL">Бүгд</option>
+          <option className="bg-surface text-ink" value="PENDING">Хүлээгдэж байна</option>
+          <option className="bg-surface text-ink" value="APPROVED">Зөвшөөрсөн</option>
+          <option className="bg-surface text-ink" value="REJECTED">Татгалзсан</option>
         </select>
         <select
-          className="py-2.5 px-3.5 rounded-full bg-white/[.04] border border-white/[.08] text-ink text-[12.5px] font-mono transition-[border-color,box-shadow] duration-250 focus:border-aqua focus-visible:outline-none focus-visible:shadow-glow-aqua"
+          className="py-2.5 px-3.5 rounded-full bg-white/[.04] border border-white/[.08] text-ink text-note font-mono transition-[border-color,box-shadow] duration-250 focus:border-aqua focus-visible:outline-none focus-visible:shadow-glow-aqua"
           value={sort}
           onChange={(e) => setSort(e.target.value as SortOrder)}
           aria-label="Эрэмбэлэх"
         >
-          <option className="bg-[#0D1414] text-ink" value="newest">Шинэ нь эхэндээ</option>
-          <option className="bg-[#0D1414] text-ink" value="oldest">Хуучин нь эхэндээ</option>
+          <option className="bg-surface text-ink" value="newest">Шинэ нь эхэндээ</option>
+          <option className="bg-surface text-ink" value="oldest">Хуучин нь эхэндээ</option>
         </select>
       </div>
 
@@ -147,7 +145,7 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
         <>
           {/* Desktop — бүрэн 7 багана. Tablet (compact, max-viz ≤1020px) — Хэрэгсэл/Огноо
               баганыг нуугаад drawer-т үлдээнэ. Mobile (max-nav ≤860px) — stacked card. */}
-          <div className="max-nav:hidden border border-white/[.08] rounded-2xl overflow-hidden bg-white/[.015]">
+          <TableCard className="max-nav:hidden">
             <div className="grid grid-cols-[1.1fr_1.3fr_.9fr_.8fr_.9fr_.8fr_auto] max-viz:grid-cols-[1.1fr_1.3fr_.9fr_.8fr_auto] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-white/[.02]">
               <span className="mono">Хэрэглэгч</span>
               <span className="mono">Имэйл</span>
@@ -160,19 +158,19 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
             {filtered.map((r) => (
               <button
                 key={r.id}
-                className="w-full grid grid-cols-[1.1fr_1.3fr_.9fr_.8fr_.9fr_.8fr_auto] max-viz:grid-cols-[1.1fr_1.3fr_.9fr_.8fr_auto] gap-3 items-center py-3 px-5 border-b border-white/[.06] last:border-b-0 text-[13px] text-left transition-colors duration-150 hover:bg-white/[.03] focus-visible:outline-none focus-visible:bg-white/[.05] focus-visible:shadow-[inset_0_0_0_2px_var(--aqua)]"
+                className="w-full grid grid-cols-[1.1fr_1.3fr_.9fr_.8fr_.9fr_.8fr_auto] max-viz:grid-cols-[1.1fr_1.3fr_.9fr_.8fr_auto] gap-3 items-center py-3 px-5 border-b border-white/[.06] last:border-b-0 text-body text-left transition-colors duration-150 hover:bg-white/[.03] focus-visible:outline-none focus-visible:bg-white/[.05] focus-visible:shadow-[inset_0_0_0_2px_var(--aqua)]"
                 onClick={() => setDrawerId(r.id)}
               >
                 <span className="truncate">{r.userName}</span>
                 <span className="text-dim truncate">{r.userEmail}</span>
                 <span className="truncate">{r.plan}</span>
                 <span className="text-dim truncate max-viz:hidden">{r.method}</span>
-                <span className="font-mono text-[11px] text-faint max-viz:hidden">{new Date(r.submittedAt).toLocaleDateString("mn-MN")}</span>
+                <span className="font-mono text-caption text-faint max-viz:hidden">{new Date(r.submittedAt).toLocaleDateString("mn-MN")}</span>
                 <StatusBadge label={STATUS_LABEL[r.status]} tone={STATUS_TONE[r.status]} />
-                <span className="text-dim text-[11px] inline-flex items-center gap-1">Дэлгэрэнгүй<Icon name="chevronRight" size={11} strokeWidth={2.2} /></span>
+                <span className="text-dim text-caption inline-flex items-center gap-1">Дэлгэрэнгүй<Icon name="chevronRight" size={11} strokeWidth={2.2} /></span>
               </button>
             ))}
-          </div>
+          </TableCard>
 
           <div className="hidden max-nav:flex flex-col gap-2.5">
             {filtered.map((r) => (
@@ -182,11 +180,11 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
                 onClick={() => setDrawerId(r.id)}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <b className="text-[14px] truncate">{r.userName}</b>
+                  <b className="text-copy truncate">{r.userName}</b>
                   <StatusBadge label={STATUS_LABEL[r.status]} tone={STATUS_TONE[r.status]} />
                 </div>
-                <span className="text-dim text-[12px] block mb-2 truncate">{r.userEmail}</span>
-                <div className="flex items-center justify-between text-[12px]">
+                <span className="text-dim text-note block mb-2 truncate">{r.userEmail}</span>
+                <div className="flex items-center justify-between text-note">
                   <span>{r.plan} · {r.method}</span>
                   <span className="font-mono text-faint">{new Date(r.submittedAt).toLocaleDateString("mn-MN")}</span>
                 </div>
@@ -216,24 +214,3 @@ export default function ProManagementPanel({ users }: { users: AdminUserRow[] })
   );
 }
 
-/* Нийтлэг player/StatCard.tsx-тэй ижил визуал хэв маягт нийцүүлэв (ижил icon-tile
-   хэмжээ/радиус, inset hairline, tabular тоо, min-height) — `icon` prop-ийн төрөл
-   (string) хэвээр, зөвхөн emoji-ийн оронд нэгдсэн icon-ийн нэр дамжуулна. */
-function StatCard({ icon, value, label, tone }: { icon: string; value: number | string; label: string; tone: "aqua" | "warm" | "faint" }) {
-  const toneCls = {
-    aqua: "bg-aqua/[.10] text-aqua shadow-[inset_0_0_0_1px_rgba(56,232,206,.22)]",
-    warm: "bg-warm/[.10] text-warm shadow-[inset_0_0_0_1px_rgba(217,165,76,.24)]",
-    faint: "bg-white/[.06] text-dim shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]",
-  }[tone];
-  return (
-    <div className="group flex items-center gap-4 min-h-[88px] py-4 px-5 rounded-2xl border border-white/[.07] [background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012))] shadow-[inset_0_1px_0_rgba(255,255,255,.05)] transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(.16,.8,.24,1)] hover:-translate-y-[3px] hover:border-white/[.14] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.07),0_10px_28px_-8px_rgba(0,0,0,.55)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-      <span className={"w-[42px] h-[42px] flex-none rounded-[13px] flex items-center justify-center " + toneCls} aria-hidden="true">
-        <Icon name={icon} size={21} />
-      </span>
-      <div className="min-w-0">
-        <b className="block font-display font-bold text-[clamp(18px,1.8vw,23px)] leading-[1.1] tracking-[-.03em] tabular-nums truncate">{value}</b>
-        <span className="font-mono text-[9.5px] uppercase tracking-[.16em] leading-[1.4] text-dim">{label}</span>
-      </div>
-    </div>
-  );
-}

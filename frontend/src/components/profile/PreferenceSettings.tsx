@@ -30,7 +30,7 @@ interface SettingsPrefs {
   largeText?: boolean;
 }
 
-const fieldLabelCls = "block text-[12px] font-medium text-dim mb-1.5";
+const fieldLabelCls = "block text-note font-medium text-dim mb-1.5";
 
 function Segmented<T extends string | number>({
   options,
@@ -52,8 +52,8 @@ function Segmented<T extends string | number>({
           type="button"
           key={o.v}
           className={
-            "py-2 px-3.5 rounded-full text-[12.5px] font-medium border transition-colors duration-150 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
-            (value === o.v ? "bg-aqua text-[#04100E] border-aqua font-semibold" : "text-dim border-white/[.08] hover:border-white/20 hover:text-ink")
+            "py-2 px-3.5 rounded-full text-note font-medium border transition-colors duration-150 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+            (value === o.v ? "bg-aqua text-on-aqua border-aqua font-semibold" : "text-dim border-white/[.08] hover:border-white/20 hover:text-ink")
           }
           onClick={() => onChange(o.v)}
           aria-pressed={value === o.v}
@@ -67,10 +67,11 @@ function Segmented<T extends string | number>({
 
 function ToggleRow({ checked, onChange, label, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string }) {
   return (
-    <label className="flex items-center justify-between gap-4 py-2.5 cursor-pointer">
+    /* min-h-11: хүрэлцэх төхөөрөмж дээрх 44px hit-target (WCAG 2.5.8) */
+    <label className="flex items-center justify-between gap-4 py-2.5 min-h-11 cursor-pointer">
       <span>
-        <span className="block text-[13.5px] text-ink">{label}</span>
-        {hint && <span className="block text-[11.5px] text-faint mt-0.5">{hint}</span>}
+        <span className="block text-body text-ink">{label}</span>
+        {hint && <span className="block text-caption text-faint mt-0.5">{hint}</span>}
       </span>
       <span className="relative flex-none">
         <input
@@ -103,33 +104,18 @@ export default function PreferenceSettings({
 }) {
   return (
     <>
-      <SectionCard title="Харагдац" description="Аппын өнгө болон хэлний тохиргоо" className="mb-5">
-        <div className="block mb-4">
-          <span className={fieldLabelCls}>Загвар (Theme)</span>
-          <Segmented
-            ariaLabel="Загвар"
-            value={prefs.theme || "dark"}
-            onChange={(v) => onUpdatePrefs({ theme: v })}
-            options={[
-              { v: "dark", label: "Харанхуй" },
-              { v: "light", label: "Цайвар" },
-            ]}
-          />
-        </div>
+      {/* ⛔ «Загвар (Theme)» ба «Хэл (Language)» шилжүүлэгчийг ЗОРИУДААР ХАССАН.
+             Хоёулаа утгаа localStorage-д хадгалдаг ч апп-д ямар ч нөлөө үзүүлдэггүй
+             байсан — хэрэглэгч дарж, "хадгалагдлаа" гэж ойлгоод, юу ч болдоггүй.
 
-        <div className="block">
-          <span className={fieldLabelCls}>Хэл (Language)</span>
-          <Segmented
-            ariaLabel="Хэл"
-            value={prefs.language || "mn"}
-            onChange={(v) => onUpdatePrefs({ language: v })}
-            options={[
-              { v: "mn", label: "Монгол" },
-              { v: "en", label: "English" },
-            ]}
-          />
-        </div>
-      </SectionCard>
+             · Theme: бүх өнгө (300+ `bg-white/[.0x]`, gradient, rgba) харанхуй суурьт
+               зориулж бичигдсэн. Цайвар хувилбар нь дизайныг дахин зохиох ажил.
+             · Language: 1000 орчим мөр текст компонент дотор шууд бичигдсэн; i18n
+               сан/каталог байхгүй.
+
+             Prefs дэх `theme`/`language` талбарууд болон хадгалагдсан утгууд ХЭВЭЭР —
+             зөвхөн UI-аас нуугдсан тул buttons буцаах үед өгөгдөл алдагдахгүй.
+             Хэрэгжүүлсний дараа энэ блокийг эргүүлэн нээнэ. */}
 
       <SectionCard title="Мэдрэх горим — үндсэн тохиргоо" description="Чичиргээ, гэрэл, визуалайзерын үндсэн тохиргоо" className="mb-5">
         <div className="block mb-4">
@@ -162,14 +148,24 @@ export default function PreferenceSettings({
 
       <SectionCard title="Мэдэгдэл ба хандалт" description="Мэдэгдэл болон хандалтын тохиргоо">
         <div className="flex flex-col divide-y divide-white/[.06]">
-          <ToggleRow checked={prefs.notifyFeed ?? true} onChange={(v) => onUpdatePrefs({ notifyFeed: v })} label="Зарлал/мэдэгдэл хүлээн авах" />
+          <ToggleRow
+            checked={prefs.notifyFeed ?? true}
+            onChange={(v) => onUpdatePrefs({ notifyFeed: v })}
+            label="Зарлал/мэдэгдэл хүлээн авах"
+            hint="Унтраавал хонхны мэдэгдэл харагдахгүй (хуучин мэдэгдэл устахгүй)"
+          />
           <ToggleRow
             checked={prefs.reducedMotion ?? false}
             onChange={(v) => onUpdatePrefs({ reducedMotion: v })}
             label="Хөдөлгөөн багасгах"
-            hint="Визуалайзер/анимаци эрчмийг бууруулна"
+            hint="Визуалайзерын гэрэлтэлт/тоосонцор, интерфейсийн анимацийг зогсооно"
           />
-          <ToggleRow checked={prefs.largeText ?? false} onChange={(v) => onUpdatePrefs({ largeText: v })} label="Том фонт ашиглах" />
+          <ToggleRow
+            checked={prefs.largeText ?? false}
+            onChange={(v) => onUpdatePrefs({ largeText: v })}
+            label="Том фонт ашиглах"
+            hint="Бүх бичвэрийг 15%-иар томруулна"
+          />
         </div>
       </SectionCard>
     </>

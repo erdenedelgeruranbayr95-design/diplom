@@ -2,27 +2,75 @@
 @import "tailwindcss/utilities.css";
 @config "../../tailwind.config.ts";
 
+/* ============================================================================
+   ДИЗАЙН ТОКЕН — ЦОРЫН ГАНЦ ЭХ СУРВАЛЖ
+
+   Урьд нь ижил токенууд 3 файлд (globals.css @theme · medreh.css :root ·
+   polish.css :root) зэрэг зарлагдаж, cascade-ийн дарааллаас болж аль нь
+   хүчинтэйг таах боломжгүй байв (жишээ нь focus ring нь Tailwind-ийн
+   `shadow-glow-aqua` ба CSS-ийн `var(--glow-aqua)` гэсэн 2 өөр утгатай байсан).
+   Одоо БҮХ утга энд л бичигдэнэ; medreh.css нь зөвхөн богино alias үүсгэнэ.
+   ============================================================================ */
 @theme {
+  /* ---- өнгө: брэнд ---- */
   --color-bg: #070a0a;
   --color-ink: #f2f5f4;
   --color-dim: #778583;
-  --color-faint: #6e7c7a;
+  /* #4E5B59 → #6E7C7A → #768583.
+     #6E7C7A нь ЗӨВХӨН цэвэр дэвсгэр (#070A0A) дээр 4.57:1 байсан ч, карт/панелийн
+     цайвар гадаргуу (white/.02…/.06) дээр 4.43…4.07:1 болж AA (4.5:1) унадаг байв.
+     .mono шошго ихэвчлэн картын дотор байдаг тул бодит контраст нь доогуур байсан.
+     #768583 нь хамгийн цайвар гадаргуу дээр ч 4.59:1 — хаа сайгүй AA. */
+  --color-faint: #768583;
   --color-aqua: #38e8ce;
+  --color-aqua-hover: #6ff3de;
+  /* aqua дэвсгэр дээрх бичвэрийн өнгө — 45 газар түүхий `#04100E` байсныг нэрлэв */
+  --color-on-aqua: #04100e;
   --color-warm: #d9a54c;
   --color-purple: #b49cff;
   --color-rose: #f08ca5;
-  --color-line: rgba(242, 245, 244, 0.1);
+  --color-danger: #e88a9b;
+  --color-danger-ink: #140306;
 
-  --radius-sm: 8px;
-  --radius-md: 13px;
-  --radius-lg: 18px;
-  --radius-full: 999px;
+  /* ---- өнгө: гадаргуу ---- */
+  --color-surface: #0d1414;
+  --color-surface-2: #101817;
 
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.55);
-  --shadow-glow-aqua: 0 0 0 3px rgba(56, 232, 206, 0.25);
-  --shadow-glow-warm: 0 0 0 3px rgba(217, 165, 76, 0.3);
+  /* ---- хайрцгийн шугам: 3 шатлал (өмнө нь .08/.09/.1/.12/.13/.16 гэсэн 6 alpha) ---- */
+  --color-line: rgba(242, 245, 244, 0.11);
+  --color-line-2: rgba(242, 245, 244, 0.16);
+  --color-line-3: rgba(242, 245, 244, 0.24);
+  /* WCAG 1.4.11 (non-text contrast): удирдлагыг ТАНИХАД шаардлагатай хүрээ нь
+     зэргэлдээ өнгөнөөсөө ≥3:1 байх ёстой. --color-line нь 1.27:1 — карт/хуваагчид
+     (чимэглэл) хангалттай ч ФОРМЫН талбарт хангалтгүй. Иймд input/select/textarea-д
+     зориулсан тусдаа шат: 3.08:1. */
+  --color-line-field: rgba(242, 245, 244, 0.36);
+
+  /* ---- радиус: бүх утга ЗӨВХӨН эндээс (arbitrary rounded-[Npx] хэрэглэхгүй) ---- */
+  --radius-bar: 3px;    /* визуалайзер/meter-ийн нимгэн баганын үзүүр */
+  --radius-sm: 8px;     /* input · жижиг чип */
+  --radius-chip: 11px;  /* сегмент товч · жижиг мөр */
+  --radius-md: 13px;    /* icon tile · toast */
+  --radius-lg: 18px;    /* карт */
+  --radius-panel: 22px; /* панел · модал */
+  --radius-card: 28px;  /* том карт · hero гадаргуу */
+  --radius-full: 999px; /* pill · тойрог */
+
+  /* ---- elevation: нейтрал сүүдэр (spread сөрөг → "жинтэй", тархалт бага) ---- */
+  --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 10px 28px -8px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 22px 56px -12px rgba(0, 0, 0, 0.7);
+  /* дээд талын hairline highlight — карт бүрийн нийтлэг "гадаргуу" мэдрэмж */
+  --shadow-hairline: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  /* focus ring: 2px цөм + халуун ореол. Tailwind-ийн `shadow-glow-aqua` болон
+     CSS-ийн `var(--glow-aqua)` ОДОО ИЖИЛ утгатай (өмнө нь зөрж байсан). */
+  --shadow-glow-aqua: 0 0 0 2px rgba(56, 232, 206, 0.6), 0 0 0 5px rgba(56, 232, 206, 0.16);
+  --shadow-glow-warm: 0 0 0 2px rgba(217, 165, 76, 0.62), 0 0 0 5px rgba(217, 165, 76, 0.18);
+  --shadow-glow-danger: 0 0 0 2px rgba(232, 138, 155, 0.6), 0 0 0 5px rgba(232, 138, 155, 0.18);
+
+  /* ---- гадаргуугийн gradient (карт/панел) ---- */
+  --surf-1: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012));
+  --surf-2: linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.022));
 
   --blur-xs: 4px;
   --blur-sm: 6px;
@@ -45,9 +93,37 @@
 
   --max-width-wrap: 1340px;
 
-  --font-display: "Unbounded", sans-serif;
-  --font-body: "Golos Text", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  /* next/font (src/app/fonts.ts) нь эдгээр хувьсагчийг <html>-д тавина. Fallback нь
+     шрифт ачаалагдах хүртэлх богино хугацаанд л ажиллана. */
+  --font-display: var(--font-unbounded), "Unbounded", sans-serif;
+  --font-body: var(--font-golos), "Golos Text", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", monospace;
+
+  /* ---- typography scale ----
+     Өмнө нь 31 өөр `text-[Npx]` утга тарсан байв. Эдгээр нь тэдгээрийн хамгийн
+     их давтагдсан утгууд — шинэ хэмжээ ЗОХИОГООГҮЙ, зөвхөн нэрлэсэн.
+
+     ⚠️ Tailwind-ийн үндсэн `text-xs/sm/base/lg/xl/2xl` нэрсийг ЗОРИУДААР
+     дарж бичээгүй — тэдгээр нь кодод 60+ газар ашиглагдаж байгаа тул дарж
+     бичвэл бүх хэмжээ өөрчлөгдөнө. Иймд семантик нэр ашиглав.
+
+     Шат бүрийн утгыг тухайн бүлгийн ХАМГИЙН ОЛОН ДАВТАГДСАН хэмжээгээр авсан тул
+     ихэнх дуудлагад пиксел огт хөдлөхгүй; үлдсэн нь дээд тал нь ±1px шилжинэ.
+     20px-ээс дээш (clamp-тай hero/дэлгэцийн гарчиг) нь нэг удаагийн зориудын
+     хэмжээ тул энэ шатлалд ороогүй.
+
+     Шат бүр `--text-scale` үржигчээр дамжина — "Том фонт" тохиргоо (Профайл →
+     Мэдэгдэл ба хандалт) үүнийг 1 → 1.15 болгоход БҮХ UI бичвэр нэг дор томорно.
+     Анхны утга 1 тул өгөгдмөл байдалд пиксел огт өөрчлөгдөхгүй. */
+  --text-micro: calc(9px * var(--text-scale));      /* хамгийн жижиг mono шошго */
+  --text-meta: calc(10px * var(--text-scale));      /* mono meta · badge */
+  --text-caption: calc(11px * var(--text-scale));   /* тайлбар · тоо */
+  --text-note: calc(12.5px * var(--text-scale));    /* хоёрдогч бичвэр */
+  --text-body: calc(13.5px * var(--text-scale));    /* үндсэн UI бичвэр · товч */
+  --text-copy: calc(14.5px * var(--text-scale));    /* урт бичвэр · input */
+  --text-lead: calc(15px * var(--text-scale));      /* танилцуулга догол */
+  --text-title: calc(16px * var(--text-scale));     /* картын гарчиг */
+  --text-heading: calc(18px * var(--text-scale));   /* хэсгийн гарчиг */
 }
 
 @import "./medreh.css";
@@ -56,11 +132,34 @@
 
 :root {
   color-scheme: dark;
+
+  /* ---- хэрэглэгчийн тохиргооны "залгуур"-ууд ----
+     Утгыг React (useAppPreferences) нь <html> дээрх data-attribute-аар сольдог.
+     Энд зөвхөн ӨГӨГДМӨЛ утга — тохиргоо ачаалагдаагүй/нэвтрээгүй үед апп яг
+     хуучин шигээ харагдана (backward compatible). */
+  --text-scale: 1;
+}
+
+/* "Том фонт ашиглах" — бүх typography токен 15%-иар томорно. Зөвхөн хэмжээ:
+   layout нь Tailwind-ийн flex/grid дээр тул мөр таслалт өөрөө тохирно. */
+html[data-large-text="true"] {
+  --text-scale: 1.15;
+}
+
+/* "Хөдөлгөөн багасгах" — системийн `prefers-reduced-motion`-оос ГАДНА, апп доторх
+   тохиргоогоор ч асаах боломжтой. Дүрэм нь medreh.css-ийн media query-тэй ижил. */
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
 }
 
 html {
   scroll-behavior: smooth;
-  background: #070a0a;
+  background: var(--color-bg);
 }
 
 body {
@@ -69,8 +168,8 @@ body {
   background:
     radial-gradient(1000px 520px at 15% -10%, rgba(56, 232, 206, 0.08), transparent 52%),
     radial-gradient(900px 460px at 88% 10%, rgba(180, 156, 255, 0.05), transparent 54%),
-    #070a0a;
-  color: #f2f5f4;
+    var(--color-bg);
+  color: var(--color-ink);
   font-family: var(--font-body);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -78,8 +177,8 @@ body {
 }
 
 ::selection {
-  background: rgba(56, 232, 206, 0.24);
-  color: #f2f5f4;
+  background: rgba(56, 232, 206, 0.3);
+  color: var(--color-ink);
 }
 
 img,

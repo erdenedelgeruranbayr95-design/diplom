@@ -3,6 +3,8 @@
 /* ХУУЧИРСАН: жинхэнэ auth (register/login/session) одоо backend JWT дээр суурилна — lib/api/client.ts, lib/auth/auth-context.tsx.
    Энэ файл зөвхөн backend руу хараахан шилжээгүй хуучин модулиудад (ProfileView, AdminView, SubscribeModal —
    Phase 2-т backend-жих) түр зуур localStorage дэмжлэг үзүүлж байна. */
+import { readJson, writeJson } from "@/lib/data/storage";
+
 const USERS_KEY = "medreh_users";
 const SESSION_KEY = "medreh_user";
 
@@ -16,14 +18,10 @@ export interface LegacyUser {
 }
 
 export function loadUsers(): LegacyUser[] {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || "[]") || [];
-  } catch {
-    return [];
-  }
+  return readJson<LegacyUser[]>(USERS_KEY, []);
 }
 export function saveUsers(users: LegacyUser[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  writeJson(USERS_KEY, users);
 }
 
 /* Анхны админ бүртгэл — байхгүй бол үүсгэнэ (демо: admin@medreh.mn / admin123) */
@@ -57,13 +55,9 @@ export function setPassword(email: string, newPass: string) {
 }
 
 export function loadSession(): LegacyUser | null {
-  try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-  } catch {
-    return null;
-  }
+  return readJson<LegacyUser | null>(SESSION_KEY, null);
 }
 export function saveSession(user: LegacyUser | null) {
-  if (user) localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  if (user) writeJson(SESSION_KEY, user);
   else localStorage.removeItem(SESSION_KEY);
 }

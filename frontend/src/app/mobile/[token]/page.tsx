@@ -13,6 +13,7 @@ import { getQrSession } from "@/lib/api/client";
 import { VIB_LEVELS } from "@/lib/player/constants";
 import type { Socket } from "socket.io-client";
 import Icon from "@/components/ui/Icon";
+import { ActionButton } from "@/components/ui/ActionGroup";
 
 type PageState = "loading" | "waiting" | "connected" | "expired" | "error";
 
@@ -165,7 +166,7 @@ export default function MobilePage() {
               </span>
             </div>
 
-            <div className={"inline-flex items-center gap-2 font-mono text-[11px] tracking-[.18em] uppercase " + (state === "connected" ? "text-aqua" : "text-dim")}>
+            <div className={"inline-flex items-center gap-2 font-mono text-caption tracking-[.18em] uppercase " + (state === "connected" ? "text-aqua" : "text-dim")}>
               <i className={"w-2 h-2 rounded-full " + (state === "connected" ? "bg-aqua shadow-[0_0_8px_var(--aqua)]" : "bg-faint")} aria-hidden="true"></i>
               {state === "connected" ? "Холбогдсон" : "Холбогдож байна…"}
             </div>
@@ -176,7 +177,7 @@ export default function MobilePage() {
                 {track.artist && <i className="not-italic text-dim">{track.artist}</i>}
               </div>
             ) : (
-              <p className="text-dim text-[13px]">Desktop дээр дуу тоглуулахад энд харагдана</p>
+              <p className="text-dim text-body">Desktop дээр дуу тоглуулахад энд харагдана</p>
             )}
 
             <div className="w-full flex flex-col gap-3 items-center pt-3 border-t border-white/[.08]">
@@ -196,13 +197,13 @@ export default function MobilePage() {
               </label>
 
               <span className="mono">Хүч</span>
-              <div className="grid grid-cols-3 gap-px bg-white/10 rounded-[9px] overflow-hidden w-full" role="group" aria-label="Чичиргээний хүч">
+              <div className="grid grid-cols-3 gap-px bg-white/10 rounded-chip overflow-hidden w-full" role="group" aria-label="Чичиргээний хүч">
                 {VIB_LEVELS.map((v, i) => (
                   <button
                     key={v.label}
                     className={
-                      "py-2.5 px-1.5 min-h-11 text-[12.5px] font-medium bg-[#101817] transition-colors duration-150 focus-visible:outline-none focus-visible:relative focus-visible:z-[1] focus-visible:shadow-glow-aqua " +
-                      (strength === i ? "bg-aqua text-[#04100E] font-semibold" : "text-dim")
+                      "py-2.5 px-1.5 min-h-11 text-note font-medium bg-surface-2 transition-colors duration-150 focus-visible:outline-none focus-visible:relative focus-visible:z-[1] focus-visible:shadow-glow-aqua " +
+                      (strength === i ? "bg-aqua text-on-aqua font-semibold" : "text-dim")
                     }
                     onClick={() => setStrength(i)}
                     aria-pressed={strength === i}
@@ -212,16 +213,16 @@ export default function MobilePage() {
                 ))}
               </div>
 
-              <button
-                className="rounded-full text-[13.5px] font-semibold bg-aqua text-[#04100E] py-3 px-6 w-full transition-[background,transform] duration-200 hover:bg-[#6FF3DE] active:scale-[.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:shadow-glow-aqua"
+              <ActionButton
+                variant="primary"
+                size="lg"
+                className="w-full"
                 onClick={testVibration}
                 disabled={!vibrateSupported}
               >
-                <span className="inline-flex items-center justify-center gap-2">
-                  {vibrateSupported && <Icon name="vibrate" size={15} />}
-                  {vibrateSupported ? "Турших" : "Энэ төхөөрөмж дэмжихгүй"}
-                </span>
-              </button>
+                {vibrateSupported && <Icon name="vibrate" size={15} />}
+                {vibrateSupported ? "Турших" : "Энэ төхөөрөмж дэмжихгүй"}
+              </ActionButton>
             </div>
           </>
         )}

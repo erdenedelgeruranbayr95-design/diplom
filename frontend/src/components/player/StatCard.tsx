@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Icon from "@/components/ui/Icon";
 
 /* Дахин ашиглагдах KPI карт — Admin/Therapist/Parent/Progress/Achievements бүх дашбоардад
    нийтлэг ашиглагддаг. Премиум KPI card (Stripe/Vercel Dashboard pattern) руу шинэчлэв:
@@ -27,7 +28,11 @@ export default function StatCard({
   value,
   label,
 }: {
-  icon: ReactNode;
+  /* Хоёр хэлбэр дэмжинэ:
+       · ICONS.*-ийн SVG path fragment (ReactNode) — dashboard-ууд ингэж дууддаг
+       · Icon.tsx-ийн icon нэр (string)          — админ самбар ингэж дууддаг
+     Ингэснээр ProManagementPanel-д давхардаж бичигдсэн локал StatCard хэрэггүй болов. */
+  icon: ReactNode | string;
   color: string;
   value: ReactNode;
   label: string;
@@ -36,18 +41,22 @@ export default function StatCard({
   return (
     <div className="group flex flex-row items-center gap-4 min-h-[88px] py-4 px-5 rounded-2xl border border-white/[.07] [background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012))] shadow-[inset_0_1px_0_rgba(255,255,255,.05)] transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(.16,.8,.24,1)] hover:-translate-y-[3px] hover:border-white/[.14] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.07),0_10px_28px_-8px_rgba(0,0,0,.55)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       <span
-        className={"w-[42px] h-[42px] flex-none rounded-[13px] flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.06] motion-reduce:group-hover:scale-100 " + colorCls}
+        className={"w-[42px] h-[42px] flex-none rounded-md flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.06] motion-reduce:group-hover:scale-100 " + colorCls}
         aria-hidden="true"
       >
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-          {icon}
-        </svg>
+        {typeof icon === "string" ? (
+          <Icon name={icon} size={21} />
+        ) : (
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            {icon}
+          </svg>
+        )}
       </span>
       <span className="flex flex-col gap-1 min-w-0">
         <b className="font-display font-bold text-[clamp(19px,2vw,25px)] leading-[1.1] tracking-[-.03em] tabular-nums whitespace-nowrap overflow-hidden text-ellipsis">
           {value}
         </b>
-        <span className="font-mono text-[10px] uppercase tracking-[.18em] leading-[1.4] text-dim">{label}</span>
+        <span className="font-mono text-meta uppercase tracking-[.18em] leading-[1.4] text-dim">{label}</span>
       </span>
     </div>
   );

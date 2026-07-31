@@ -11,6 +11,7 @@ import { AssignmentsModule } from './assignments/assignments.module';
 import { TherapyModule } from './therapy/therapy.module';
 import { QrModule } from './qr/qr.module';
 import { HistoryModule } from './history/history.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { SocketModule } from './socket/socket.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
@@ -27,6 +28,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     TherapyModule,
     QrModule,
     HistoryModule,
+    NotificationsModule,
     SocketModule,
   ],
   providers: [

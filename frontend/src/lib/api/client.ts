@@ -4,7 +4,18 @@
    refresh token нь httpOnly cookie-д, browser автоматаар илгээнэ.
    Access token нь зөвхөн browser tab-ийн module-level хувьсагчид оршдог тул энэ файл болон
    үүнийг ашигладаг бүх код Client Component-т байх ёстой (Server Component-д унших боломжгүй). */
-import type { AdminUserRow, CreatedUser, CreateUserPayload, SessionUser, UserSub } from "@/types/auth";
+import { APP_EVENTS } from "@/lib/data/events";
+import type {
+  AdminUserRow,
+  ChangePasswordPayload,
+  CreatedUser,
+  CreateUserPayload,
+  NotificationFeed,
+  NotificationRow,
+  SessionUser,
+  UpdateProfilePayload,
+  UserSub,
+} from "@/types/auth";
 import type { AnalyzeSongPayload, Artist, ArtistWithSongs, CreateHistoryPayload, HistoryPage, ListenHistoryRow, Song } from "@/types/song";
 import type { QrSessionRow } from "@/types/qr";
 import type {
@@ -45,15 +56,23 @@ async function apiFetch<T>(path: string, opts: RequestInit = {}, retry = true): 
     const refreshed = await refresh().catch(() => null);
     if (refreshed) return apiFetch<T>(path, opts, false);
     accessToken = null;
-    dispatchEvent(new CustomEvent("medreh:session-expired"));
+    dispatchEvent(new CustomEvent(APP_EVENTS.sessionExpired));
   }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.message || `Алдаа гарлаа (${res.status})`);
   }
+
+  /* ⚠️ NestJS handler `null` буцаахад 204 биш, ХООСОН body-тай 200 ирдэг
+     (жишээ нь DELETE /users/me/subscription, PATCH /users/:id/subscription идэвхгүй
+     болгох үед). Урьд нь энд шууд `res.json()` дуудаж "Unexpected end of JSON input"
+     гэж уначихдаг байсан — "Захиалга цуцлах" урсгал зөвхөн дуудагч тал алдааг
+     залгидаг байсны ачаар л ажилладаг мэт харагдаж байв. */
   if (res.status === 204) return null as T;
-  return res.json();
+  const text = await res.text();
+  if (!text) return null as T;
+  return JSON.parse(text) as T;
 }
 
 export async function register(name: string, email: string, password: string, password2: string) {
@@ -111,6 +130,42 @@ export function cancelSubscriptionMe() {
   return apiFetch<UserSub | null>("/users/me/subscription", { method: "DELETE" });
 }
 
+/* Профайл ба нууц үг — өмнө нь эдгээр нь localStorage-ийн хоосон "legacy" сан руу
+   бичдэг байсан тул нууц үг солих нь хэзээ ч ажилладаггүй, профайл refresh хийхэд
+   алга болдог байв. Одоо Postgres руу бодитоор бичигдэнэ. */
+export function updateProfile(payload: UpdateProfilePayload) {
+  return apiFetch<Pick<SessionUser, "id" | "name" | "email" | "role" | "avatarColor" | "hearingProfile">>("/users/me", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function changePassword(payload: ChangePasswordPayload) {
+  return apiFetch<{ ok: true }>("/users/me/password", { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+/* Админ өөр хэрэглэгчийн PRO эрхийг DB-д бодитоор олгоно/хасна. */
+export function setUserSubscription(userId: string, active: boolean, plan?: string) {
+  return apiFetch<UserSub | null>(`/users/${userId}/subscription`, {
+    method: "PATCH",
+    body: JSON.stringify({ active, plan }),
+  });
+}
+
+// ---- Мэдэгдэл (feed) ----
+export function listNotifications() {
+  return apiFetch<NotificationFeed>("/notifications");
+}
+
+export function markNotificationsRead() {
+  return apiFetch<{ readAt: string }>("/notifications/read", { method: "POST" });
+}
+
+/** Админы зарлал — `userId = null` тул БҮХ хэрэглэгчид хүрнэ. */
+export function broadcastNotification(text: string, icon = "📢") {
+  return apiFetch<NotificationRow>("/notifications/broadcast", { method: "POST", body: JSON.stringify({ text, icon }) });
+}
+
 // ---- Эмч томилолт (admin) ----
 export function createTherapistAssignment(therapistId: string, userId: string) {
   return apiFetch<TherapistAssignmentRow>("/assignments/therapists", {
@@ -156,9 +211,6 @@ export function getPopularSongs() {
   return apiFetch<Song[]>("/songs/popular");
 }
 
-export function getMoreByArtist(songId: string) {
-  return apiFetch<Song[]>(`/songs/${songId}/more-by-artist`);
-}
 
 // ---- Artists (дуучид) ----
 export function listArtists() {

@@ -1,9 +1,66 @@
 import { PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { readFileSync, statSync } from 'fs';
+import { join } from 'path';
 
 const prisma = new PrismaClient();
 
+/* Демо mp3-ууд frontend/public/-д байрладаг тул seed тэднийг репо доторх замаар олно.
+   Файл олдохгүй бол duration нь null үлдэнэ — seed унахгүй (UI нь "—" харуулна). */
+const PUBLIC_DIR = join(__dirname, '..', '..', 'frontend', 'public');
+
+const MPEG1_LAYER3_BITRATES = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
+
+/* Демо файлууд бүгд MPEG-1 Layer III, тогтмол битрэйт (CBR 192 kbps), Xing/VBR толгойгүй.
+   Тийм тул урт нь (аудио байтын хэмжээ ÷ битрэйт) томьёогоор нарийн гарна — гуравдагч талын
+   сан (music-metadata / ffprobe) шаардахгүй. Эхний frame-ийн толгойноос битрэйтийг уншина
+   (192-г шууд бичихгүй), файл солигдвол тоо нь автоматаар мөрдөнө. */
+function mp3DurationSec(publicPath: string): number | null {
+  try {
+    const abs = join(PUBLIC_DIR, publicPath.replace(/^\//, ''));
+    const size = statSync(abs).size;
+    const buf = readFileSync(abs);
+
+    // ID3v2 толгойг алгасана (synchsafe 4×7-bit урт).
+    let off = 0;
+    if (buf.toString('latin1', 0, 3) === 'ID3') {
+      off = 10 + (((buf[6] & 0x7f) << 21) | ((buf[7] & 0x7f) << 14) | ((buf[8] & 0x7f) << 7) | (buf[9] & 0x7f));
+    }
+
+    // Эхний хүчинтэй frame sync (11 бит 1) хайж, битрэйт/дээжлэх давтамжийг уншина.
+    for (let i = off; i + 4 <= buf.length; i++) {
+      if (buf[i] !== 0xff || (buf[i + 1] & 0xe0) !== 0xe0) continue;
+      const version = (buf[i + 1] >> 3) & 0x03; // 3 = MPEG-1
+      const layer = (buf[i + 1] >> 1) & 0x03; // 1 = Layer III
+      const bitrateIdx = (buf[i + 2] >> 4) & 0x0f;
+      const sampleRateIdx = (buf[i + 2] >> 2) & 0x03;
+      if (version !== 3 || layer !== 1 || bitrateIdx === 0 || bitrateIdx === 15 || sampleRateIdx === 3) continue;
+
+      const kbps = MPEG1_LAYER3_BITRATES[bitrateIdx];
+      const seconds = ((size - off) * 8) / (kbps * 1000);
+      return Math.round(seconds);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
+  /* ROOT — системийн эзэмшигч, ADMIN-аас дээр зэрэглэлтэй. Зөвхөн энэ дүр Root Panel-д
+     нэвтэрнэ (`RolesGuard`-д ROOT бүх @Roles() шаардлагыг давна). */
+  await prisma.user.upsert({
+    where: { email: 'root@medreh.mn' },
+    update: {},
+    create: {
+      name: 'Систем эзэмшигч',
+      email: 'root@medreh.mn',
+      passwordHash: await bcrypt.hash('root123', 10),
+      role: Role.ROOT,
+    },
+  });
+  console.log('Seeded root@medreh.mn / root123');
+
   await prisma.user.upsert({
     where: { email: 'admin@medreh.mn' },
     update: {},
@@ -79,6 +136,13 @@ async function main() {
   }
   function placeholderCover(i: number) {
     return PLACEHOLDER_COVERS[i % PLACEHOLDER_COVERS.length];
+  }
+  /* Файл бүрийг нэг л удаа уншиж, урт нь кэшлэгдэнэ (6 файл × 21 дуу давхар уншихаас сэргийлнэ). */
+  const durationCache = new Map<string, number | null>();
+  function placeholderDuration(i: number) {
+    const file = placeholderFile(i);
+    if (!durationCache.has(file)) durationCache.set(file, mp3DurationSec(file));
+    return durationCache.get(file) ?? null;
   }
 
   const ARTISTS: { name: string; bio: string; careerInfo: string; songs: { title: string; genre: string; year: number; featured?: boolean }[] }[] = [
@@ -183,6 +247,7 @@ async function main() {
   ];
 
   let songIndex = 0;
+  let backfilled = 0;
   for (const a of ARTISTS) {
     const artist = await prisma.artist.upsert({
       where: { name: a.name },
@@ -192,6 +257,16 @@ async function main() {
     for (const s of a.songs) {
       const existing = await prisma.song.findFirst({ where: { title: s.title, artistId: artist.id } });
       if (existing) {
+        /* Хуучин seed нь duration бичдэггүй байсан тул DB-д аль хэдийн байгаа мөрүүд
+           duration = null-тай үлдсэн (UI-д "—" харагдана). Дахин seed хийхэд тэдгээрийг
+           нөхөж бөглөнө — бусад талбарыг хөндөхгүй (гараар засварласан өгөгдөл хэвээр). */
+        if (existing.duration === null) {
+          const duration = placeholderDuration(songIndex);
+          if (duration !== null) {
+            await prisma.song.update({ where: { id: existing.id }, data: { duration } });
+            backfilled++;
+          }
+        }
         songIndex++;
         continue;
       }
@@ -205,13 +280,17 @@ async function main() {
           featured: !!s.featured,
           coverUrl: placeholderCover(songIndex),
           fileUrl: placeholderFile(songIndex),
+          duration: placeholderDuration(songIndex),
           uploadedBy: (await prisma.user.findUniqueOrThrow({ where: { email: 'admin@medreh.mn' } })).id,
         },
       });
       songIndex++;
     }
   }
-  console.log(`Seeded ${ARTISTS.length} artists and ${songIndex} songs (placeholder audio/cover)`);
+  console.log(
+    `Seeded ${ARTISTS.length} artists and ${songIndex} songs (placeholder audio/cover)` +
+      (backfilled > 0 ? `, backfilled duration on ${backfilled} existing songs` : ''),
+  );
 
   await prisma.therapistAssignment.upsert({
     where: { therapistId_userId: { therapistId: therapist.id, userId: demoUser.id } },

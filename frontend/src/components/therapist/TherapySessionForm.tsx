@@ -5,9 +5,10 @@
    default загвартай) байсан тул энд бодит Tailwind загвар анх удаа нэмэв — энэ бол зөвхөн
    визуал сайжруулалт, notes/scheduledAt/saving/onSubmit state/callback огт өөрчлөгдөөгүй. */
 import SectionCard from "@/components/ui/SectionCard";
+import { ActionButton } from "@/components/ui/ActionGroup";
 
 const inputCls =
-  "bg-white/[.04] border border-white/[.08] text-ink font-body text-[14.5px] p-[12px_14px] rounded-lg transition-[border-color,background,box-shadow] duration-250 focus:border-aqua focus:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint";
+  "bg-white/[.04] border border-white/[.08] text-ink font-body text-copy p-[12px_14px] rounded-lg transition-[border-color,background,box-shadow] duration-250 focus:border-aqua focus:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint";
 
 export default function TherapySessionForm({
   notes,
@@ -42,13 +43,9 @@ export default function TherapySessionForm({
           onChange={(e) => setScheduledAt(e.target.value)}
           aria-label="Товлосон огноо"
         />
-        <button
-          type="submit"
-          className="rounded-full text-[13.5px] font-semibold bg-aqua text-[#04100E] py-3 px-6 transition-[background,transform] duration-200 hover:bg-[#6FF3DE] active:scale-[.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:shadow-glow-aqua flex-none"
-          disabled={saving}
-        >
+        <ActionButton type="submit" variant="primary" size="lg" className="flex-none" disabled={saving}>
           {saving ? "Үүсгэж байна…" : "Үүсгэх"}
-        </button>
+        </ActionButton>
       </form>
     </SectionCard>
   );

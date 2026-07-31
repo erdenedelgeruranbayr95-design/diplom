@@ -38,7 +38,7 @@ export default function StatusBadge({
   return (
     <span
       className={
-        "inline-flex items-center gap-1.5 w-fit font-mono text-[9.5px] uppercase tracking-[.09em] leading-none rounded-full py-1.5 px-2.5 border whitespace-nowrap " +
+        "inline-flex items-center gap-1.5 w-fit font-mono text-micro uppercase tracking-[.09em] leading-none rounded-full py-1.5 px-2.5 border whitespace-nowrap " +
         TONE_CLS[tone] +
         " " +
         className

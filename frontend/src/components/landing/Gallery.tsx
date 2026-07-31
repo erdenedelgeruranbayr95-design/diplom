@@ -1,4 +1,16 @@
-import CircularGallery from "./CircularGallery";
+"use client";
+
+/* CircularGallery нь `ogl` (WebGL) ашигладаг ~50 KB-ийн компонент бөгөөд landing-ийн
+   ХОЁР ДАХЬ дэлгэцэнд байрладаг — эхний зурагт (LCP) огт оролцдоггүй. Тиймээс
+   `dynamic({ ssr: false })`-ээр тусад нь chunk болгож, түүнийг ЗӨВХӨН энэ хэсэг
+   ойртоход татна. Ингэснээр эхний JS ачаалал багасаж, LCP эрт болно.
+   `loading` нь яг ижил өндөртэй байрыг эзэлдэг тул layout ҮСРЭХГҮЙ (CLS = 0). */
+import dynamic from "next/dynamic";
+
+const CircularGallery = dynamic(() => import("./CircularGallery"), {
+  ssr: false,
+  loading: () => <div className="w-full h-full" aria-hidden="true" />,
+});
 
 const SLIDES = [
   { image: "/gallery/gal-01.jpg", text: "Гүн бас — 40 Hz" },

@@ -24,9 +24,9 @@ export default function AchievementCard({ achievement }: { achievement: Achievem
       >
         {achievement.icon}
       </span>
-      <b className="font-display text-[16px] tracking-[-.02em] text-ink mt-1">{achievement.title}</b>
-      <p className="text-dim text-[12.5px] leading-[1.45]">{achievement.hint}</p>
-      <span className="mono !text-faint !text-[11px] mt-1">{achievement.progressLabel}</span>
+      <b className="font-display text-title tracking-[-.02em] text-ink mt-1">{achievement.title}</b>
+      <p className="text-dim text-note leading-[1.45]">{achievement.hint}</p>
+      <span className="mono !text-faint !text-caption mt-1">{achievement.progressLabel}</span>
     </div>
   );
 }

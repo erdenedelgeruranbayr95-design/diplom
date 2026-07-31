@@ -40,8 +40,8 @@ export default function SessionHistoryTable({ sessions }: { sessions: TherapySes
             >
               <StatusBadge label={STATUS_LABEL[s.status]} tone={STATUS_TONE[s.status]} className="flex-none" />
               <div className="flex-1 min-w-0">
-                <p className="text-[13.5px] text-ink whitespace-nowrap overflow-hidden text-ellipsis">{s.notes || "—"}</p>
-                <span className="text-faint font-mono text-[11px]">{s.scheduledAt ? new Date(s.scheduledAt).toLocaleString("mn-MN") : "—"}</span>
+                <p className="text-body text-ink whitespace-nowrap overflow-hidden text-ellipsis">{s.notes || "—"}</p>
+                <span className="text-faint font-mono text-caption">{s.scheduledAt ? new Date(s.scheduledAt).toLocaleString("mn-MN") : "—"}</span>
               </div>
             </div>
           ))}

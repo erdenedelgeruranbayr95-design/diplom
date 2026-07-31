@@ -7,7 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ROOT нь ADMIN-аас ДЭЭР зэрэглэлтэй (систем эзэмшигч). Эрхийн шатлалыг
+// `common/guards/roles.guard.ts` нэг газар шийднэ — controller бүрийн @Roles()
+// жагсаалтад ROOT-ыг нэмж бичих шаардлагагүй.
+// Бусад дүр (USER · PARENT · THERAPIST · ADMIN) огт өөрчлөгдөөгүй.
 enum Role {
+  ROOT
   ADMIN
   THERAPIST
   USER
@@ -27,13 +32,24 @@ enum QRStatus {
   EXPIRED
 }
 
+enum UserStatus {
+  ACTIVE
+  BANNED
+}
+
 model User {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   name         String
-  email        String   @unique
+  email        String     @unique
   passwordHash String
-  role         Role     @default(USER)
-  createdAt    DateTime @default(now())
+  role         Role       @default(USER)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+
+  // Профайлын тохиргоо (ProfileView). `hearingProfile` нь ЭМЗЭГ эрүүл мэндийн
+  // мэдээлэл тул заавал биш — хэрэглэгч өөрөө хүсвэл л бөглөнө (§14).
+  avatarColor    String?
+  hearingProfile String?
 
   subActive Boolean   @default(false)
   subPlan   String?
@@ -41,6 +57,7 @@ model User {
   subRenews DateTime?
 
   refreshTokens RefreshToken[]
+  notifications NotificationRead[]
 
   songs                           Song[]
   therapySessionsAsTherapist      TherapySession[]      @relation("TherapistSessions")
@@ -50,7 +67,7 @@ model User {
   therapistAssignmentsAsTherapist TherapistAssignment[] @relation("TherapistOf")
   therapistAssignmentsAsPatient   TherapistAssignment[] @relation("PatientOf")
   parentLinksAsParent             ParentLink[]          @relation("ParentOf")
-  parentLinksAsChild              ParentLink[]           @relation("ChildOf")
+  parentLinksAsChild              ParentLink[]          @relation("ChildOf")
   listenHistory                   ListenHistory[]
 }
 
@@ -188,6 +205,27 @@ model Progress {
 
   @@index([userId])
   @@index([therapySessionId])
+}
+
+// Системийн мэдэгдэл. `userId = null` бол BROADCAST — бүх хэрэглэгчид харагдана
+// (админы "Зарлал"). Урьд нь энэ нь localStorage дээр байсан тул зөвхөн зарлал
+// илгээсэн админы өөрийнх нь browser-т хүрдэг байв.
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String? // null = broadcast
+  text      String
+  icon      String   @default("🎵")
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+// Хэрэглэгч мэдэгдлээ хамгийн сүүлд хэзээ уншсан бэ (хонхны "шинэ" тоолуурт).
+model NotificationRead {
+  userId String   @id
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt DateTime @default(now())
 }
 
 model QRSession {

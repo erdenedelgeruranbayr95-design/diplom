@@ -25,8 +25,8 @@ export default function RecommendationPanel({ recommendations }: { recommendatio
                 <Icon name="message" size={15} />
               </span>
               <div className="min-w-0">
-                <span className="font-mono text-[10.5px] text-faint">{s.completedAt ? new Date(s.completedAt).toLocaleDateString("mn-MN") : ""}</span>
-                <p className="text-[13.5px] text-ink leading-[1.5] mt-1">{s.notes}</p>
+                <span className="font-mono text-meta text-faint">{s.completedAt ? new Date(s.completedAt).toLocaleDateString("mn-MN") : ""}</span>
+                <p className="text-body text-ink leading-[1.5] mt-1">{s.notes}</p>
               </div>
             </div>
           ))}

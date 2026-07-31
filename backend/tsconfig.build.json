@@ -1,4 +1,9 @@
 {
   "extends": "./tsconfig.json",
+  // "include" нь ЗААВАЛ src/-ээр хязгаарлагдана. Үгүй бол prisma/seed.ts мөн компайлд орж,
+  // TypeScript-ийн rootDir төслийн үндэс рүү өргөжиж, гаралт нь dist/main.js биш
+  // dist/src/main.js болдог → package.json-ы "start:prod": "node dist/main" унана.
+  // (seed нь ts-node-оор шууд ажилладаг тул dist-д хөрвүүлэх шаардлагагүй.)
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }

@@ -12,11 +12,12 @@ import StatusBadge, { type StatusTone } from "@/components/ui/StatusBadge";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import ConfirmDialog from "./ConfirmDialog";
 import { useToast } from "@/components/providers/ToastProvider";
-import { setSubOverride } from "@/lib/data/admin-sub-overrides";
+import { setUserSubscription } from "@/lib/api/client";
 import type { AdminUserRow } from "@/types/auth";
 import Icon from "@/components/ui/Icon";
 
 const ROLE_LABEL: Record<AdminUserRow["role"], string> = {
+  ROOT: "Систем эзэмшигч",
   USER: "Хэрэглэгч",
   THERAPIST: "Эмч",
   PARENT: "Эцэг эх",
@@ -24,6 +25,7 @@ const ROLE_LABEL: Record<AdminUserRow["role"], string> = {
 };
 
 const ROLE_TONE: Record<AdminUserRow["role"], StatusTone> = {
+  ROOT: "rose",
   USER: "faint",
   THERAPIST: "purple",
   PARENT: "warm",
@@ -56,6 +58,7 @@ export default function UsersTable({
   const toast = useToast();
   const [subFilter, setSubFilter] = useState<SubFilter>("ALL");
   const [confirmTarget, setConfirmTarget] = useState<{ u: AdminUserRow; kind: "grant" | "remove" } | null>(null);
+  const [deciding, setDeciding] = useState(false);
 
   const filtered = useMemo(() => {
     if (subFilter === "PRO") return users.filter((u) => u.subActive);
@@ -66,18 +69,23 @@ export default function UsersTable({
   if (loading) return <Skeleton variant="row" rows={5} />;
   if (error) return <ErrorState title="Ачаалагдсангүй" hint={error} onRetry={onRetry} />;
 
-  function runDecision() {
-    if (!confirmTarget) return;
+  /* PRO эрхийг DB-д БОДИТООР бичнэ (PATCH /users/:id/subscription). Урьд нь энэ нь
+     localStorage override байсан тул зөвхөн админы өөрийнх нь browser-т харагдаж,
+     хэрэглэгч рүү хэзээ ч хүрдэггүй байв. */
+  async function runDecision() {
+    if (!confirmTarget || deciding) return;
     const { u, kind } = confirmTarget;
-    if (kind === "grant") {
-      setSubOverride(u.id, true, "pro");
-      toast.success(`${u.name} — PRO эрх олгогдлоо ✓`);
-    } else {
-      setSubOverride(u.id, false, null);
-      toast.success(`${u.name} — PRO эрх цуцлагдлаа`);
+    setDeciding(true);
+    try {
+      await setUserSubscription(u.id, kind === "grant", kind === "grant" ? "МЭДРЭХ PRO" : undefined);
+      toast.success(kind === "grant" ? `${u.name} — PRO эрх олгогдлоо ✓` : `${u.name} — PRO эрх цуцлагдлаа`);
+      setConfirmTarget(null);
+      onSubChanged();
+    } catch (err) {
+      toast.error((err as Error).message || "PRO эрх өөрчлөхөд алдаа гарлаа");
+    } finally {
+      setDeciding(false);
     }
-    setConfirmTarget(null);
-    onSubChanged();
   }
 
   return (
@@ -89,7 +97,7 @@ export default function UsersTable({
             <line x1="21" y1="21" x2="16.5" y2="16.5" />
           </svg>
           <input
-            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/[.04] border border-white/[.08] text-ink text-[13.5px] transition-[border-color,box-shadow,background] duration-250 focus:bg-white/[.06] focus:border-aqua/60 focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint"
+            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/[.04] border border-white/[.08] text-ink text-body transition-[border-color,box-shadow,background] duration-250 focus:bg-white/[.06] focus:border-aqua/60 focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint"
             placeholder="Нэр эсвэл имэйлээр хайх…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -101,8 +109,8 @@ export default function UsersTable({
             <button
               key={f}
               className={
-                "text-[11.5px] font-mono rounded-full py-2 px-3.5 border transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
-                (subFilter === f ? "bg-aqua border-aqua text-[#04100E] font-semibold" : "border-white/[.1] text-dim hover:text-ink hover:bg-white/[.05]")
+                "text-caption font-mono rounded-full py-2 px-3.5 border transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+                (subFilter === f ? "bg-aqua border-aqua text-on-aqua font-semibold" : "border-white/[.1] text-dim hover:text-ink hover:bg-white/[.05]")
               }
               onClick={() => setSubFilter(f)}
               aria-pressed={subFilter === f}
@@ -117,7 +125,7 @@ export default function UsersTable({
         <Empty icon="users" title="Хэрэглэгч олдсонгүй" hint={q ? "Хайлтад тохирох хэрэглэгч алга" : "Одоогоор бүртгүүлсэн хэрэглэгч алга"} />
       ) : (
         <div className="border border-white/[.08] rounded-2xl max-h-[360px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]">
-          <div className="grid grid-cols-[1fr_1.5fr_.8fr_.7fr_.8fr_auto] max-[680px]:grid-cols-[1fr_auto] gap-3 items-center py-3 px-4 border-b border-white/[.08] text-[12.5px] bg-white/[.02] sticky top-0 z-[1]">
+          <div className="grid grid-cols-[1fr_1.5fr_.8fr_.7fr_.8fr_auto] max-[680px]:grid-cols-[1fr_auto_auto] gap-3 items-center py-3 px-4 border-b border-white/[.08] text-note bg-white/[.02] sticky top-0 z-[1]">
             <span className="mono">Нэр</span>
             <span className="mono max-[680px]:hidden">Имэйл</span>
             <span className="mono max-[680px]:hidden">Эрх</span>
@@ -127,29 +135,29 @@ export default function UsersTable({
           </div>
           {filtered.map((u, i) => (
             <div
-              className="grid grid-cols-[1fr_1.5fr_.8fr_.7fr_.8fr_auto] max-[680px]:grid-cols-[1fr_auto] gap-3 items-center py-3 px-4 border-b border-white/[.06] text-[13.5px] transition-colors duration-150 last:border-b-0 hover:bg-white/[.03] [animation:row-in_.3s_cubic-bezier(.2,.8,.2,1)_backwards]"
+              className="grid grid-cols-[1fr_1.5fr_.8fr_.7fr_.8fr_auto] max-[680px]:grid-cols-[1fr_auto_auto] gap-3 items-center py-3 px-4 border-b border-white/[.06] text-body transition-colors duration-150 last:border-b-0 hover:bg-white/[.03] [animation:row-in_.3s_cubic-bezier(.2,.8,.2,1)_backwards]"
               style={{ animationDelay: i >= 1 && i <= 7 ? `${Math.min(i, 7) * 0.03}s` : undefined }}
               key={u.id}
             >
               <span className="whitespace-nowrap overflow-hidden text-ellipsis">{u.name}</span>
               <span className="text-dim overflow-hidden text-ellipsis whitespace-nowrap max-[680px]:hidden">{u.email}</span>
               <StatusBadge label={ROLE_LABEL[u.role]} tone={ROLE_TONE[u.role]} className="max-[680px]:hidden" />
-              <span className="font-mono text-[11px] text-faint max-[680px]:hidden">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("mn-MN") : "—"}</span>
-              <StatusBadge label={u.subActive ? "PRO" : "Free"} tone={u.subActive ? "aqua" : "faint"} dot />
+              <span className="font-mono text-caption text-faint max-[680px]:hidden">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("mn-MN") : "—"}</span>
+              <StatusBadge label={u.subActive ? "PRO" : "Үнэгүй"} tone={u.subActive ? "aqua" : "faint"} dot />
               <div className="flex items-center gap-1.5 justify-end">
                 {u.subActive ? (
                   <ActionButton variant="danger" size="sm" onClick={() => setConfirmTarget({ u, kind: "remove" })}>
                     <Icon name="close" size={13} strokeWidth={2.2} />
-                    Remove PRO
+                    PRO цуцлах
                   </ActionButton>
                 ) : (
                   <ActionButton variant="primary" size="sm" onClick={() => setConfirmTarget({ u, kind: "grant" })}>
                     <Icon name="crown" size={13} />
-                    Make PRO
+                    PRO олгох
                   </ActionButton>
                 )}
                 <button
-                  className="text-[11px] text-[#E88A9B] border border-[rgba(232,138,155,.3)] rounded-full py-1 px-2.5 whitespace-nowrap transition-colors duration-250 hover:bg-[#E88A9B] hover:text-[#140306] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(232,138,155,.3)]"
+                  className="text-caption text-danger border border-[rgba(232,138,155,.3)] rounded-full py-1 px-2.5 whitespace-nowrap transition-colors duration-250 hover:bg-danger hover:text-danger-ink focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(232,138,155,.3)]"
                   onClick={() => onDelete(u)}
                   aria-label={u.email + " устгах"}
                 >
@@ -171,7 +179,7 @@ export default function UsersTable({
               ? `Та ${confirmTarget.u.name} хэрэглэгчийн PRO эрхийг цуцлах гэж байна.`
               : ""
         }
-        confirmLabel={confirmTarget?.kind === "grant" ? "Grant PRO" : "Remove"}
+        confirmLabel={confirmTarget?.kind === "grant" ? "PRO олгох" : "Цуцлах"}
         tone={confirmTarget?.kind === "remove" ? "danger" : "primary"}
         onConfirm={runDecision}
         onCancel={() => setConfirmTarget(null)}

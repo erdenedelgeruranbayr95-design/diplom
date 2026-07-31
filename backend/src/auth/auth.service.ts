@@ -16,12 +16,25 @@ function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex');
 }
 
-function toSession(user: { id: string; name: string; email: string; role: string; subActive: boolean; subPlan: string | null; subSince: Date | null; subRenews: Date | null }) {
+function toSession(user: {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatarColor: string | null;
+  hearingProfile: string | null;
+  subActive: boolean;
+  subPlan: string | null;
+  subSince: Date | null;
+  subRenews: Date | null;
+}) {
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     role: user.role,
+    avatarColor: user.avatarColor,
+    hearingProfile: user.hearingProfile,
     sub: user.subActive
       ? {
           active: user.subActive,

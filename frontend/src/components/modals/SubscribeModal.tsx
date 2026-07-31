@@ -14,7 +14,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { loadUsers, saveUsers } from "@/lib/auth/auth-storage";
 import { pushPayment } from "@/lib/data/library";
 import { pushPaymentRequest } from "@/lib/data/admin-payment-requests";
-import { useFocusTrap } from "@/lib/ui/useFocusTrap";
+import { useModalShell } from "@/hooks/useModalShell";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import { subscribeMe } from "@/lib/api/client";
 import type { SessionUser, UserSub } from "@/types/auth";
@@ -48,27 +48,17 @@ export default function SubscribeModal({
   const [payState, setPayState] = useState<PayState>("waiting");
   const [secondsLeft, setSecondsLeft] = useState(QR_TTL_SEC);
   const [qrNonce, setQrNonce] = useState(0);
-  const [closing, setClosing] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const trapRef = useFocusTrap(open && !closing);
+  /* Гарах animation · Escape · focus trap · backdrop-click — дөрвүүлээ нэг hook-т. */
+  const { closing, handleClose, trapRef, backdropProps } = useModalShell({ open, onClose, durationMs: 200 });
 
   const expired = payState === "waiting" && secondsLeft <= 0;
-
-  function handleClose() {
-    if (closing) return;
-    setClosing(true);
-    setTimeout(() => {
-      setClosing(false);
-      onClose();
-    }, 200);
-  }
 
   useEffect(() => {
     if (!open) return;
     setPayState("waiting");
     setSecondsLeft(QR_TTL_SEC);
     setQrNonce((n) => n + 1);
-    setClosing(false);
     /* Admin "PRO Management" таб-д харагдах ДЕМО "хүлээгдэж буй хүсэлт" бичлэг —
        subscription-ийн жинхэнэ логикт (доор) хамааралгүй, зэрэгцээ admin-side demo. */
     if (user) {
@@ -81,11 +71,6 @@ export default function SubscribeModal({
         note: "SocialPay QR-ээр илгээсэн хүсэлт (демо)",
       });
     }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    addEventListener("keydown", onKey);
-    return () => removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -161,13 +146,11 @@ export default function SubscribeModal({
           animate={{ opacity: closing ? 0 : 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) handleClose();
-          }}
+          {...backdropProps}
         >
           <motion.div
             ref={trapRef}
-            className="relative w-full max-w-[560px] max-viz:max-w-[90%] max-nav:max-w-full bg-[rgba(9,14,14,.97)] border border-white/[.1] rounded-t-[24px] max-nav:rounded-b-none rounded-b-[24px] p-[30px_30px_26px] max-nav:p-[26px_22px_30px] shadow-[0_24px_70px_rgba(0,0,0,.55)]"
+            className="relative w-full max-w-[560px] max-viz:max-w-[90%] max-nav:max-w-full bg-[rgba(9,14,14,.97)] border border-white/[.1] rounded-t-panel max-nav:rounded-b-none rounded-b-panel p-[30px_30px_26px] max-nav:p-[26px_22px_30px] shadow-[0_24px_70px_rgba(0,0,0,.55)]"
             initial={{ opacity: 0, scale: 0.94, y: 24 }}
             animate={{ opacity: closing ? 0 : 1, scale: closing ? 0.96 : 1, y: closing ? 12 : 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -185,10 +168,10 @@ export default function SubscribeModal({
             </button>
 
             <div className="text-center mb-6">
-              <b id="subscribe-modal-title" className="font-display text-[19px] block mb-1">
+              <b id="subscribe-modal-title" className="font-display text-heading block mb-1">
                 PRO эрх авах
               </b>
-              <span className="mono !text-purple">SocialPay Demo</span>
+              <span className="mono !text-purple">SocialPay · туршилт</span>
             </div>
 
             {payState === "success" ? (
@@ -202,13 +185,13 @@ export default function SubscribeModal({
                 >
                   <Icon name="check" size={32} strokeWidth={2.2} />
                 </motion.span>
-                <b className="font-display text-[18px] text-aqua block mb-1.5">Төлбөр амжилттай</b>
-                <p className="text-dim text-[13px]">МЭДРЭХ PRO идэвхжлээ — жагсаалт удахгүй шинэчлэгдэнэ.</p>
+                <b className="font-display text-heading text-aqua block mb-1.5">Төлбөр амжилттай</b>
+                <p className="text-dim text-body">МЭДРЭХ PRO идэвхжлээ — жагсаалт удахгүй шинэчлэгдэнэ.</p>
               </div>
             ) : (
               <>
                 <div className="flex justify-center mb-5">
-                  <div className="relative rounded-[24px] p-6 bg-white/[.04] border border-white/[.1] backdrop-blur-xl shadow-[0_0_40px_rgba(56,232,206,.12)]">
+                  <div className="relative rounded-panel p-6 bg-white/[.04] border border-white/[.1] backdrop-blur-xl shadow-[0_0_40px_rgba(56,232,206,.12)]">
                     <div className="relative bg-white p-4 rounded-2xl shadow-lg overflow-hidden">
                       <QRCodeSVG value={qrValue} size={196} />
                       {!expired && (
@@ -222,23 +205,23 @@ export default function SubscribeModal({
                       )}
                       {expired && (
                         <div className="absolute inset-0 bg-[rgba(9,14,14,.92)] backdrop-blur-sm flex flex-col items-center justify-center gap-3 rounded-2xl">
-                          <span className="text-dim text-[12.5px]">Хугацаа дууссан</span>
+                          <span className="text-dim text-note">Хугацаа дууссан</span>
                           <ActionButton variant="secondary" size="sm" onClick={newQr}>
                             Шинэ QR
                           </ActionButton>
                         </div>
                       )}
                     </div>
-                    <div className="text-center mt-3.5 font-mono text-[13px] text-dim tabular-nums" aria-live="polite">
+                    <div className="text-center mt-3.5 font-mono text-body text-dim tabular-nums" aria-live="polite">
                       {expired ? "00:00" : fmtCountdown(secondsLeft)}
                     </div>
                   </div>
                 </div>
 
-                <ol className="flex flex-col gap-2 mb-5 text-[13px] text-ink">
+                <ol className="flex flex-col gap-2 mb-5 text-body text-ink">
                   {["SocialPay апп нээнэ", "QR уншуулна", "Төлбөр баталгаажуулна", "PRO автоматаар идэвхжинэ"].map((step, i) => (
                     <li key={step} className="flex items-center gap-2.5">
-                      <span className="w-5 h-5 flex-none rounded-full flex items-center justify-center bg-white/[.06] text-[10px] font-mono text-dim">
+                      <span className="w-5 h-5 flex-none rounded-full flex items-center justify-center bg-white/[.06] text-meta font-mono text-dim">
                         {i + 1}
                       </span>
                       {step}
@@ -246,7 +229,7 @@ export default function SubscribeModal({
                   ))}
                 </ol>
 
-                <div className="flex items-center justify-center gap-2 text-[12.5px] text-dim mb-1" aria-live="polite" role="status">
+                <div className="flex items-center justify-center gap-2 text-note text-dim mb-1" aria-live="polite" role="status">
                   {!expired && (
                     <motion.i
                       className="w-[7px] h-[7px] rounded-full bg-[#E8C86A] flex-none"
@@ -260,7 +243,7 @@ export default function SubscribeModal({
               </>
             )}
 
-            <p className="mono !text-[9px] mt-5 pt-4 border-t border-white/[.07] text-center">
+            <p className="mono !text-micro mt-5 pt-4 border-t border-white/[.07] text-center">
               Демо горим — жинхэнэ мөнгө шилжихгүй, банк/SocialPay-тэй холбогдоогүй.
             </p>
           </motion.div>

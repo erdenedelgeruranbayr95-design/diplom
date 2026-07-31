@@ -4,11 +4,15 @@
    refresh нь httpOnly cookie-д. Ачаалахад refresh cookie-гоор session-оо чимээгүй сэргээнэ. */
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import * as api from "@/lib/api/client";
+import { useWindowEvent } from "@/hooks/useWindowEvent";
+import { APP_EVENTS } from "@/lib/data/events";
 import type { SessionUser, UserSub } from "@/types/auth";
 
 interface AuthContextValue {
   user: SessionUser | null;
-  role: "user" | "admin" | "therapist" | "parent" | null;
+  role: "root" | "user" | "admin" | "therapist" | "parent" | null;
+  /** Систем эзэмшигч — ADMIN-аас дээр зэрэглэлтэй, Root Panel-д нэвтэрнэ. */
+  isRoot: boolean;
   isAdmin: boolean;
   isTherapist: boolean;
   isParent: boolean;
@@ -24,9 +28,9 @@ interface AuthContextValue {
 
 const AuthCtx = createContext<AuthContextValue | null>(null);
 
-function normalizeRole(role: string | undefined): "user" | "admin" | "therapist" | "parent" | null {
+function normalizeRole(role: string | undefined): "root" | "user" | "admin" | "therapist" | "parent" | null {
   if (!role) return null;
-  return role.toLowerCase() as "user" | "admin" | "therapist" | "parent";
+  return role.toLowerCase() as "root" | "user" | "admin" | "therapist" | "parent";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -39,14 +43,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((u) => setUser(u))
       .catch(() => setUser(null))
       .finally(() => setReady(true));
-
-    const onExpired = () => setUser(null);
-    addEventListener("medreh:session-expired", onExpired);
-    return () => removeEventListener("medreh:session-expired", onExpired);
   }, []);
 
+  /* Access token сэргээгдэхгүй болбол api client энэ event-ийг дамжуулна. */
+  useWindowEvent(APP_EVENTS.sessionExpired, () => setUser(null));
+
   const role = normalizeRole(user?.role);
-  const isAdmin = role === "admin";
+  const isRoot = role === "root";
+  /* ROOT нь ADMIN-ы бүх дэлгэц/эрхийг мөн хамарна (шатлал) — backend-ийн RolesGuard-тай нийцтэй. */
+  const isAdmin = role === "admin" || isRoot;
   const isTherapist = role === "therapist";
   const isParent = role === "parent";
   const subscribed = isAdmin || !!user?.sub?.active;
@@ -82,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthCtx.Provider
-      value={{ user, role, isAdmin, isTherapist, isParent, subscribed, ready, login, register, logout, updateUser, setSub, cancelSub }}
+      value={{ user, role, isRoot, isAdmin, isTherapist, isParent, subscribed, ready, login, register, logout, updateUser, setSub, cancelSub }}
     >
       {children}
     </AuthCtx.Provider>

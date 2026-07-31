@@ -6,7 +6,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { ActionButton } from "@/components/ui/ActionGroup";
-import { useFocusTrap } from "@/lib/ui/useFocusTrap";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import type { AdminPaymentRequest } from "@/lib/data/admin-payment-requests";
 import Icon from "@/components/ui/Icon";
 
@@ -83,16 +83,16 @@ export default function PaymentRequestDrawer({
             </div>
 
             <div className="flex items-center gap-3 mb-6">
-              <span className="w-12 h-12 flex-none rounded-full bg-aqua/[.14] text-aqua flex items-center justify-center font-display font-semibold text-[15px]" aria-hidden="true">
+              <span className="w-12 h-12 flex-none rounded-full bg-aqua/[.14] text-aqua flex items-center justify-center font-display font-semibold text-lead" aria-hidden="true">
                 {initials(request.userName) || "?"}
               </span>
               <div className="min-w-0">
-                <b className="block text-[15px] font-semibold truncate">{request.userName}</b>
-                <span className="text-dim text-[12.5px] truncate block">{request.userEmail}</span>
+                <b className="block text-lead font-semibold truncate">{request.userName}</b>
+                <span className="text-dim text-note truncate block">{request.userEmail}</span>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3.5 text-[13px]">
+            <div className="flex flex-col gap-3.5 text-body">
               <div className="flex items-center justify-between">
                 <span className="text-dim">Сонгосон план</span>
                 <b>{request.plan}</b>
@@ -107,12 +107,12 @@ export default function PaymentRequestDrawer({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-dim">Илгээсэн огноо</span>
-                <span className="font-mono text-[12px]">{new Date(request.submittedAt).toLocaleString("mn-MN")}</span>
+                <span className="font-mono text-note">{new Date(request.submittedAt).toLocaleString("mn-MN")}</span>
               </div>
               {request.decidedAt && (
                 <div className="flex items-center justify-between">
                   <span className="text-dim">Шийдвэрлэсэн</span>
-                  <span className="font-mono text-[12px]">{new Date(request.decidedAt).toLocaleString("mn-MN")}</span>
+                  <span className="font-mono text-note">{new Date(request.decidedAt).toLocaleString("mn-MN")}</span>
                 </div>
               )}
               <div className="flex items-center justify-between">
@@ -123,14 +123,14 @@ export default function PaymentRequestDrawer({
 
             {request.note && (
               <div className="mt-5 pt-5 border-t border-white/[.08]">
-                <span className="mono !text-[9px] block mb-1.5">Тэмдэглэл</span>
-                <p className="text-dim text-[12.5px] leading-[1.5]">{request.note}</p>
+                <span className="mono !text-micro block mb-1.5">Тэмдэглэл</span>
+                <p className="text-dim text-note leading-[1.5]">{request.note}</p>
               </div>
             )}
             {request.reason && (
               <div className="mt-3">
-                <span className="mono !text-[9px] block mb-1.5">Татгалзсан шалтгаан</span>
-                <p className="text-[#E88A9B] text-[12.5px] leading-[1.5]">{request.reason}</p>
+                <span className="mono !text-micro block mb-1.5">Татгалзсан шалтгаан</span>
+                <p className="text-danger text-note leading-[1.5]">{request.reason}</p>
               </div>
             )}
 
@@ -145,7 +145,7 @@ export default function PaymentRequestDrawer({
               </div>
             )}
 
-            <p className="mono !text-[9px] mt-6 pt-4 border-t border-white/[.07]">Демо горим — жинхэнэ мөнгө шилжихгүй.</p>
+            <p className="mono !text-micro mt-6 pt-4 border-t border-white/[.07]">Демо горим — жинхэнэ мөнгө шилжихгүй.</p>
           </motion.div>
         </>
       )}

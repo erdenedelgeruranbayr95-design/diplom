@@ -6,10 +6,12 @@
    загварчилсан (parent-ийн [&_input] дүрмүүд мөн адил тохирсон хэвээр байгаа тул давхар
    зөрчилдөөн үүсэхгүй). Validation логик AdminPanel.tsx-д (submit handler) хэвээр — энд
    зөвхөн UI, ямар ч name attribute/талбарын бүтэц өөрчлөгдөөгүй. */
+import { ActionButton } from "@/components/ui/ActionGroup";
+
 const labelCls = "flex flex-col gap-1.5";
-const captionCls = "mono !text-[9px]";
+const captionCls = "mono !text-micro";
 const inputCls =
-  "bg-white/[.04] border border-white/[.08] text-ink font-body text-[14.5px] p-[12px_14px] rounded-lg transition-[border-color,background,box-shadow] duration-250 focus:border-aqua focus:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint";
+  "bg-white/[.04] border border-white/[.08] text-ink font-body text-copy p-[12px_14px] rounded-lg transition-[border-color,background,box-shadow] duration-250 focus:border-aqua focus:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint";
 
 export default function StaffCreationForm({
   newRole,
@@ -27,8 +29,8 @@ export default function StaffCreationForm({
   return (
     <form className="flex flex-col gap-3.5 border border-white/[.08] rounded-2xl p-5 my-5 bg-white/[.02]" onSubmit={onSubmit}>
       <div>
-        <b className="block font-display font-semibold text-[15px] text-ink">Ажилтан бүртгэх</b>
-        <p className="text-dim text-[12.5px] mt-0.5">Шинэ админ эсвэл эмчийн эрх үүсгэнэ</p>
+        <b className="block font-display font-semibold text-lead text-ink">Ажилтан бүртгэх</b>
+        <p className="text-dim text-note mt-0.5">Шинэ админ эсвэл эмчийн эрх үүсгэнэ</p>
       </div>
       <div className="grid grid-cols-2 max-[560px]:grid-cols-1 gap-3">
         <label className={labelCls}>
@@ -52,23 +54,19 @@ export default function StaffCreationForm({
             value={newRole}
             onChange={(e) => setNewRole(e.target.value as "THERAPIST" | "ADMIN")}
           >
-            <option className="bg-[#0D1414] text-ink" value="THERAPIST">Эмч</option>
-            <option className="bg-[#0D1414] text-ink" value="ADMIN">Админ</option>
+            <option className="bg-surface text-ink" value="THERAPIST">Эмч</option>
+            <option className="bg-surface text-ink" value="ADMIN">Админ</option>
           </select>
         </label>
       </div>
       {createMsg && (
-        <p className={"text-[13px] " + (createMsg.startsWith("✅") ? "text-aqua" : "text-[#E88A9B]")} role="status">
+        <p className={"text-body " + (createMsg.startsWith("✅") ? "text-aqua" : "text-danger")} role="status">
           {createMsg}
         </p>
       )}
-      <button
-        type="submit"
-        className="rounded-full text-[13.5px] font-semibold bg-aqua text-[#04100E] py-2.5 px-5 transition-[background,transform] duration-200 hover:bg-[#6FF3DE] active:scale-[.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:shadow-glow-aqua w-fit"
-        disabled={creating}
-      >
+      <ActionButton type="submit" variant="primary" className="w-fit" disabled={creating}>
         {creating ? "Бүртгэж байна…" : "+ Ажилтан бүртгэх"}
-      </button>
+      </ActionButton>
     </form>
   );
 }

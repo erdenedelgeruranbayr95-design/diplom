@@ -7,7 +7,7 @@ export default function AchievementSummary({ unlockedCount, totalCount }: { unlo
   const pct = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
   return (
     <div className="mb-7">
-      <p className="text-dim text-[14px] leading-[1.55] mb-3">
+      <p className="text-dim text-copy leading-[1.55] mb-3">
         {unlockedCount} / {totalCount} амжилт нээгдсэн
       </p>
       <div className="h-2 rounded-full bg-white/[.08] overflow-hidden max-w-[320px]">

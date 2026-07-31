@@ -8,15 +8,15 @@
    визуал давхарга шинэчлэгдсэн. */
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useClosingTransition } from "@/lib/ui/useClosingTransition";
+import { useModalShell } from "@/hooks/useModalShell";
 import { ActionButton } from "@/components/ui/ActionGroup";
+import { FIELD_LABEL_CLS, FIELD_CAPTION_CLS, VALIDATED_INPUT_CLS } from "@/components/ui/form-styles";
 import type { SessionUser } from "@/types/auth";
 import Icon from "@/components/ui/Icon";
 
-const labelCls = "flex flex-col gap-1.5";
-const captionCls = "mono !text-[9px]";
-const inputCls =
-  "bg-white/[.04] border border-white/[.08] text-ink font-body text-[14.5px] p-[12px_14px] rounded-lg transition-[border-color,background,box-shadow] duration-250 focus:border-aqua focus:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua placeholder:text-faint aria-[invalid=true]:border-[#E88A9B] aria-[invalid=true]:bg-[rgba(232,138,155,.06)] aria-[invalid=true]:[animation:auth-shake_.3s] aria-[invalid=true]:focus-visible:shadow-[0_0_0_3px_rgba(232,138,155,.3)]";
+const labelCls = FIELD_LABEL_CLS;
+const captionCls = FIELD_CAPTION_CLS;
+const inputCls = VALIDATED_INPUT_CLS;
 
 function PassInput({ name, autoComplete, invalid }: { name: string; autoComplete: string; invalid?: boolean }) {
   const [show, setShow] = useState(false);
@@ -71,7 +71,9 @@ export default function AuthModal({
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
   const [busy, setBusy] = useState(false);
-  const { closing, handleClose } = useClosingTransition(onClose);
+  /* Гарах animation · Escape · focus trap · backdrop-click — дөрвүүлээ нэг hook-т
+     (WCAG 2.4.3: нээгдэхэд эхний оролт руу фокус шилжиж, Tab нь модалаас гарахгүй). */
+  const { closing, handleClose, trapRef, backdropProps } = useModalShell({ open, onClose });
 
   useEffect(() => {
     if (!open) return;
@@ -79,13 +81,7 @@ export default function AuthModal({
     setEmail("");
     setErr("");
     setOk("");
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    addEventListener("keydown", onKey);
-    return () => removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -145,11 +141,10 @@ export default function AuthModal({
         "fixed inset-0 z-[10000] bg-[rgba(4,7,7,.72)] backdrop-blur-lg flex items-center justify-center p-6 " +
         (closing ? "[animation:aov-out_.2s_ease_forwards]" : "[animation:aov_.3s_ease]")
       }
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) handleClose();
-      }}
+      {...backdropProps}
     >
       <div
+        ref={trapRef}
         className="relative w-full max-w-[400px] bg-[rgba(9,14,14,.97)] border border-white/[.1] rounded-2xl p-[30px_30px_24px] shadow-lg [animation:abx_.4s_cubic-bezier(.16,.8,.24,1)]"
         role="dialog"
         aria-modal="true"
@@ -170,8 +165,8 @@ export default function AuthModal({
             role="tab"
             aria-selected={mode === "login"}
             className={
-              "font-display text-[12px] tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
-              (mode === "login" ? "bg-aqua text-[#04100E] font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
+              "font-display text-note tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+              (mode === "login" ? "bg-aqua text-on-aqua font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
             }
             onClick={() => {
               setMode("login");
@@ -185,8 +180,8 @@ export default function AuthModal({
             role="tab"
             aria-selected={mode === "register"}
             className={
-              "font-display text-[12px] tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
-              (mode === "register" ? "bg-aqua text-[#04100E] font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
+              "font-display text-note tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+              (mode === "register" ? "bg-aqua text-on-aqua font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
             }
             onClick={() => {
               setMode("register");
@@ -230,12 +225,12 @@ export default function AuthModal({
           )}
 
           {err && (
-            <p className="text-[13px] text-[#E88A9B]" role="alert">
+            <p className="text-body text-danger" role="alert">
               {err}
             </p>
           )}
           {ok && (
-            <p className="text-[13px] text-aqua" role="status">
+            <p className="text-body text-aqua" role="status">
               {ok}
             </p>
           )}
@@ -246,7 +241,7 @@ export default function AuthModal({
           </ActionButton>
         </form>
 
-        <p className="mono !text-[9px] mt-5 pt-4 border-t border-white/[.07]">Session нь серверт JWT-ээр баталгаажина</p>
+        <p className="mono !text-micro mt-5 pt-4 border-t border-white/[.07]">Session нь серверт JWT-ээр баталгаажина</p>
       </div>
     </div>
   );

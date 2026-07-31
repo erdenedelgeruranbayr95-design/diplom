@@ -6,7 +6,7 @@ export type AvatarSize = "sm" | "md" | "lg";
 export type AvatarTone = "aqua" | "warm";
 
 const SIZE_CLS: Record<AvatarSize, string> = {
-  sm: "w-8 h-8 text-[13px]",
+  sm: "w-8 h-8 text-body",
   md: "w-12 h-12 text-lg",
   lg: "w-16 h-16 text-2xl",
 };
