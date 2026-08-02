@@ -1,0 +1,9 @@
+librosa>=0.10.2
+numpy>=1.26,<3
+soundfile>=0.12.1
+redis==5.0.8
+rq==1.16.2
+requests==2.32.3
+python-dotenv==1.0.1
+boto3==1.35.36
+Pillow==10.4.0

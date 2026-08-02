@@ -7,6 +7,7 @@ export type RootSection =
   | "admins"
   | "therapists"
   | "parents"
+  | "staff"
   | "songs"
   | "payments"
   | "pro"
@@ -15,6 +16,7 @@ export type RootSection =
   | "broadcast"
   | "security"
   | "audit"
+  | "monitoring"
   | "storage"
   | "database"
   | "settings"
@@ -41,16 +43,18 @@ export const ROOT_NAV: RootNavItem[] = [
   { id: "admins", label: "Админууд", icon: "shield", group: "Хэрэглэгч", live: true },
   { id: "therapists", label: "Эмч нар", icon: "stethoscope", group: "Хэрэглэгч", live: true },
   { id: "parents", label: "Эцэг эхчүүд", icon: "family", group: "Хэрэглэгч", live: true },
+  { id: "staff", label: "Куратор · Модератор", icon: "shield", group: "Хэрэглэгч", live: true },
 
   { id: "songs", label: "Дууны сан", icon: "music", group: "Контент", live: true },
-  { id: "payments", label: "Төлбөр", icon: "money", group: "Контент", live: false },
+  { id: "payments", label: "Төлбөр", icon: "money", group: "Контент", live: true },
   { id: "pro", label: "PRO эрх", icon: "crown", group: "Контент", live: true },
   { id: "devices", label: "Төхөөрөмж", icon: "device", group: "Контент", live: false },
 
-  { id: "reports", label: "Гомдол", icon: "alert", group: "Систем", live: false },
+  { id: "reports", label: "Гомдол", icon: "alert", group: "Систем", live: true },
   { id: "broadcast", label: "Зарлал", icon: "megaphone", group: "Систем", live: true },
-  { id: "security", label: "Аюулгүй байдал", icon: "eye", group: "Систем", live: false },
-  { id: "audit", label: "Аудит лог", icon: "clipboard", group: "Систем", live: false },
+  { id: "security", label: "Аюулгүй байдал", icon: "eye", group: "Систем", live: true },
+  { id: "audit", label: "Аудит лог", icon: "clipboard", group: "Систем", live: true },
+  { id: "monitoring", label: "Мониторинг", icon: "activity", group: "Систем", live: true },
   { id: "storage", label: "Файл сан", icon: "upload", group: "Систем", live: false },
   { id: "database", label: "Өгөгдлийн сан", icon: "disc", group: "Систем", live: false },
   { id: "settings", label: "Тохиргоо", icon: "settings", group: "Систем", live: false },

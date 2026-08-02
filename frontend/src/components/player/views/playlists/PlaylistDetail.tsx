@@ -7,7 +7,6 @@ import { ActionButton } from "@/components/ui/ActionGroup";
 import { useToast } from "@/components/providers/ToastProvider";
 import { useIsPlayingTrack, useTrackActions } from "../../PlayerContext";
 import { NowPlayingEqualizer } from "../../shared/TrackPlayButton";
-import { addToPlaylist, removeFromPlaylist } from "@/lib/data/library";
 import { resolveTracks } from "@/lib/player/track-index";
 import type { PlayerTrack } from "@/types/player";
 import type { Playlist } from "@/types/track";
@@ -15,15 +14,17 @@ import type { Playlist } from "@/types/track";
 /** Нээсэн жагсаалт — дуунуудын мөр + "дуу нэмэх" хайлт. */
 export default function PlaylistDetail({
   playlist,
-  email,
   trackIndex,
   allTracks,
+  onAddTrack,
+  onRemoveTrack,
   onClose,
 }: {
   playlist: Playlist;
-  email: string;
   trackIndex: Map<string, PlayerTrack>;
   allTracks: PlayerTrack[];
+  onAddTrack: (songId: string) => void;
+  onRemoveTrack: (songId: string) => void;
   onClose: () => void;
 }) {
   const toast = useToast();
@@ -108,7 +109,11 @@ export default function PlaylistDetail({
                 <button
                   className="w-8 h-8 flex-none rounded-full flex items-center justify-center bg-aqua text-on-aqua text-base transition-transform duration-150 hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:shadow-glow-aqua"
                   onClick={() => {
-                    addToPlaylist(email, playlist.id, track.id);
+                    if (typeof track.id !== "string") {
+                      toast.error("Энэ дууг жагсаалтад нэмэх боломжгүй байна");
+                      return;
+                    }
+                    onAddTrack(track.id);
                     toast.success("Нэмэгдлээ");
                   }}
                   aria-label={track.title + " нэмэх"}
@@ -126,7 +131,7 @@ export default function PlaylistDetail({
       ) : (
         <div className="flex flex-col gap-0.5">
           {items.map((track, i) => (
-            <PlaylistRow key={track.id} track={track} index={i} email={email} playlistId={playlist.id} />
+            <PlaylistRow key={track.id} track={track} index={i} onRemove={() => typeof track.id === "string" && onRemoveTrack(track.id)} />
           ))}
         </div>
       )}
@@ -137,13 +142,11 @@ export default function PlaylistDetail({
 function PlaylistRow({
   track,
   index,
-  email,
-  playlistId,
+  onRemove,
 }: {
   track: PlayerTrack;
   index: number;
-  email: string;
-  playlistId: string;
+  onRemove: () => void;
 }) {
   const toast = useToast();
   const { play } = useTrackActions();
@@ -175,7 +178,7 @@ function PlaylistRow({
       <button
         className="text-caption text-danger border border-[rgba(232,138,155,.3)] rounded-full py-1.5 px-3.5 transition-colors duration-250 hover:bg-danger hover:text-danger-ink focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(232,138,155,.3)]"
         onClick={() => {
-          removeFromPlaylist(email, playlistId, track.id);
+          onRemove();
           toast.info("Хасагдлаа");
         }}
       >

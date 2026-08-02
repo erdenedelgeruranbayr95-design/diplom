@@ -1,0 +1,5 @@
+metric,value_ms
+latency_avg,4.24
+latency_max,18.70
+raf_interval_avg,16.65
+beat_count,40

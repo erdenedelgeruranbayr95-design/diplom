@@ -5,11 +5,13 @@
    болгож, мөр бүрт анализын статус chip нэмэв (analyzedBpm байгаа эсэхээс шууд гарган
    авсан — шинэ backend талбар нэмээгүй). msg/busy/onSubmit/loading/songs props бүгд хэвээр,
    upload/analyze урсгал огт өөрчлөгдөөгүй. */
+import { useState } from "react";
 import { Loading, Empty } from "@/components/ui/States";
 import StatusBadge from "@/components/ui/StatusBadge";
-import type { Song } from "@/types/song";
+import type { Song, SongLicense } from "@/types/song";
 import Icon from "@/components/ui/Icon";
 import { ActionButton } from "@/components/ui/ActionGroup";
+import { LICENSE_OPTIONS } from "@/lib/songs/license-options";
 
 const labelCls = "flex flex-col gap-1.5";
 const captionCls = "mono !text-micro";
@@ -29,6 +31,7 @@ export default function SongLibraryPanel({
   loading: boolean;
   songs: Song[];
 }) {
+  const [license, setLicense] = useState<SongLicense>("ORIGINAL");
   return (
     <>
       <form className="flex flex-col gap-3.5 border border-white/[.08] rounded-2xl p-5 my-5 bg-white/[.02]" onSubmit={onSubmit}>
@@ -71,6 +74,25 @@ export default function SongLibraryPanel({
             <input name="audio" type="file" accept="audio/*" />
           </div>
         </label>
+
+        <div className="grid grid-cols-2 max-[560px]:grid-cols-1 gap-3">
+          <label className={labelCls}>
+            <span className={captionCls}>Лиценз *</span>
+            <select className={inputCls} name="license" value={license} onChange={(e) => setLicense(e.target.value as SongLicense)}>
+              {LICENSE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {license === "LICENSED" && (
+            <label className={labelCls}>
+              <span className={captionCls}>Гэрээ/эх сурвалж *</span>
+              <input className={inputCls} name="licenseSrc" type="text" placeholder="ж: Гэрээний холбоос эсвэл дугаар" />
+            </label>
+          )}
+        </div>
 
         {msg && (
           <p className={"text-body " + (msg.startsWith("✅") ? "text-aqua" : msg.startsWith("⚠️") ? "text-warm" : "text-danger")} role="status">

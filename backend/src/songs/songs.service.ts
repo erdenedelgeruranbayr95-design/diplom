@@ -1,7 +1,10 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Role, SongLicense } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AnalyzeSongDto } from './dto/analyze-song.dto';
+import { UpdateSongDto } from './dto/update-song.dto';
+
+const CATALOG_ROLES: Role[] = [Role.CURATOR, Role.MODERATOR, Role.ADMIN, Role.ROOT];
 
 @Injectable()
 export class SongsService {
@@ -20,23 +23,51 @@ export class SongsService {
     bpm?: number;
     fileUrl: string;
     uploadedBy: string;
+    license: SongLicense;
+    licenseSrc?: string;
+    uploadConfirmed?: boolean;
+    /* Curator/Admin шууд upload хийвэл нийтэлсэн байдлаар эхэлнэ; энгийн хэрэглэгчийн
+       upload хянагдаагүй тул нийтэд published=false-ээр хадгалж, Curator баталгаажуулна. */
+    published?: boolean;
   }) {
-    return this.prisma.song.create({ data });
+    return this.prisma.song.create({
+      data: { ...data, published: data.published ?? false, publishedAt: data.published ? new Date() : null },
+    });
   }
 
+  /* Нийтэд (тоглуулагч, хайлт) зөвхөн published + upload баталгаажсан дуу л харагдана. */
   list() {
+    return this.prisma.song.findMany({
+      where: { published: true, uploadConfirmed: true },
+      orderBy: { createdAt: 'desc' },
+      include: { artistRef: true },
+    });
+  }
+
+  /* Curator/Admin/Root-д зориулсан каталог — ноорог (published=false) хамт бүгдийг
+     харуулна, лицензийн талбар засаж/publish хийхийн тулд шаардлагатай (Үе шат 5). */
+  catalog() {
     return this.prisma.song.findMany({ orderBy: { createdAt: 'desc' }, include: { artistRef: true } });
   }
 
   /* Нүүр хуудасны "Онцлох" — админ гараар тэмдэглэсэн featured дуунууд. */
   featured() {
-    return this.prisma.song.findMany({ where: { featured: true }, orderBy: { createdAt: 'desc' }, include: { artistRef: true } });
+    return this.prisma.song.findMany({
+      where: { featured: true, published: true, uploadConfirmed: true },
+      orderBy: { createdAt: 'desc' },
+      include: { artistRef: true },
+    });
   }
 
   /* "Сүүлийн үеийн" — createdAt-аар эрэмбэлсэн хамгийн шинэ дуунууд (list()-ийн default
      дараалал ижил тул зөвхөн хязгаарлагдсан тоог буцаана). */
   recent(limit = 12) {
-    return this.prisma.song.findMany({ orderBy: { createdAt: 'desc' }, take: limit, include: { artistRef: true } });
+    return this.prisma.song.findMany({
+      where: { published: true, uploadConfirmed: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: { artistRef: true },
+    });
   }
 
   /* "Хамгийн алдартай" — ListenHistory бичлэгийн тоогоор эрэмбэлнэ (бодит тоглуулалтын
@@ -50,7 +81,10 @@ export class SongsService {
     });
     if (grouped.length === 0) return this.recent(limit);
     const ids = grouped.map((g) => g.songId);
-    const songs = await this.prisma.song.findMany({ where: { id: { in: ids } }, include: { artistRef: true } });
+    const songs = await this.prisma.song.findMany({
+      where: { id: { in: ids }, published: true, uploadConfirmed: true },
+      include: { artistRef: true },
+    });
     const order = new Map(ids.map((id, i) => [id, i]));
     return songs.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
   }
@@ -68,7 +102,7 @@ export class SongsService {
     const song = await this.prisma.song.findUnique({ where: { id: songId } });
     if (!song?.artistId) return [];
     return this.prisma.song.findMany({
-      where: { artistId: song.artistId, id: { not: songId } },
+      where: { artistId: song.artistId, id: { not: songId }, published: true, uploadConfirmed: true },
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
@@ -101,6 +135,40 @@ export class SongsService {
     });
   }
 
+  private async assertCanEdit(id: string, requesterId: string, requesterRole: Role) {
+    const song = await this.prisma.song.findUnique({ where: { id } });
+    if (!song) throw new NotFoundException('Дуу олдсонгүй');
+    const isOwner = song.uploadedBy === requesterId;
+    const isCatalogStaff = CATALOG_ROLES.includes(requesterRole);
+    if (!isOwner && !isCatalogStaff) throw new ForbiddenException('Энэ дуунд хандах эрхгүй');
+    return song;
+  }
+
+  async update(id: string, dto: UpdateSongDto, requesterId: string, requesterRole: Role) {
+    await this.assertCanEdit(id, requesterId, requesterRole);
+    return this.prisma.song.update({ where: { id }, data: dto });
+  }
+
+  /* Лицензгүй дуу нийтлэгдэхгүй байх ёстой (DoD) — publish үед лиценз заавал тавигдсан
+     байх ёстойг сервер талд дахин баталгаажуулна (create() дээр аль хэдийн шаардсан ч,
+     энэ бол хоёр дахь давхарга — ирээдүйд license-гүй мөр ямар нэг замаар үүссэн ч
+     нийтлэгдэхгүй байхыг батална). */
+  async publish(id: string, requesterId: string, requesterRole: Role) {
+    const song = await this.assertCanEdit(id, requesterId, requesterRole);
+    if (!song.license) {
+      throw new BadRequestException('Лицензгүй дууг нийтлэх боломжгүй — эхлээд лиценз сонгоно уу');
+    }
+    if (!song.uploadConfirmed) {
+      throw new BadRequestException('Файлын upload баталгаажаагүй байна');
+    }
+    return this.prisma.song.update({ where: { id }, data: { published: true, publishedAt: new Date() } });
+  }
+
+  async unpublish(id: string, requesterId: string, requesterRole: Role) {
+    await this.assertCanEdit(id, requesterId, requesterRole);
+    return this.prisma.song.update({ where: { id }, data: { published: false } });
+  }
+
   async remove(id: string, requesterId: string, requesterRole: Role) {
     const song = await this.prisma.song.findUnique({ where: { id } });
     if (!song) throw new NotFoundException('Дуу олдсонгүй');
@@ -108,6 +176,6 @@ export class SongsService {
       throw new ForbiddenException('Энэ дууг устгах эрхгүй');
     }
     await this.prisma.song.delete({ where: { id } });
-    return { ok: true };
+    return { ok: true, fileUrl: song.fileUrl, coverUrl: song.coverUrl };
   }
 }

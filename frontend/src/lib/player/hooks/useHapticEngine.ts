@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BeatScheduler } from "@/lib/audio/beat-scheduler";
 import { supportsVibration, vibrate } from "@/lib/audio/tone";
+import { frameIndexAt } from "@/lib/audio/haptic-score";
+import { DeviceRouter } from "@/lib/haptics/DeviceRouter";
 import { LIGHT_LEVELS, VIB_LEVELS } from "@/lib/player/constants";
 import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
 import type { BandLevels, Prefs } from "@/types/player";
 import type { BeatFlash } from "@/lib/player/visualizer-modes";
 import type { ListeningStats } from "@/types/track";
+import type { HapticScore } from "@/types/song";
 import type { AudioAnalyserBundle } from "./useAudioPlayback";
 
 /* Мэдрэхүйн хөдөлгүүр — спектрээс гэрэл (RAF) ба чичиргээ (interval) гаргана.
@@ -42,11 +45,24 @@ export interface HapticEngine {
   /* --- Визуалайзерт дамждаг агшин зуурын утгууд --- */
   levelRef: React.MutableRefObject<BandLevels>;
   beatFlashRef: React.MutableRefObject<BeatFlash | null>;
+  /** Haptic Score байвал (worker-ийн бэлдсэн) — 8 утгатай массив, 0..1 normalize,
+   *  тухайн фрэймд харгалзах. Score байхгүй бол хоосон массив (fallback горимд UI
+   *  3-бүсийн `levelRef`-ийг ашиглана, энэ ref-ийг үл тоомсорлоно). */
+  bandLevelsRef: React.MutableRefObject<number[]>;
+  /** Одоо Score-ээр удирдагдаж байгаа эсэх — UI (жишээ DevicesView) 8-бүсийн preview
+   *  харуулах эсэхээ шийдэхэд ашиглана. */
+  hasHapticScore: boolean;
 
   /** Тухайн дууны beatTimestamps-ийг оноох (шинэ дуу эхлэхэд). */
   setBeatTimestamps: (timestamps: number[] | null | undefined) => void;
+  /** Тухайн дууны Haptic Score-ийг оноох (worker бэлдсэн бол) — байхгүй бол `null`
+   *  дамжуулж 3-бүсийн realtime fallback руу шилжинэ. */
+  setHapticScore: (score: HapticScore | null) => void;
   /** Энэ төхөөрөмж чичиргээ дэмжих эсэх. */
   canVibrate: boolean;
+  /** Холбогдсон HapticDevice-уудыг удирдах (register/unregister/connected) —
+   *  DevicesView-ийн "Холбох"/"Тест" товчнууд үүгээр дамжина. */
+  deviceRouter: DeviceRouter;
 }
 
 export interface HapticEngineOptions {
@@ -96,6 +112,11 @@ export function useHapticEngine({
   const levelRef = useRef<BandLevels>({ lo: 0, mi: 0, hi: 0 });
   const beatFlashRef = useRef<BeatFlash | null>(null);
   const beatSchedulerRef = useRef(new BeatScheduler());
+  const bandLevelsRef = useRef<number[]>([]);
+  const hapticScoreRef = useRef<HapticScore | null>(null);
+  const [hasHapticScore, setHasHapticScore] = useState(false);
+  const deviceRouterRef = useRef<DeviceRouter | null>(null);
+  if (!deviceRouterRef.current) deviceRouterRef.current = new DeviceRouter();
 
   const canVibrate = supportsVibration();
 
@@ -123,7 +144,67 @@ export function useHapticEngine({
 
       const analyser = analyserRef.current;
       const p = prefsRef.current;
-      const lightMult = LIGHT_LEVELS[p.light].mult;
+      /* iOS Safari `navigator.vibrate` дэмждэггүй (canVibrate=false) тул чичиргээ
+         суваг бүрэн алга болно — дэлгэцийн визуал (гэрлийн пульс) цорын ганц мэдрэх
+         суваг үлддэг тул илт тод харагдуулна (§Үе шат 4 "iOS-д визуал сувгийг
+         хүчтэй болгох"). Бусад платформд энгийн lightMult хэвээр. */
+      const lightMult = LIGHT_LEVELS[p.light].mult * (canVibrate ? 1 : 1.6);
+
+      /* Haptic Score байвал (worker бэлдсэн 8-бүс) — currentTime-аар frame индекслэж
+         `bandLevelsRef`-г шинэчилнэ. Энэ бол ЗӨВХӨН 8-бүсийн preview UI (жишээ
+         DevicesView)-д ашиглагдана, доорх 3-бүсийн realtime FFT логикийг орлохгүй
+         (тэр нь бодит амьд визуал/чичиргээнд хэвээр ажиллана — Score-ийн 60fps frame
+         resolution нь RAF-тай ойролцоо ч яг synchronized биш тул хараахан орлуулаагүй). */
+      const score = hapticScoreRef.current;
+      if (score && playing && audioRef.current) {
+        const idx = frameIndexAt(score, audioRef.current.currentTime);
+        bandLevelsRef.current = score.frames[idx].b;
+      }
+
+      /* Timestamp-driven beat (songId-тэй, analyze хийгдсэн дуу) — ROADMAP-ийн DoD
+         "beat → чичиргээ хоцролт < 40мс" шаардлагыг хангахын тулд RAF loop дотор Л
+         шалгана (~16.7мс тутам, browser throttle-гүй). Өмнө нь тусдаа setInterval(25)
+         дотор байсан ч, event loop дээр RAF-тай өрсөлдөж бодит дуудагдах хоцролт нь
+         25мс-ээс хамаагүй том (хэмжсэн: дундаж ~60-80мс, зарим үед 200мс) болж байсныг
+         browser дотор туршиж олж, RAF loop руу нүүлгэв. */
+      if (playing && vibrationOn) {
+        const scheduler = beatSchedulerRef.current;
+        if (scheduler.hasTimestamps && audioRef.current) {
+          const { fired: crossed, crossedAt } = scheduler.pollDetailed(audioRef.current.currentTime);
+          if (crossed) {
+            if (
+              crossedAt !== undefined &&
+              typeof window !== "undefined" &&
+              (window as unknown as { __LATENCY_DEBUG?: boolean }).__LATENCY_DEBUG
+            ) {
+              const latencyMs = (audioRef.current.currentTime - crossedAt) * 1000;
+              // eslint-disable-next-line no-console
+              console.log("LATENCY_DEBUG", JSON.stringify({ latencyMs: Math.round(latencyMs * 100) / 100 }));
+            }
+            const bp = prefsRef.current;
+            const bStrength = VIB_LEVELS[bp.vib].mult;
+            const bSync = deviceSyncRef.current;
+            const { lo: blo, mi: bmi, hi: bhi } = levelRef.current;
+            const band = blo >= bmi && blo >= bhi ? "bass" : bmi >= bhi ? "mid" : "high";
+            const level = band === "bass" ? blo : band === "mid" ? bmi : bhi;
+            beatFlashRef.current = { band, level, at: performance.now() };
+            if (canVibrate) {
+              if (band === "bass") deviceRouterRef.current!.pulse(bStrength, Math.round((60 + level * 80) * bStrength));
+              else if (band === "mid") vibrate([Math.round(30 * bStrength), 30, Math.round(30 * bStrength)]);
+              else deviceRouterRef.current!.pulse(bStrength, Math.max(8, Math.round(12 * bStrength)));
+            }
+            /* 8-бүсийн Score байвал олон моторт төхөөрөмж (BLE хантааз) бүс тус
+               бүрийг тусад нь мэдрүүлнэ — tonotopic мэдрэмж (§Үе шат 4 DoD). */
+            if (bandLevelsRef.current.length > 0) {
+              bandLevelsRef.current.forEach((lvl, zone) => deviceRouterRef.current!.setBand(zone, lvl));
+            }
+            /* QR-аар холбогдсон утас руу — Score байвал бүх 8 бүсийн payload,
+               эс бол хуучин 3-бүсийн {band,level} (mobile page-ийн fallback хэвээр). */
+            if (bSync.isConnected) bSync.emitBeat({ band, level, bands: bandLevelsRef.current.length > 0 ? bandLevelsRef.current : undefined });
+            if (statsRef.current) statsRef.current.vib++;
+          }
+        }
+      }
 
       if (analyser && playing) {
         analyser.an.getByteFrequencyData(analyser.data);
@@ -191,41 +272,25 @@ export function useHapticEngine({
     };
     loop();
 
-    /* Локал чичиргээ (canVibrate) болон QR-аар холбогдсон утас руу beat event илгээх (deviceSync)
-       хоёулаа энэ ижил 170мс интервалд явна — тусдаа шинэ interval үүсгэхгүй. */
+    /* Level-threshold fallback (beatTimestamps байхгүй, static demo track) — өмнөх
+       170мс cooldown зан төлөв ХЭВЭЭР (threshold-ийн дараагийн шатах хоорондын зай
+       товчилвол дуу нэг л bass цохилтод олон удаа чичирнэ — өмнөх найдвартай
+       харьцаа энд өөрчлөгдөөгүй). */
     const vibTimer = setInterval(() => {
       if (!playing || !vibrationOn) return;
+      const scheduler = beatSchedulerRef.current;
+      if (scheduler.hasTimestamps) return; // timestamp-driven салбар RAF loop дотор аль хэдийн шатсан
+
       const p = prefsRef.current;
       const strength = VIB_LEVELS[p.vib].mult;
       const sync = deviceSyncRef.current;
       const qrConnected = sync.isConnected;
 
-      /* songId-тэй (backend Song, beatTimestamps-тай) дуу бол timestamp-driven scheduler,
-         эс бол одоогийн level-threshold логик — аль ч тохиолдолд {band, level} ижил payload. */
-      const scheduler = beatSchedulerRef.current;
-      if (scheduler.hasTimestamps && audioRef.current) {
-        const crossed = scheduler.poll(audioRef.current.currentTime);
-        if (crossed) {
-          const { lo, mi, hi } = levelRef.current;
-          const band = lo >= mi && lo >= hi ? "bass" : mi >= hi ? "mid" : "high";
-          const level = band === "bass" ? lo : band === "mid" ? mi : hi;
-          beatFlashRef.current = { band, level, at: performance.now() };
-          if (canVibrate) {
-            if (band === "bass") vibrate(Math.round((60 + level * 80) * strength));
-            else if (band === "mid") vibrate([Math.round(30 * strength), 30, Math.round(30 * strength)]);
-            else vibrate(Math.max(8, Math.round(12 * strength)));
-          }
-          if (qrConnected) sync.emitBeat({ band, level });
-          if (statsRef.current) statsRef.current.vib++;
-        }
-        return;
-      }
-
       const { lo, mi, hi } = levelRef.current;
       let fired = false;
       if (p.bands.bass && lo > 0.45) {
         beatFlashRef.current = { band: "bass", level: lo, at: performance.now() };
-        if (canVibrate) vibrate(Math.round((60 + lo * 80) * strength));
+        if (canVibrate) deviceRouterRef.current!.pulse(strength, Math.round((60 + lo * 80) * strength));
         if (qrConnected) sync.emitBeat({ band: "bass", level: lo });
         fired = true;
       } else if (p.bands.mid && mi > 0.35) {
@@ -235,7 +300,7 @@ export function useHapticEngine({
         fired = true;
       } else if (p.bands.high && hi > 0.3) {
         beatFlashRef.current = { band: "high", level: hi, at: performance.now() };
-        if (canVibrate) vibrate(Math.max(8, Math.round(12 * strength)));
+        if (canVibrate) deviceRouterRef.current!.pulse(strength, Math.max(8, Math.round(12 * strength)));
         if (qrConnected) sync.emitBeat({ band: "high", level: hi });
         fired = true;
       }
@@ -245,7 +310,7 @@ export function useHapticEngine({
     return () => {
       cancelAnimationFrame(raf);
       clearInterval(vibTimer);
-      if (canVibrate) navigator.vibrate(0);
+      deviceRouterRef.current?.stop();
     };
     // analyserRef/audioRef/statsRef нь тогтвортой ref объектууд тул dependency болох шаардлагагүй
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,7 +326,15 @@ export function useHapticEngine({
     signalBarsRef,
     levelRef,
     beatFlashRef,
+    bandLevelsRef,
+    hasHapticScore,
     setBeatTimestamps: (timestamps) => beatSchedulerRef.current.setTrack(timestamps),
+    setHapticScore: (score) => {
+      hapticScoreRef.current = score;
+      bandLevelsRef.current = score ? new Array(score.bandEdgesHz.length - 1).fill(0) : [];
+      setHasHapticScore(!!score);
+    },
     canVibrate,
+    deviceRouter: deviceRouterRef.current,
   };
 }

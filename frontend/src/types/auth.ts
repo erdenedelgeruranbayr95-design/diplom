@@ -1,6 +1,6 @@
 /* ROOT нь ADMIN-аас ДЭЭР зэрэглэлтэй (систем эзэмшигч) — зөвхөн Root Panel-д нэвтэрнэ.
-   Бусад дүр (USER · PARENT · THERAPIST · ADMIN) огт өөрчлөгдөөгүй. */
-export type UserRole = "ROOT" | "ADMIN" | "THERAPIST" | "USER" | "PARENT";
+   Үе шат 2: CURATOR/MODERATOR нэмэгдэв (backend/prisma/schema.prisma: enum Role). */
+export type UserRole = "ROOT" | "ADMIN" | "CURATOR" | "MODERATOR" | "THERAPIST" | "USER" | "PARENT";
 export type UserStatus = "ACTIVE" | "BANNED";
 
 /** Сонсголын байдал — ЭМЗЭГ мэдээлэл, заавал биш (§14). */
@@ -30,6 +30,7 @@ export interface AdminUserRow {
   role: UserRole;
   status: UserStatus;
   createdAt: string;
+  lastLoginAt: string | null;
   subActive: boolean;
   subPlan: string | null;
 }
@@ -75,4 +76,32 @@ export interface NotificationRow {
 export interface NotificationFeed {
   items: NotificationRow[];
   readAt: string | null;
+}
+
+/** GET /audit — ROOT-only мөрдөгдөх бүртгэл (mutating route бүрийг interceptor автоматаар бичдэг). */
+export interface AuditLogRow {
+  id: string;
+  actorId: string;
+  action: string;
+  target: string | null;
+  meta: Record<string, unknown> | null;
+  ip: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  actor: { id: string; name: string; email: string };
+}
+
+/** GET/POST /moderation/reports */
+export interface ReportRow {
+  id: string;
+  reporterId: string;
+  targetType: "song" | "user";
+  targetId: string;
+  reason: string;
+  status: "OPEN" | "RESOLVED" | "DISMISSED";
+  resolvedById: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  reporter?: { id: string; name: string; email: string };
+  resolvedBy?: { id: string; name: string; email: string } | null;
 }

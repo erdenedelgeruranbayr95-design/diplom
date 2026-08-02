@@ -9,7 +9,11 @@ import type { ReactNode } from "react";
 
 export default function PageContainer({ children }: { children: ReactNode }) {
   return (
-    <main id="main" tabIndex={-1} className="sp-main relative z-[2] flex-1 overflow-y-auto w-full">
+    // tabIndex=0 (-1 биш): энэ бүс өөрөө scroll хийдэг (overflow-y-auto) тул гар
+    // товчлуураар (Tab/Page Down) хүрч чадах ёстой — WCAG 2.1.1, axe
+    // "scrollable-region-focusable" дүрэм. "Шууд агуулга руу очих" skip-link
+    // (layout.tsx) энэ рүү focus() дуудахад ч ямар ч нөлөөгүй.
+    <main id="main" tabIndex={0} className="sp-main relative z-[2] flex-1 overflow-y-auto w-full">
       <div className="w-full min-w-0">{children}</div>
     </main>
   );

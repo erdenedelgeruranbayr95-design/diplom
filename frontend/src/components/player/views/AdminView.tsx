@@ -28,6 +28,8 @@ const ROLE_LABEL: Record<AdminUserRow["role"], string> = {
   THERAPIST: "Эмч",
   PARENT: "Эцэг эх",
   ADMIN: "Админ",
+  CURATOR: "Куратор",
+  MODERATOR: "Модератор",
 };
 
 export default function AdminView({

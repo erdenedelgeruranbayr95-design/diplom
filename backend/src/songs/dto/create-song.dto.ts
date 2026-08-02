@@ -1,5 +1,6 @@
-import { IsBoolean, IsInt, IsOptional, IsString, IsUrl, Max, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUrl, Max, Min, MinLength, ValidateIf } from 'class-validator';
 import { Type } from 'class-transformer';
+import { SongLicense } from '@prisma/client';
 
 export class CreateSongDto {
   @IsString()
@@ -57,4 +58,20 @@ export class CreateSongDto {
   @IsOptional()
   @IsUrl()
   sourceUrl?: string;
+
+  /* MinIO-д аль хэдийн байршуулсан (presigned upload) файлын key — presigned урсгалаар
+     upload хийсэн үед `file`/`sourceUrl`-ийн оронд ирнэ (см. songs.controller.ts). */
+  @IsOptional()
+  @IsString()
+  storageKey?: string;
+
+  // Лиценз ЗААВАЛ (см. ROADMAP-7-PHASES.md Үе шат 5 DoD): "Лицензгүй дуу upload хийгдэхгүй".
+  @IsEnum(SongLicense)
+  license: SongLicense;
+
+  // LICENSED (гэрээт/тусдаа лиценз) сонговол эх сурвалж/гэрээний тайлбар заавал.
+  @ValidateIf((o) => o.license === SongLicense.LICENSED)
+  @IsString()
+  @MinLength(1)
+  licenseSrc?: string;
 }

@@ -89,6 +89,14 @@ export default function MobilePage() {
     if (!("vibrate" in navigator)) return;
     const m = VIB_LEVELS[strengthIdx]?.mult ?? 1;
     try {
+      /* 8-бүсийн Score байвал (evt.bands) хамгийн идэвхтэй бүсийн энергиэр
+         амплитуд тохируулна — ганц моторт утас тул зэрэг олон бүс мэдрүүлэх
+         боломжгүй ч дор хаяж СОГИЙН (loudest) бүсийн эрч хүчийг илэрхийлнэ. */
+      if (evt.bands && evt.bands.length > 0) {
+        const maxLevel = Math.max(...evt.bands);
+        navigator.vibrate(Math.max(8, Math.round((30 + maxLevel * 150) * m)));
+        return;
+      }
       if (evt.band === "bass") {
         navigator.vibrate(Math.round((60 + evt.level * 80) * m));
       } else if (evt.band === "mid") {

@@ -2,7 +2,9 @@ import Icon from "@/components/ui/Icon";
 
 export default function HeroSection() {
   return (
-    <header className="hero" id="hero">
+    // tabIndex=-1: skip-link (layout.tsx) энэ рүү programmatically focus() дуудна
+    // (жинхэнэ Tab дараалалд ороход зориулаагүй, зөвхөн "Шууд агуулга руу очих"-ийн зорилт).
+    <header className="hero" id="hero" tabIndex={-1}>
       <canvas id="stage"></canvas>
       <div className="hero-veil"></div>
 

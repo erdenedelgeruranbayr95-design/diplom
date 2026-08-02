@@ -12,10 +12,11 @@ import { useState } from "react";
 import BackBar from "../BackBar";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/providers/ToastProvider";
-import { changePassword, updateProfile } from "@/lib/api/client";
+import { changePassword, deleteMyAccount, exportMyData, updateProfile } from "@/lib/api/client";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileSettings, { COLORS } from "@/components/profile/ProfileSettings";
 import SecuritySettings from "@/components/profile/SecuritySettings";
+import PrivacyDataSettings from "@/components/profile/PrivacyDataSettings";
 import PreferenceSettings from "@/components/profile/PreferenceSettings";
 import type { Prefs } from "@/types/player";
 
@@ -28,7 +29,7 @@ export default function ProfileView({
   prefs: Prefs;
   onUpdatePrefs: (patch: Partial<Prefs>) => void;
 }) {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const toast = useToast();
 
   const [name, setName] = useState(user?.name || "");
@@ -88,6 +89,32 @@ export default function ProfileView({
     }
   }
 
+  async function handleExportData() {
+    try {
+      const data = await exportMyData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `medreh-medeelel-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Мэдээлэл татагдлаа");
+    } catch (err) {
+      toast.error((err as Error).message || "Мэдээлэл татахад алдаа гарлаа");
+    }
+  }
+
+  async function handleDeleteAccount(password: string) {
+    try {
+      await deleteMyAccount(password);
+      toast.success("Бүртгэл устгагдлаа");
+      await logout();
+    } catch (err) {
+      toast.error((err as Error).message || "Бүртгэл устгахад алдаа гарлаа");
+    }
+  }
+
   return (
     <>
       <BackBar title="Профайл ба тохиргоо" onBack={onBack} />
@@ -125,6 +152,8 @@ export default function ProfileView({
           saving={changingPass}
           onSubmit={changePass}
         />
+
+        <PrivacyDataSettings onExport={handleExportData} onDeleteAccount={handleDeleteAccount} />
       </div>
     </>
   );

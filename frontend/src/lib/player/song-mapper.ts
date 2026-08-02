@@ -24,6 +24,7 @@ export function songToPlayerTrack(song: Song, fallback?: PlayerTrack | null, art
     artistId: song.artistId || fallback?.artistId || undefined,
     genre: song.genre || fallback?.genre || "Бусад",
     description: song.description || fallback?.description || undefined,
+    lyrics: song.lyrics || fallback?.lyrics || undefined,
     releaseYear: song.releaseYear || fallback?.releaseYear || undefined,
     file: song.fileUrl,
     cover: song.coverUrl || fallback?.cover || fallbackCover(song.title),

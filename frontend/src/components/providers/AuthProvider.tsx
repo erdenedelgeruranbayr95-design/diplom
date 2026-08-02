@@ -14,6 +14,8 @@ interface AuthContextValue {
   /** Систем эзэмшигч — ADMIN-аас дээр зэрэглэлтэй, Root Panel-д нэвтэрнэ. */
   isRoot: boolean;
   isAdmin: boolean;
+  /** Куратор/модератор — контент лиценз/нийтлэл удирдах Curator Panel-д нэвтэрнэ. */
+  isCurator: boolean;
   isTherapist: boolean;
   isParent: boolean;
   subscribed: boolean;
@@ -52,6 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isRoot = role === "root";
   /* ROOT нь ADMIN-ы бүх дэлгэц/эрхийг мөн хамарна (шатлал) — backend-ийн RolesGuard-тай нийцтэй. */
   const isAdmin = role === "admin" || isRoot;
+  /* ADMIN/ROOT нь CURATOR/MODERATOR-ийн бүх эрхийг мөн хамарна (шатлал) — backend-ийн
+     RolesGuard-д CURATOR_ROLES = [CURATOR, MODERATOR, ADMIN, ROOT] гэж тодорхойлогдсонтой нийцтэй. */
+  const isCurator = user?.role === "CURATOR" || user?.role === "MODERATOR" || isAdmin;
   const isTherapist = role === "therapist";
   const isParent = role === "parent";
   const subscribed = isAdmin || !!user?.sub?.active;
@@ -87,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthCtx.Provider
-      value={{ user, role, isRoot, isAdmin, isTherapist, isParent, subscribed, ready, login, register, logout, updateUser, setSub, cancelSub }}
+      value={{ user, role, isRoot, isAdmin, isCurator, isTherapist, isParent, subscribed, ready, login, register, logout, updateUser, setSub, cancelSub }}
     >
       {children}
     </AuthCtx.Provider>

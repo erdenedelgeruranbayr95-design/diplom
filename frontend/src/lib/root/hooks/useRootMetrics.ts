@@ -48,8 +48,9 @@ interface RootSnapshot {
   songs: Song[];
   artists: Artist[];
   assignments: TherapistAssignmentRow[];
+  revenue: number | null;
 }
-const EMPTY: RootSnapshot = { users: [], songs: [], artists: [], assignments: [] };
+const EMPTY: RootSnapshot = { users: [], songs: [], artists: [], assignments: [], revenue: null };
 
 const live = (value: number): RootMetric => ({ value });
 const missing = (reason: string): RootMetric => ({ value: null, unavailableReason: reason });
@@ -58,17 +59,19 @@ export function useRootMetrics(enabled: boolean): RootData {
   const { data, loading, error, reload } = useAsyncResource<RootSnapshot>(
     async () => {
       /* `allSettled` — нэг endpoint унасан ч самбар бүхэлдээ хоосон болохгүй. */
-      const [users, songs, artists, assignments] = await Promise.allSettled([
+      const [users, songs, artists, assignments, revenue] = await Promise.allSettled([
         api.listUsers(),
         api.listSongs(),
         api.listArtists(),
         api.listTherapistAssignments(),
+        api.getRevenue(),
       ]);
       return {
         users: users.status === "fulfilled" ? users.value : [],
         songs: songs.status === "fulfilled" ? songs.value : [],
         artists: artists.status === "fulfilled" ? artists.value : [],
         assignments: assignments.status === "fulfilled" ? assignments.value : [],
+        revenue: revenue.status === "fulfilled" ? revenue.value.total : null,
       };
     },
     [],
@@ -86,7 +89,7 @@ export function useRootMetrics(enabled: boolean): RootData {
       totalUsers: live(regular.length),
       onlineUsers: missing("Идэвхтэй сесс тоолох endpoint байхгүй (WebSocket presence шаардлагатай)"),
       premiumUsers: live(users.filter((u) => u.subActive).length),
-      revenue: missing("Payment хүснэгт байхгүй — төлбөр одоогоор per-user localStorage дээр"),
+      revenue: data.revenue !== null ? live(data.revenue) : missing("GET /revenue дуудлага амжилтгүй боллоо"),
       songs: live(songs.length),
       therapists: live(users.filter((u) => u.role === "THERAPIST").length),
       parents: live(users.filter((u) => u.role === "PARENT").length),

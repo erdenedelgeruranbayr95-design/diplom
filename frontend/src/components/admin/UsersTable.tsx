@@ -22,6 +22,8 @@ const ROLE_LABEL: Record<AdminUserRow["role"], string> = {
   THERAPIST: "Эмч",
   PARENT: "Эцэг эх",
   ADMIN: "Админ",
+  CURATOR: "Куратор",
+  MODERATOR: "Модератор",
 };
 
 const ROLE_TONE: Record<AdminUserRow["role"], StatusTone> = {
@@ -30,6 +32,8 @@ const ROLE_TONE: Record<AdminUserRow["role"], StatusTone> = {
   THERAPIST: "purple",
   PARENT: "warm",
   ADMIN: "aqua",
+  CURATOR: "purple",
+  MODERATOR: "purple",
 };
 
 type SubFilter = "ALL" | "PRO" | "FREE";

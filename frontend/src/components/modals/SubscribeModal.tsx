@@ -12,7 +12,6 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { loadUsers, saveUsers } from "@/lib/auth/auth-storage";
-import { pushPayment } from "@/lib/data/library";
 import { pushPaymentRequest } from "@/lib/data/admin-payment-requests";
 import { useModalShell } from "@/hooks/useModalShell";
 import { ActionButton } from "@/components/ui/ActionGroup";
@@ -83,9 +82,10 @@ export default function SubscribeModal({
 
   /* ДЕМО: QR "уншуулсны" дараах баталгаажилтыг хуурамчаар дуурайна (жинхэнэ SocialPay
      callback/webhook үгүй тул) — гэхдээ идэвхжүүлэлт өөрөө backend руу бодитоор бичигдэнэ
-     (PATCH /users/me/subscription, users.controller.ts) тул refresh/дахин нэвтрэх/өөр
-     tab дээр ч PRO эрх хадгалагдана. localStorage legacy давхарга (loadUsers/saveUsers)
-     хуучин ProfileView/BillingView-той нийцтэй байлгахын тулд зэрэгцээ хэвээр үлдээв. */
+     (PATCH /users/me/subscription → users.service.ts: subscribe() Payment мөрийг ч
+     transaction дотор үүсгэдэг) тул refresh/дахин нэвтрэх/өөр tab дээр ч PRO эрх болон
+     төлбөрийн түүх хадгалагдана. localStorage legacy давхарга (loadUsers/saveUsers)
+     хуучин ProfileView-той нийцтэй байлгахын тулд зэрэгцээ хэвээр үлдээв. */
   useEffect(() => {
     if (!open || payState !== "waiting" || expired || !user) return;
     confirmTimerRef.current = setTimeout(async () => {
@@ -103,14 +103,6 @@ export default function SubscribeModal({
         u.sub = { active: sub.active, plan: sub.plan || "", since: now.getTime(), renews: sub.renews ? new Date(sub.renews).getTime() : now.getTime() };
         saveUsers(users);
       }
-      pushPayment(user.email, {
-        id: "inv-" + Date.now(),
-        date: now.getTime(),
-        amount: PLAN.price,
-        plan: PLAN.name,
-        method: "SocialPay",
-        status: "Амжилттай",
-      });
       setPayState("success");
       onSubscribed(sub);
     }, DEMO_CONFIRM_DELAY_MS);

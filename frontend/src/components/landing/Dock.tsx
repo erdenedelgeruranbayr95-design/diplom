@@ -5,20 +5,25 @@ export default function Dock({
   user,
   isRoot,
   isAdmin,
+  isCurator,
   onLogin,
   onLogout,
   onRoot,
   onAdmin,
+  onCurator,
   onPlayer,
 }: {
   user: SessionUser | null;
   /** Систем эзэмшигч — Root Panel-ийн товч зөвхөн түүнд харагдана. */
   isRoot: boolean;
   isAdmin: boolean;
+  /** Куратор/модератор — Curator Panel-ийн товч зөвхөн түүнд харагдана (ADMIN/ROOT ч мөн). */
+  isCurator: boolean;
   onLogin: () => void;
   onLogout: () => void;
   onRoot: () => void;
   onAdmin: () => void;
+  onCurator: () => void;
   onPlayer: () => void;
 }) {
   const navLinkCls =
@@ -63,6 +68,16 @@ export default function Dock({
             onClick={onAdmin}
           >
             Админ
+          </button>
+        )}
+        {/* CURATOR/MODERATOR — контент лиценз/нийтлэл удирдах самбар (ADMIN/ROOT-д ч харагдана) */}
+        {isCurator && (
+          <button
+            className="keep text-body py-2.5 px-[15px] rounded-full transition-[color,background,box-shadow] duration-250 focus-visible:shadow-glow-aqua text-purple border border-purple/40 hover:bg-purple hover:text-[#0E0A1C] inline-flex items-center gap-2"
+            onClick={onCurator}
+          >
+            <Icon name="disc" size={14} />
+            Куратор
           </button>
         )}
         {user ? (

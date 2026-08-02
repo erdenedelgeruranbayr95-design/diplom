@@ -6,17 +6,13 @@ import RootUserList from "./views/RootUserList";
 import RootSongs from "./views/RootSongs";
 import RootPro from "./views/RootPro";
 import RootBroadcast from "./views/RootBroadcast";
-import {
-  RootAuditLogs,
-  RootBackup,
-  RootDatabase,
-  RootDevices,
-  RootPayments,
-  RootReports,
-  RootSecurity,
-  RootSettings,
-  RootStorage,
-} from "./views/RootPendingSections";
+import RootAuditLogs from "./views/RootAuditLogs";
+import RootSecurity from "./views/RootSecurity";
+import RootPayments from "./views/RootPayments";
+import RootReports from "./views/RootReports";
+import RootMonitoring from "./views/RootMonitoring";
+import { RootBackup, RootDatabase, RootDevices, RootSettings } from "./views/RootPendingSections";
+import RootStorage from "./views/RootStorage";
 import type { RootData } from "@/lib/root/hooks/useRootMetrics";
 import type { RootSection } from "@/types/root";
 
@@ -42,6 +38,12 @@ const USER_LISTS = {
     roles: ["THERAPIST"] as const,
     emptyTitle: "Эмч алга",
   },
+  staff: {
+    title: "Куратор · Модератор",
+    description: "GET /users — CURATOR/MODERATOR дүртэй платформын ажилтнууд.",
+    roles: ["CURATOR", "MODERATOR"] as const,
+    emptyTitle: "Куратор/Модератор алга — дүр солих dropdown-оор хэрэглэгчийг эдгээр эрхэд шилжүүлнэ үү",
+  },
   parents: {
     title: "Эцэг эхчүүд",
     description: "GET /users — PARENT дүртэй бүртгэлүүд.",
@@ -54,7 +56,7 @@ export default function RootViewRouter({ section, data }: { section: RootSection
   if (section === "dashboard") return <RootDashboard data={data} />;
   if (section === "analytics") return <RootAnalytics data={data} />;
 
-  if (section === "users" || section === "admins" || section === "therapists" || section === "parents") {
+  if (section === "users" || section === "admins" || section === "therapists" || section === "parents" || section === "staff") {
     const config = USER_LISTS[section];
     return (
       <RootUserList
@@ -64,6 +66,7 @@ export default function RootViewRouter({ section, data }: { section: RootSection
         description={config.description}
         roles={config.roles ? [...config.roles] : undefined}
         emptyTitle={config.emptyTitle}
+        showCreateStaff={section === "admins"}
       />
     );
   }
@@ -71,13 +74,14 @@ export default function RootViewRouter({ section, data }: { section: RootSection
   if (section === "songs") return <RootSongs data={data} />;
   if (section === "pro") return <RootPro data={data} />;
   if (section === "broadcast") return <RootBroadcast />;
+  if (section === "payments") return <RootPayments />;
+  if (section === "reports") return <RootReports />;
+  if (section === "security") return <RootSecurity data={data} />;
+  if (section === "audit") return <RootAuditLogs />;
+  if (section === "monitoring") return <RootMonitoring />;
 
   /* ---- Backend API хүлээгдэж буй хэсгүүд ---- */
-  if (section === "payments") return <RootPayments />;
   if (section === "devices") return <RootDevices />;
-  if (section === "reports") return <RootReports />;
-  if (section === "security") return <RootSecurity />;
-  if (section === "audit") return <RootAuditLogs />;
   if (section === "storage") return <RootStorage />;
   if (section === "database") return <RootDatabase />;
   if (section === "settings") return <RootSettings />;

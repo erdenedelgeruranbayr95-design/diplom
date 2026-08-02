@@ -32,6 +32,7 @@ import { useWindowEvent } from "@/hooks/useWindowEvent";
 import { APP_EVENTS } from "@/lib/data/events";
 import { feelProfileFor } from "@/lib/player/constants";
 import { ToneGenerator, vibrate } from "@/lib/audio/tone";
+import { loadHapticScore } from "@/lib/audio/haptic-score";
 import { ALL_GENRES, filterTracks, indexTracksById, resolveTracks } from "@/lib/player/track-index";
 import { scoreRecommendations } from "@/lib/player/recommendations";
 import * as songsApi from "@/lib/api/client";
@@ -115,10 +116,21 @@ export default function Player({
       /* songId-тэй (analyze хийгдсэн) бол beatTimestamps-ийг татаж scheduler-т тохируулна;
          эс бол scheduler хоосорч, level-threshold fallback идэвхжинэ. */
       haptics.setBeatTimestamps(null);
+      haptics.setHapticScore(null);
       if (track.songId) {
         songsApi
           .getSong(track.songId)
           .then((song) => haptics.setBeatTimestamps(song.beatTimestamps))
+          .catch(() => {});
+        /* Haptic Score (8-бүс, worker бэлдсэн) — READY бол л татна, эс бол дуудлага
+           дэмий үрэхгүй (score.getAnalysisStatus 1 удаагийн хямд GET). */
+        songsApi
+          .getAnalysisStatus(track.songId)
+          .then((status) => {
+            if (status.analysisStatus === "READY" && status.scoreUrl) {
+              return loadHapticScore(status.scoreUrl).then((score) => haptics.setHapticScore(score));
+            }
+          })
           .catch(() => {});
       }
       if (deviceSync.isConnected) deviceSync.emitTrackChanged({ title: track.title, artist: track.artist });
@@ -342,6 +354,9 @@ export default function Player({
                   canVibrate: haptics.canVibrate,
                   deviceSync,
                   signalBarsRef: haptics.signalBarsRef,
+                  hasHapticScore: haptics.hasHapticScore,
+                  bandLevelsRef: haptics.bandLevelsRef,
+                  deviceRouter: haptics.deviceRouter,
                 }}
                 actions={{
                   goHome,
@@ -356,7 +371,7 @@ export default function Player({
               />
             </PageContainer>
 
-            <NowPlayingSidebar track={playback.current} playing={playback.playing} />
+            <NowPlayingSidebar track={playback.current} playing={playback.playing} currentTime={playback.time} />
           </div>
         </div>
 

@@ -1,8 +1,9 @@
 /* localStorage-ийн бүх түлхүүрийн ганц бүртгэл.
 
-   Урьд нь "medreh_likes:" + email гэсэн мөрүүд Player.tsx, library.ts, auth-storage.ts,
-   admin-sub-overrides.ts зэрэгт тарж бичигдсэн байсан тул нэгийг нь өөрчлөхөд нөгөө нь
-   мартагдах эрсдэлтэй байв. Түлхүүрийн УТГА огт өөрчлөгдөөгүй — зөвхөн нэг газар цугларав. */
+   Үе шат 1 (ROADMAP-7-PHASES.md): likes/saves/prefs/payments/playlists эх сурвалж
+   backend руу шилжсэн тул тэдгээрийн түлхүүрүүд энд байхаа больсон. `stats` ЗӨВХӨН
+   session доторх орон нутгийн кэш болгож үлдсэн (`lib/data/library.ts`-ийн толгойн
+   комментыг үзнэ үү). */
 
 /** Хэрэглэгчээс хамааралгүй (глобал) түлхүүрүүд. */
 export const GLOBAL_KEYS = {
@@ -11,12 +12,7 @@ export const GLOBAL_KEYS = {
 
 /** Хэрэглэгч тус бүрийн түлхүүрийн угтвар — `<prefix>:<email>` хэлбэрээр ашиглана. */
 export const USER_KEY_PREFIX = {
-  likes: "medreh_likes",
-  saves: "medreh_saves",
-  prefs: "medreh_prefs",
   stats: "medreh_stats",
-  payments: "medreh_payments",
-  playlists: "medreh_playlists",
 } as const;
 
 export type UserKeyName = keyof typeof USER_KEY_PREFIX;

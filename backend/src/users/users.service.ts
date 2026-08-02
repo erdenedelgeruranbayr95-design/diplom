@@ -1,9 +1,15 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
+import { Role, UserStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
+import { encryptField, decryptField } from '../common/crypto/field-encryption';
 
 const BCRYPT_ROUNDS = 10;
 const DEFAULT_PLAN = 'МЭДРЭХ PRO';
@@ -12,7 +18,25 @@ type SubscriptionFields = { subActive: boolean; subPlan: string | null; subSince
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {}
+
+  /* `hearingProfile` DB-д ТОДООР хадгалагдахгүй (эмнэлгийн шинж чанартай эмзэг
+     мэдээлэл, см. Нууцлалын бодлого §2). HEARING_PROFILE_ENC_KEY тохируулаагүй
+     локал/CI орчинд dev-fallback түлхүүрээр ажиллана — production-д ЗААВАЛ
+     тохируулагдсан байх ёстой (см. .env.example). */
+  private encryptHearingProfile(value: string): string {
+    const key = this.config.get<string>('HEARING_PROFILE_ENC_KEY') || 'dev-only-insecure-hearing-key';
+    return encryptField(value, key);
+  }
+
+  private decryptHearingProfile(value: string | null): string | null {
+    if (!value) return value;
+    const key = this.config.get<string>('HEARING_PROFILE_ENC_KEY') || 'dev-only-insecure-hearing-key';
+    return decryptField(value, key);
+  }
 
   /* Admin-аар THERAPIST/ADMIN эрхтэй account үүсгэх — staff бүртгэл нь self-service биш. */
   async create(dto: CreateUserDto) {
@@ -37,6 +61,7 @@ export class UsersService {
         role: true,
         status: true,
         createdAt: true,
+        lastLoginAt: true,
         subActive: true,
         subPlan: true,
       },
@@ -53,6 +78,66 @@ export class UsersService {
     return { ok: true };
   }
 
+  /* ---------- ROOT: дүр/төлөв/эрх удирдлага ---------- */
+
+  /* ROOT-only. `Role.ROOT`-руу зориудаар оруулаагүй — систем эзэмшигчийн эрхийг
+     endpoint-ээр биш, зөвхөн DB seed/гараар олгоно (аюулгүй байдлын хувьд). */
+  async updateRole(id: string, requesterId: string, dto: UpdateRoleDto) {
+    if (id === requesterId) throw new BadRequestException('Та өөрийн дүрээ солих боломжгүй');
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('Хэрэглэгч олдсонгүй');
+    if (user.role === Role.ROOT) throw new BadRequestException('ROOT дүрийг солих боломжгүй');
+    return this.prisma.user.update({ where: { id }, data: { role: dto.role }, select: { id: true, name: true, email: true, role: true } });
+  }
+
+  /* SUSPEND (BANNED) үед идэвхтэй бүх refresh token-ыг цуцлана — дараагийн /auth/refresh
+     амжилтгүй болно, одоо байгаа access token дуусах хүртэл (≤15 мин) 401 биш харин
+     JwtStrategy.validate() дотор шууд шалгагдаад 401 буцна (доор харна уу). */
+  async updateStatus(id: string, requesterId: string, dto: UpdateStatusDto) {
+    if (id === requesterId) throw new BadRequestException('Та өөрийн төлөвөө солих боломжгүй');
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('Хэрэглэгч олдсонгүй');
+    if (user.role === Role.ROOT) throw new BadRequestException('ROOT хэрэглэгчийг түдгэлзүүлэх боломжгүй');
+
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id }, data: { status: dto.status }, select: { id: true, name: true, email: true, status: true } }),
+      this.prisma.refreshToken.updateMany({ where: { userId: id, revoked: false }, data: { revoked: true } }),
+    ]);
+    return updated;
+  }
+
+  /* Түр нууц үг үүсгэж буцаана (ROOT/ADMIN дэлгэцэнд харуулна, имэйлээр илгээх
+     сервис одоогоор байхгүй тул). Идэвхтэй бүх session-ийг цуцалж, шинэ нууц үгээр
+     дахин нэвтрэхийг албадана. */
+  async resetPassword(id: string, requesterId: string) {
+    if (id === requesterId) throw new BadRequestException('Өөрийн нууц үгээ энэ аргаар сэргээх боломжгүй — Тохиргоо хэсгээс солино уу');
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('Хэрэглэгч олдсонгүй');
+
+    const tempPassword = randomBytes(6).toString('base64url');
+    const passwordHash = await bcrypt.hash(tempPassword, BCRYPT_ROUNDS);
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id }, data: { passwordHash } }),
+      this.prisma.refreshToken.updateMany({ where: { userId: id, revoked: false }, data: { revoked: true } }),
+    ]);
+    return { tempPassword };
+  }
+
+  /* ---------- Session удирдлага (force logout) ---------- */
+
+  async listSessions(id: string) {
+    return this.prisma.refreshToken.findMany({
+      where: { userId: id, revoked: false, expiresAt: { gt: new Date() } },
+      select: { id: true, createdAt: true, expiresAt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async revokeSessions(id: string) {
+    await this.prisma.refreshToken.updateMany({ where: { userId: id, revoked: false }, data: { revoked: true } });
+    return { ok: true };
+  }
+
   /* ---------- Профайл ----------
      Урьд нь ProfileView нь `lib/auth/auth-storage.ts`-ийн хоосон localStorage сан руу
      бичдэг байсан тул "хадгалагдлаа" гэж хэлээд refresh хийхэд алга болдог байв. */
@@ -63,7 +148,8 @@ export class UsersService {
         name: dto.name?.trim(),
         avatarColor: dto.avatarColor,
         /* Хоосон мөр = "хэлэхийг хүсэхгүй байна" → талбарыг цэвэрлэнэ. */
-        hearingProfile: dto.hearingProfile === '' ? null : dto.hearingProfile,
+        hearingProfile:
+          dto.hearingProfile === '' ? null : dto.hearingProfile !== undefined ? this.encryptHearingProfile(dto.hearingProfile) : undefined,
       },
     });
     return this.toProfileDto(user);
@@ -96,15 +182,25 @@ export class UsersService {
      Жинхэнэ төлбөрийн систем (SocialPay/QPay) холбогдоогүй тул зөвхөн энэ endpoint-ыг
      дуудсанаар л идэвхжинэ — бодит бэлэн мөнгөн гүйлгээ шалгахгүй. */
   async subscribe(userId: string, plan: string) {
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: this.activeSubscriptionData(plan),
-    });
+    const [user] = await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: userId }, data: this.activeSubscriptionData(plan) }),
+      this.prisma.subscription.upsert({
+        where: { userId },
+        create: { userId, provider: 'socialpay-demo', ...this.activeSubscriptionFields(plan) },
+        update: { provider: 'socialpay-demo', ...this.activeSubscriptionFields(plan) },
+      }),
+      this.prisma.payment.create({
+        data: { userId, amount: '9’900₮', method: 'SocialPay (demo)', plan, status: 'SUCCESS' },
+      }),
+    ]);
     return this.toSubDto(user);
   }
 
   async cancelSubscription(userId: string) {
-    const user = await this.prisma.user.update({ where: { id: userId }, data: { subActive: false } });
+    const [user] = await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: userId }, data: { subActive: false } }),
+      this.prisma.subscription.updateMany({ where: { userId }, data: { status: 'CANCELED' } }),
+    ]);
     return this.toSubDto(user);
   }
 
@@ -114,10 +210,20 @@ export class UsersService {
     const target = await this.prisma.user.findUnique({ where: { id: targetUserId } });
     if (!target) throw new NotFoundException('Хэрэглэгч олдсонгүй');
 
-    const user = await this.prisma.user.update({
-      where: { id: targetUserId },
-      data: active ? this.activeSubscriptionData(plan || DEFAULT_PLAN) : { subActive: false },
-    });
+    const resolvedPlan = plan || DEFAULT_PLAN;
+    const [user] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: targetUserId },
+        data: active ? this.activeSubscriptionData(resolvedPlan) : { subActive: false },
+      }),
+      active
+        ? this.prisma.subscription.upsert({
+            where: { userId: targetUserId },
+            create: { userId: targetUserId, provider: 'admin-grant', ...this.activeSubscriptionFields(resolvedPlan) },
+            update: { provider: 'admin-grant', ...this.activeSubscriptionFields(resolvedPlan) },
+          })
+        : this.prisma.subscription.updateMany({ where: { userId: targetUserId }, data: { status: 'CANCELED' } }),
+    ]);
     return this.toSubDto(user);
   }
 
@@ -128,10 +234,83 @@ export class UsersService {
     return { subActive: true, subPlan: plan, subSince: now, subRenews: renews };
   }
 
+  private activeSubscriptionFields(plan: string) {
+    const now = new Date();
+    const renews = new Date(now);
+    renews.setMonth(renews.getMonth() + 1);
+    return { status: 'ACTIVE' as const, renewsAt: renews, plan };
+  }
+
   private toSubDto(user: SubscriptionFields) {
     return user.subActive
       ? { active: user.subActive, plan: user.subPlan, since: user.subSince, renews: user.subRenews }
       : null;
+  }
+
+  /* ---------- GDPR: өөрийн мэдээлэл татах / бүртгэл устгах ---------- */
+
+  /* Self-service "миний бүх мэдээллийг татах" — Нууцлалын бодлого §5-д амласан
+     эрх. Хэрэглэгчтэй холбоотой БҮХ хүснэгтийг JSON болгож буцаана (passwordHash
+     эс тооцвол — нууц үгийн hash-ийг ч гэсэн дамжуулах шаардлагагүй). */
+  async exportMyData(userId: string) {
+    const [user, payments, subscription, listenHistory, trackActions, playlists, progress, therapySessions, qrSessions] =
+      await this.prisma.$transaction([
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            status: true,
+            createdAt: true,
+            lastLoginAt: true,
+            avatarColor: true,
+            hearingProfile: true,
+            subActive: true,
+            subPlan: true,
+            subSince: true,
+            subRenews: true,
+          },
+        }),
+        this.prisma.payment.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } }),
+        this.prisma.subscription.findUnique({ where: { userId } }),
+        this.prisma.listenHistory.findMany({ where: { userId }, orderBy: { playedAt: 'desc' } }),
+        this.prisma.userTrackAction.findMany({ where: { userId } }),
+        this.prisma.playlist.findMany({ where: { userId }, include: { tracks: true } }),
+        this.prisma.progress.findMany({ where: { userId } }),
+        this.prisma.therapySession.findMany({ where: { OR: [{ userId }, { therapistId: userId }] } }),
+        this.prisma.qRSession.findMany({ where: { userId } }),
+      ]);
+    if (!user) throw new NotFoundException('Хэрэглэгч олдсонгүй');
+
+    return {
+      exportedAt: new Date().toISOString(),
+      profile: { ...user, hearingProfile: this.decryptHearingProfile(user.hearingProfile) },
+      subscription,
+      payments,
+      listenHistory,
+      trackActions,
+      playlists,
+      progress,
+      therapySessions,
+      qrSessions,
+    };
+  }
+
+  /* Self-service "бүртгэл устгах" — нууц үгээр баталгаажуулна (жинхэнэ эзэн
+     хүсэлт гаргаж буйг батлах хамгийн бага дархлаа). User мөр устахад Prisma
+     schema-ийн `onDelete: Cascade` холбоос бүхий бүх хүснэгт (Payment, Subscription,
+     ListenHistory, Playlist, Progress гм) автоматаар цэвэрлэгдэнэ. */
+  async deleteMyAccount(userId: string, password: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Хэрэглэгч олдсонгүй');
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) throw new UnauthorizedException('Нууц үг буруу байна');
+
+    await this.prisma.user.delete({ where: { id: userId } });
+    return { ok: true };
   }
 
   private toProfileDto(user: {
@@ -148,7 +327,7 @@ export class UsersService {
       email: user.email,
       role: user.role,
       avatarColor: user.avatarColor,
-      hearingProfile: user.hearingProfile,
+      hearingProfile: this.decryptHearingProfile(user.hearingProfile),
     };
   }
 }

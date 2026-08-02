@@ -7,16 +7,37 @@
 import { APP_EVENTS } from "@/lib/data/events";
 import type {
   AdminUserRow,
+  AuditLogRow,
   ChangePasswordPayload,
   CreatedUser,
   CreateUserPayload,
   NotificationFeed,
   NotificationRow,
+  ReportRow,
   SessionUser,
   UpdateProfilePayload,
   UserSub,
 } from "@/types/auth";
-import type { AnalyzeSongPayload, Artist, ArtistWithSongs, CreateHistoryPayload, HistoryPage, ListenHistoryRow, Song } from "@/types/song";
+import type {
+  AnalyzeSongPayload,
+  Artist,
+  ArtistWithSongs,
+  CreateHistoryPayload,
+  HistoryPage,
+  JamendoSearchResult,
+  ListenHistoryRow,
+  ListeningStatsRow,
+  PaymentRow,
+  PlaylistRow,
+  SensoryProfile,
+  Song,
+  SongLicense,
+  StorageUsage,
+  UpdateSensoryProfilePayload,
+  UpdateSongPayload,
+  UploadUrlResponse,
+  UserLibraryRow,
+} from "@/types/song";
 import type { QrSessionRow } from "@/types/qr";
 import type {
   AssignedPatient,
@@ -144,12 +165,100 @@ export function changePassword(payload: ChangePasswordPayload) {
   return apiFetch<{ ok: true }>("/users/me/password", { method: "PATCH", body: JSON.stringify(payload) });
 }
 
+/* GDPR: өөрийн бүх мэдээллийг JSON болгож татах (Нууцлалын бодлого §5). */
+export function exportMyData() {
+  return apiFetch<Record<string, unknown>>("/users/me/export");
+}
+
+/* GDPR: бүртгэлээ бүрэн устгах — нууц үгээр баталгаажина. */
+export function deleteMyAccount(password: string) {
+  return apiFetch<{ ok: true }>("/users/me", { method: "DELETE", body: JSON.stringify({ password }) });
+}
+
 /* Админ өөр хэрэглэгчийн PRO эрхийг DB-д бодитоор олгоно/хасна. */
 export function setUserSubscription(userId: string, active: boolean, plan?: string) {
   return apiFetch<UserSub | null>(`/users/${userId}/subscription`, {
     method: "PATCH",
     body: JSON.stringify({ active, plan }),
   });
+}
+
+// ---- ROOT: дүр/төлөв/эрх удирдлага ----
+export function setUserRole(userId: string, role: AdminUserRow["role"]) {
+  return apiFetch<Pick<AdminUserRow, "id" | "name" | "email" | "role">>(`/users/${userId}/role`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
+  });
+}
+
+export function setUserStatus(userId: string, status: "ACTIVE" | "BANNED") {
+  return apiFetch<Pick<AdminUserRow, "id" | "name" | "email" | "status">>(`/users/${userId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function resetUserPassword(userId: string) {
+  return apiFetch<{ tempPassword: string }>(`/users/${userId}/reset-password`, { method: "POST" });
+}
+
+export function listUserSessions(userId: string) {
+  return apiFetch<{ id: string; createdAt: string; expiresAt: string }[]>(`/users/${userId}/sessions`);
+}
+
+export function revokeUserSessions(userId: string) {
+  return apiFetch<{ ok: true }>(`/users/${userId}/sessions`, { method: "DELETE" });
+}
+
+// ---- ROOT: аудит лог ----
+export function listAuditLog(params?: { actorId?: string; action?: string; page?: number; limit?: number }) {
+  const qs = new URLSearchParams();
+  if (params?.actorId) qs.set("actorId", params.actorId);
+  if (params?.action) qs.set("action", params.action);
+  if (params?.page) qs.set("page", String(params.page));
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return apiFetch<{ items: AuditLogRow[]; total: number }>(`/audit${suffix}`);
+}
+
+// ---- ROOT: файл сан (storage) ----
+export function getStorageUsage() {
+  return apiFetch<StorageUsage>("/storage/usage");
+}
+
+export function cleanupOrphanFiles() {
+  return apiFetch<{ deleted: number; bytesFreed: number }>("/storage/cleanup-orphans", { method: "POST" });
+}
+
+// ---- ROOT: health/monitoring ----
+export function getHealth() {
+  return apiFetch<{ ok: true }>("/health");
+}
+
+export function getHealthDb() {
+  return apiFetch<{ ok: true; latencyMs: number }>("/health/db");
+}
+
+export function getRevenue() {
+  return apiFetch<{ total: number; count: number }>("/revenue");
+}
+
+export function listAllPayments() {
+  return apiFetch<(PaymentRow & { user: { id: string; name: string; email: string } })[]>("/payments");
+}
+
+// ---- Moderation ----
+export function createReport(payload: { targetType: "song" | "user"; targetId: string; reason: string }) {
+  return apiFetch<ReportRow>("/moderation/reports", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function listReports(status?: "OPEN" | "RESOLVED" | "DISMISSED") {
+  const suffix = status ? `?status=${status}` : "";
+  return apiFetch<ReportRow[]>(`/moderation/reports${suffix}`);
+}
+
+export function resolveReport(id: string, status: "RESOLVED" | "DISMISSED") {
+  return apiFetch<ReportRow>(`/moderation/reports/${id}/resolve`, { method: "PATCH", body: JSON.stringify({ status }) });
 }
 
 // ---- Мэдэгдэл (feed) ----
@@ -183,8 +292,18 @@ export function removeTherapistAssignment(id: string) {
 }
 
 // ---- Songs ----
-export function uploadSong(form: FormData) {
-  return apiFetch<Song>("/songs", { method: "POST", body: form });
+/** Presigned MinIO upload (эсвэл sourceUrl) дуусаад Song мөр үүсгэнэ — файлын байт
+ *  backend дундуур дамжихгүй, зөвхөн `storageKey`/`sourceUrl` (URL) илгээнэ. */
+export function createSong(payload: {
+  title: string;
+  artist?: string;
+  genre?: string;
+  storageKey?: string;
+  sourceUrl?: string;
+  license: SongLicense;
+  licenseSrc?: string;
+}) {
+  return apiFetch<Song>("/songs", { method: "POST", body: JSON.stringify(payload) });
 }
 
 export function listSongs() {
@@ -197,6 +316,53 @@ export function getSong(id: string) {
 
 export function submitAnalysis(id: string, payload: AnalyzeSongPayload) {
   return apiFetch<Song>(`/songs/${id}/analyze`, { method: "POST", body: JSON.stringify(payload) });
+}
+
+// ---- Songs: лиценз · нийтлэл · Curator каталог (Phase 5) ----
+export function getUploadUrl(filename: string, contentType: string) {
+  return apiFetch<UploadUrlResponse>("/songs/upload-url", {
+    method: "POST",
+    body: JSON.stringify({ filename, contentType }),
+  });
+}
+
+/** CURATOR/MODERATOR/ADMIN/ROOT — нийтлээгүй drafts-ыг ч оруулаад БҮХ дууг буцаана. */
+export function getSongCatalog() {
+  return apiFetch<Song[]>("/songs/catalog");
+}
+
+export function updateSong(id: string, payload: UpdateSongPayload) {
+  return apiFetch<Song>(`/songs/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+
+export function publishSong(id: string) {
+  return apiFetch<Song>(`/songs/${id}/publish`, { method: "POST" });
+}
+
+export function unpublishSong(id: string) {
+  return apiFetch<Song>(`/songs/${id}/unpublish`, { method: "POST" });
+}
+
+export function getSongScore(id: string) {
+  return apiFetch<{ scoreUrl: string | null; analysisStatus: Song["analysisStatus"] }>(`/songs/${id}/score`);
+}
+
+/** CURATOR/MODERATOR/ADMIN/ROOT — Jamendo каталогоос хайх. `client_id` тохируулаагүй бол backend 400 буцаана. */
+export function searchJamendo(q: string, limit = 20) {
+  const params = new URLSearchParams({ q, limit: String(limit) });
+  return apiFetch<JamendoSearchResult[]>(`/songs/jamendo/search?${params}`);
+}
+
+/** Ижил jamendoId-г 2 дахь удаа импортлоход одоо байгаа Song-ийг idempotent-ээр буцаана. */
+export function importJamendoTrack(jamendoId: string) {
+  return apiFetch<Song>("/songs/jamendo/import", { method: "POST", body: JSON.stringify({ jamendoId }) });
+}
+
+// ---- Haptic Score (Python worker, librosa) ----
+export function getAnalysisStatus(id: string) {
+  return apiFetch<{ analysisStatus: "PENDING" | "PROCESSING" | "READY" | "FAILED"; analysisError: string | null; scoreUrl: string | null }>(
+    `/songs/${id}/analysis-status`,
+  );
 }
 
 export function getFeaturedSongs() {
@@ -281,4 +447,62 @@ export function createProgress(payload: CreateProgressPayload) {
 export function listProgress(userId?: string) {
   const params = userId ? `?${new URLSearchParams({ userId })}` : "";
   return apiFetch<Progress[]>(`/therapy/progress${params}`);
+}
+
+// ---- Мэдрэхүйн тохиргоо (калибровк) ----
+export function getSensoryProfile() {
+  return apiFetch<SensoryProfile>("/me/sensory-profile");
+}
+
+export function putSensoryProfile(payload: UpdateSensoryProfilePayload) {
+  return apiFetch<SensoryProfile>("/me/sensory-profile", { method: "PUT", body: JSON.stringify(payload) });
+}
+
+// ---- Дуртай / хадгалсан ----
+export function getLibrary() {
+  return apiFetch<UserLibraryRow>("/me/library");
+}
+
+export function addTrackAction(songId: string, action: "LIKE" | "SAVE") {
+  return apiFetch<{ ok: true }>("/me/actions", { method: "POST", body: JSON.stringify({ songId, action }) });
+}
+
+export function removeTrackAction(songId: string, action: "LIKE" | "SAVE") {
+  const params = new URLSearchParams({ songId, action });
+  return apiFetch<{ ok: true }>(`/me/actions?${params}`, { method: "DELETE" });
+}
+
+// ---- Сонсолтын статистик ----
+export function getMyStats() {
+  return apiFetch<ListeningStatsRow>("/me/stats");
+}
+
+// ---- Төлбөрийн түүх ----
+export function getMyPayments() {
+  return apiFetch<PaymentRow[]>("/me/payments");
+}
+
+// ---- Playlist ----
+export function listPlaylists() {
+  return apiFetch<PlaylistRow[]>("/playlists");
+}
+
+export function createPlaylistApi(name: string) {
+  return apiFetch<PlaylistRow>("/playlists", { method: "POST", body: JSON.stringify({ name }) });
+}
+
+export function renamePlaylistApi(id: string, name: string) {
+  return apiFetch<PlaylistRow>(`/playlists/${id}`, { method: "PATCH", body: JSON.stringify({ name }) });
+}
+
+export function deletePlaylistApi(id: string) {
+  return apiFetch<null>(`/playlists/${id}`, { method: "DELETE" });
+}
+
+export function addPlaylistTrackApi(id: string, songId: string) {
+  return apiFetch<PlaylistRow>(`/playlists/${id}/tracks`, { method: "POST", body: JSON.stringify({ songId }) });
+}
+
+export function removePlaylistTrackApi(id: string, songId: string) {
+  return apiFetch<{ ok: true }>(`/playlists/${id}/tracks/${songId}`, { method: "DELETE" });
 }

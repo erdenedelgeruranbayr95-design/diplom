@@ -89,6 +89,22 @@ function bandSplit(n: number) {
   return { ai: Math.floor(n * 0.08), bi: Math.floor(n * 0.38) };
 }
 
+/* Haptic Score-ийн 8 бүсийг (§3.3) өнгө болгож зураглана — бас (8°, улаан-улбар шар)
+   → өндөр (308°, час улаан) хооронд ЛОГАРИФМ HSL hue шилжилт. Логарифм хэрэглэсэн
+   шалтгаан: давтамжийн бүсүүд өөрсдөө лог масштабтай (20Hz..20000Hz) тул хэрэглэгчийн
+   мэдрэмж дэх "бас нам, өндөр цог" зурган ялгаа шугаман hue-ээс илүү тэнцвэртэй харагдана. */
+const HAPTIC_BAND_HUE_START = 8;
+const HAPTIC_BAND_HUE_END = 308;
+
+export function bandToColor(bandIndex: number, totalBands: number, opts: { saturation?: number; lightness?: number; alpha?: number } = {}): string {
+  const { saturation = 82, lightness = 58, alpha = 1 } = opts;
+  const clamped = Math.max(0, Math.min(totalBands - 1, bandIndex));
+  /* index=0 → 0, index=totalBands-1 → 1, лог масштабтай (index+1-ийг ашиглаж log(0)-оос зайлсхийнэ). */
+  const t = totalBands > 1 ? Math.log(clamped + 1) / Math.log(totalBands) : 0;
+  const hue = HAPTIC_BAND_HUE_START + t * (HAPTIC_BAND_HUE_END - HAPTIC_BAND_HUE_START);
+  return alpha < 1 ? `hsla(${hue.toFixed(1)}, ${saturation}%, ${lightness}%, ${alpha})` : `hsl(${hue.toFixed(1)}, ${saturation}%, ${lightness}%)`;
+}
+
 export function drawWaveform(ctx: CanvasRenderingContext2D, w: number, h: number, timeData: Uint8Array, glow: number) {
   ctx.lineWidth = 2;
   ctx.strokeStyle = `rgba(140, 210, 255, ${0.75 + glow * 0.25})`;

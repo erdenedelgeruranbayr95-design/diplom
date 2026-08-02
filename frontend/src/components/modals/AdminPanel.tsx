@@ -13,7 +13,7 @@ import AssignmentsPanel from "@/components/admin/AssignmentsPanel";
 import SongLibraryPanel from "@/components/admin/SongLibraryPanel";
 import ProManagementPanel from "@/components/admin/ProManagementPanel";
 import type { AdminUserRow, SessionUser } from "@/types/auth";
-import type { Song } from "@/types/song";
+import type { Song, SongLicense } from "@/types/song";
 import type { TherapistAssignmentRow } from "@/types/therapy";
 
 export default function AdminPanel({
@@ -173,6 +173,8 @@ export default function AdminPanel({
     const composer = ((f.get("composer") as string) || "").trim();
     const genre = ((f.get("genre") as string) || "").trim() || "Бусад";
     const audio = f.get("audio") as File;
+    const license = (f.get("license") as SongLicense) || "ORIGINAL";
+    const licenseSrc = ((f.get("licenseSrc") as string) || "").trim();
 
     if (title.length < 2) {
       setMsg("❌ Дууны нэрээ оруулна уу");
@@ -190,10 +192,22 @@ export default function AdminPanel({
       setMsg("❌ Аудио талбарт зөвхөн дууны файл (mp3) оруулна — зураг биш");
       return;
     }
+    if (license === "LICENSED" && licenseSrc.length < 1) {
+      setMsg("❌ Гэрээт лиценз сонгосон бол эх сурвалж/гэрээний тайлбар заавал бичнэ үү");
+      return;
+    }
 
     setBusy(true);
     try {
-      const { analyzed, analyzeError } = await uploadSongWithAnalysis({ title, artist: singer, composer, genre, file: audio });
+      const { analyzed, analyzeError } = await uploadSongWithAnalysis({
+        title,
+        artist: singer,
+        composer,
+        genre,
+        file: audio,
+        license,
+        licenseSrc: license === "LICENSED" ? licenseSrc : undefined,
+      });
       form.reset();
       loadSongs();
       if (analyzed) setMsg("✅ «" + title + "» нэмэгдэж, анализ дууслаа.");

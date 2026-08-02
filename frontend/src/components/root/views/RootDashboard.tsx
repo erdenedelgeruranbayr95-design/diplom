@@ -13,6 +13,8 @@ import type { AdminUserRow, UserRole } from "@/types/auth";
 const ROLE_LABEL: Record<UserRole, string> = {
   ROOT: "Систем эзэмшигч",
   ADMIN: "Админ",
+  CURATOR: "Куратор",
+  MODERATOR: "Модератор",
   THERAPIST: "Эмч",
   PARENT: "Эцэг эх",
   USER: "Хэрэглэгч",
@@ -20,6 +22,8 @@ const ROLE_LABEL: Record<UserRole, string> = {
 const ROLE_TONE: Record<UserRole, StatusTone> = {
   ROOT: "rose",
   ADMIN: "aqua",
+  CURATOR: "purple",
+  MODERATOR: "purple",
   THERAPIST: "purple",
   PARENT: "warm",
   USER: "faint",

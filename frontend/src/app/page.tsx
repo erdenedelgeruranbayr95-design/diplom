@@ -5,6 +5,7 @@ import AuthModal from "@/components/modals/AuthModal";
 import AdminPanel from "@/components/modals/AdminPanel";
 import Player from "@/components/player/Player";
 import RootPanel from "@/components/root/RootPanel";
+import CuratorPanel from "@/components/curator/CuratorPanel";
 import SubscribeModal from "@/components/modals/SubscribeModal";
 import { useAuth } from "@/components/providers/AuthProvider";
 import Preloader from "@/components/landing/Preloader";
@@ -29,12 +30,14 @@ export default function Page() {
   }, []);
 
   /* auth төлөв AuthContext-оос (session нэг эх сурвалж, backend JWT дээр суурилна) */
-  const { user, isRoot, isAdmin, isTherapist, isParent, subscribed, logout: authLogout, setSub, cancelSub } = useAuth();
+  const { user, isRoot, isAdmin, isCurator, isTherapist, isParent, subscribed, logout: authLogout, setSub, cancelSub } = useAuth();
 
   const [authOpen, setAuthOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   /* Root Panel — зөвхөн ROOT дүрд. Backend-ийн RolesGuard нь жинхэнэ хамгаалалт. */
   const [rootOpen, setRootOpen] = useState(false);
+  /* Curator Panel — CURATOR/MODERATOR (ба ADMIN/ROOT) дүрд. Backend-ийн RolesGuard жинхэнэ хамгаалалт. */
+  const [curatorOpen, setCuratorOpen] = useState(false);
   /* Landing нь ҮРГЭЛЖ эхэлж харагдана — нэвтэрсэн хэрэглэгчийн хувьд ч мөн адил.
      Өмнө нь `useState(!!user)` + `useEffect(() => { if (user) setPlayerOpen(true) })`
      гэсэн 2 газраас Player-ийг автоматаар нээдэг байсан тул сесстэй хэрэглэгч landing-ийг
@@ -54,6 +57,7 @@ export default function Page() {
     authLogout();
     setAdminOpen(false);
     setRootOpen(false);
+    setCuratorOpen(false);
     setPlayerOpen(false);
     setSubOpen(false);
   };
@@ -74,10 +78,12 @@ export default function Page() {
         user={user}
         isRoot={isRoot}
         isAdmin={isAdmin}
+        isCurator={isCurator}
         onLogin={() => setAuthOpen(true)}
         onLogout={logout}
         onRoot={() => setRootOpen(true)}
         onAdmin={() => setAdminOpen(true)}
+        onCurator={() => setCuratorOpen(true)}
         onPlayer={openPlayer}
       />
       <Marquee />
@@ -104,6 +110,7 @@ export default function Page() {
       />
       <SubscribeModal open={subOpen} onClose={() => setSubOpen(false)} user={user} onSubscribed={handleSubscribed} />
       <RootPanel open={rootOpen} onClose={() => setRootOpen(false)} />
+      <CuratorPanel open={curatorOpen} onClose={() => setCuratorOpen(false)} />
     </>
   );
 }

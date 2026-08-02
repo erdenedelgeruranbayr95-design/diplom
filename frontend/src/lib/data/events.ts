@@ -8,7 +8,6 @@
 export const APP_EVENTS = {
   libraryChanged: "medreh:library-changed",
   feedChanged: "medreh:feed-changed",
-  playlistsChanged: "medreh:playlists-changed",
   usersChanged: "medreh:users-changed",
   paymentRequestsChanged: "medreh:payment-requests-changed",
   sessionExpired: "medreh:session-expired",

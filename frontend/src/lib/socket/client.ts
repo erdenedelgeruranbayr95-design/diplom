@@ -7,9 +7,12 @@ import { getAccessToken } from "@/lib/api/client";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3000";
 
+/* Үе шат 4: 8-бүсийн Haptic Score байгаа үед `bands` (8 элементтэй массив, 0..1)
+   дамжуулна. `band`/`level` (хуучин 3-бүсийн fallback) ХЭВЭЭР байна. */
 export interface BeatEvent {
   band: "bass" | "mid" | "high";
   level: number;
+  bands?: number[];
 }
 export interface TrackInfo {
   title: string;

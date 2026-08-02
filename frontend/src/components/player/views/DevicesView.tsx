@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { MutableRefObject } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useWindowEvents } from "@/hooks/useWindowEvent";
 import BackBar from "../BackBar";
@@ -8,6 +9,10 @@ import { SectionTitle } from "@/components/ui/PageHeader";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import { useToast } from "@/components/providers/ToastProvider";
 import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
+import type { DeviceRouter } from "@/lib/haptics/DeviceRouter";
+import { BleVestDevice } from "@/lib/haptics/BleVestDevice";
+import { useMicHapticMode } from "@/lib/audio/useMicHapticMode";
+import { bandToColor } from "@/lib/player/visualizer-modes";
 import Icon from "@/components/ui/Icon";
 
 /* Төхөөрөмж холбох — утас / gamepad / BLE хантааз + тест + давтамж→байрлал оноолт.
@@ -25,6 +30,9 @@ const ZONES = [
 const DEFAULT_MAP: Record<string, string> = { bass: 'chest', mid: 'ribs', high: 'shoulder' }
 const BAND_LABEL: Record<string, string> = { bass: 'Бас (20–250 Hz)', mid: 'Дунд (250–4k)', high: 'Өндөр (4–20k)' }
 const BAND_PAT: Record<string, number[]> = { bass: [230, 80, 230], mid: [70, 50, 70, 50, 70], high: [24, 24, 24, 24, 24, 24] }
+/* Хуучин 3-бүсийн (bass/mid/high) нэрийг Haptic Score-ийн 8-бүсийн индекс (0-7,
+   BAND_EDGES_HZ дараалалтай) рүү заана — DeviceRouter.setBand()-т ашиглана. */
+const BAND_TO_8ZONE: Record<string, number> = { bass: 1, mid: 4, high: 6 }
 
 export default function DevicesView({
   prefs,
@@ -32,17 +40,37 @@ export default function DevicesView({
   canVibrate,
   onBack,
   deviceSync,
+  hasHapticScore,
+  bandLevelsRef,
+  deviceRouter,
 }: {
   prefs: { deviceMap?: Record<string, string> };
   onUpdatePrefs: (patch: { deviceMap: Record<string, string> }) => void;
   canVibrate: boolean;
   onBack: () => void;
   deviceSync: ReturnType<typeof useDeviceSync>;
+  hasHapticScore: boolean;
+  bandLevelsRef: MutableRefObject<number[]>;
+  deviceRouter: DeviceRouter;
 }) {
   const toast = useToast()
   const [gamepad, setGamepad] = useState<Gamepad | null>(null)
   const [justConnected, setJustConnected] = useState(false)
+  const [bleConnected, setBleConnected] = useState(() => deviceRouter.all.some((d) => d.id === "ble-vest" && d.isConnected()))
   const map = { ...DEFAULT_MAP, ...(prefs.deviceMap || {}) }
+
+  /* Микрофон (live) горим — гадаад дуу чимээг 8-бүсээр задалж, холбогдсон бүх
+     HapticDevice руу шууд дамжуулна (playback-той адил, songId шаардахгүй). */
+  const mic = useMicHapticMode((bands) => {
+    bands.forEach((level, zone) => deviceRouter.setBand(zone, level))
+  })
+  function toggleMic() {
+    if (mic.active) { mic.stop(); toast.info('Микрофон горим унтарлаа'); return }
+    mic.start().then((ok) => {
+      if (ok) toast.success('Микрофон горим асаалаа — гадаад дуу чимээг мэдрэх боллоо')
+      else toast.error('Микрофонд хандах эрх өгөгдөөгүй байна')
+    })
+  }
 
   /* waiting→connected шилжилтийг ажиглаж, богино "✓" flourish харуулна (шинэ state биш, зөвхөн UI). */
   useEffect(() => {
@@ -69,27 +97,34 @@ export default function DevicesView({
 
   function testPhone() {
     if (!canVibrate) { toast.error('Энэ төхөөрөмж чичиргээ дэмжихгүй — Android утсан дээр туршина уу'); return }
+    /* Энгийн шаблон chичиргээ (bass→dund→bass) — HapticDevice.pulse() нэг импульс л
+       өгдөг тул энд шууд navigator.vibrate-г ашиглана (одоо байгаа зан төлөв хэвээр). */
     try { navigator.vibrate([230, 80, 230]); toast.success('Утас чичирлээ 📳') } catch { toast.error('Чичиргээ ажиллахгүй байна') }
   }
 
   function testGamepad() {
     const gp = [...(navigator.getGamepads?.() || [])].find(Boolean)
     if (!gp) { toast.error('Gamepad олдсонгүй — холбоод, нэг товч дараарай'); return }
-    const act = (gp as any).vibrationActuator
-    if (act?.playEffect) {
-      act.playEffect('dual-rumble', { duration: 320, strongMagnitude: 1, weakMagnitude: .55 })
-      toast.success('Gamepad чичирлээ 🎮')
-    } else { toast.error('Энэ gamepad чичиргээ дэмжихгүй') }
+    const gamepadDevice = deviceRouter.all.find((d) => d.id === 'gamepad')
+    if (!gamepadDevice) { toast.error('Gamepad хөдөлгүүр бүртгэгдээгүй байна'); return }
+    gamepadDevice.pulse(1, 320)
+    toast.success('Gamepad чичирлээ 🎮')
   }
 
+  /* Web Bluetooth-ийн browser dialog хэрэглэгчийн шууд дохио (click) дотор дуудагдах
+     ёстой тул энд шинээр BleVestDevice үүсгээд DeviceRouter-т register хийнэ —
+     амжилтгүй бол (хэрэглэгч цуцалсан/тохирох төхөөрөмж олдоогүй) register хийхгүй. */
   async function connectBLE() {
-    if (!(navigator as any).bluetooth) { toast.error('Web Bluetooth дэмжигдэхгүй — Chrome/Edge (desktop/Android) ашиглана уу'); return }
-    try {
-      const d = await (navigator as any).bluetooth.requestDevice({ acceptAllDevices: true })
-      toast.success('Холбогдлоо: ' + (d.name || 'төхөөрөмж'))
-    } catch (e: any) {
-      if (e.name !== 'NotFoundError') toast.error('Холбогдож чадсангүй')
+    if (typeof navigator === 'undefined' || !navigator.bluetooth) {
+      toast.error('Web Bluetooth дэмжигдэхгүй — Chrome/Edge (desktop/Android) ашиглана уу')
+      return
     }
+    const vest = new BleVestDevice()
+    const ok = await vest.connect()
+    if (!ok) { toast.error('Холбогдож чадсангүй эсвэл тохирох төхөөрөмж олдсонгүй'); return }
+    deviceRouter.register(vest)
+    setBleConnected(true)
+    toast.success('Хантааз холбогдлоо: ' + vest.label)
   }
 
   async function connectQr() {
@@ -100,6 +135,12 @@ export default function DevicesView({
     onUpdatePrefs({ deviceMap: { ...map, [band]: zone } })
   }
   function testZone(band: string) {
+    /* Одоо холбогдсон бүх HapticDevice руу зэрэг илгээнэ (утас + BLE хантааз гэх
+       мэт) — "давтамж → биеийн байрлал оноолт БОДИТООР ажиллана" DoD. BLE хантааз
+       (олон моторт) бол тухайн 3-бүсийг төлөөлөх 8-бүсийн индексрүү чиглүүлнэ. */
+    deviceRouter.pulse(1, 260)
+    const zoneIndex = BAND_TO_8ZONE[band] ?? 0
+    deviceRouter.setBand(zoneIndex, 1)
     if (canVibrate) { try { navigator.vibrate(BAND_PAT[band]) } catch { /* noop */ } }
     toast.info(BAND_LABEL[band] + ' → ' + (ZONES.find((z) => z.v === map[band])?.label))
   }
@@ -122,7 +163,8 @@ export default function DevicesView({
     { key: 'gamepad', icon: 'gamepad', name: 'Gamepad (rumble)', desc: 'USB/Bluetooth джойстик — 2 моторт, эрчимтэй чичиргээ.',
       status: gamepad ? ('Холбогдсон: ' + (gamepad.id?.slice(0, 22) || 'gamepad')) : 'Холбогдоогүй', ok: !!gamepad, action: testGamepad, actionLabel: 'Тест' },
     { key: 'ble', icon: 'vest', name: 'BLE хаптик хантааз', desc: 'Олон моторт хантааз/суудал — биеийн бүсээр tonotopic мэдрэмж.',
-      status: (navigator as any).bluetooth ? 'Холбоход бэлэн' : 'Браузер дэмжихгүй', ok: !!(navigator as any).bluetooth, action: connectBLE, actionLabel: 'Холбох' },
+      status: bleConnected ? 'Холбогдсон' : (typeof navigator !== 'undefined' && navigator.bluetooth) ? 'Холбоход бэлэн' : 'Браузер дэмжихгүй',
+      ok: bleConnected, action: connectBLE, actionLabel: bleConnected ? 'Холбогдсон' : 'Холбох', disabled: bleConnected },
   ]
 
   return (
@@ -198,6 +240,30 @@ export default function DevicesView({
         </div>
       )}
 
+      {hasHapticScore && (
+        <div className="mt-8 mb-2">
+          <SectionTitle
+            title="8-бүсийн Haptic Score (preview)"
+            description="Одоо тоглож буй дуунд worker (librosa) бэлдсэн 8 давтамжийн бүсийн энерги — тус бүр өөрийн өнгө/өндөртэй, real-time шинэчлэгдэнэ."
+          />
+          <HapticBandPreview bandLevelsRef={bandLevelsRef} />
+        </div>
+      )}
+
+      <div className="mt-8 mb-2">
+        <SectionTitle
+          title="Микрофон (амьд) горим"
+          description="Гадаад дуу чимээг (жишээ: тайзны спикер) микрофоноор авч, 8-бүсийн энергийг холбогдсон бүх төхөөрөмж рүү шууд дамжуулна. Апп доторх дуу тоглуулах шаардлагагүй."
+          actions={
+            <ActionButton variant={mic.active ? "danger" : "primary"} size="sm" onClick={toggleMic}>
+              {mic.active ? "Унтраах" : "Асаах"}
+            </ActionButton>
+          }
+        />
+        {mic.error && <p className="text-danger text-note mt-2">{mic.error}</p>}
+        {mic.active && <HapticBandPreview bandLevelsRef={mic.bandLevelsRef} />}
+      </div>
+
       <div className="mt-8">
         <SectionTitle title="Давтамж → биеийн байрлал" description="Олон моторт төхөөрөмж дээр давтамжийн бүс бүрийг биеийн өөр цэгт оноож болно (чихний дун шиг — «tonotopic»). Дараад туршиж үзээрэй." />
       </div>
@@ -231,9 +297,53 @@ export default function DevicesView({
       <div className="rounded-2xl p-6 flex gap-4 items-start [background:linear-gradient(120deg,rgba(56,232,206,.14),rgba(14,92,83,.25)_55%,rgba(9,14,14,.4))]">
         <div>
           <b className="block font-display font-semibold text-lead mb-1">Санамж</b>
-          <p className="text-dim text-body leading-[1.5]">Компьютер дээр жинхэнэ чичиргээ гарахгүй — зөвхөн гэрлийн пульс. Бүрэн туршихын тулд Android утас эсвэл gamepad холбоно уу.</p>
+          <p className="text-dim text-body leading-[1.5]">
+            {canVibrate
+              ? 'Компьютер дээр жинхэнэ чичиргээ гарахгүй — зөвхөн гэрлийн пульс. Бүрэн туршихын тулд Android утас эсвэл gamepad холбоно уу.'
+              : 'Энэ төхөөрөмж (iOS/Safari гэх мэт) чичиргээ дэмждэггүй тул дэлгэцийн гэрлийн пульсийг ЗОРИУДААР илт тод болгосон — цорын ганц мэдрэх суваг тул. Бүрэн мэдрэхийн тулд QR-аар Android утас, эсвэл BLE хантааз холбоно уу.'}
+          </p>
         </div>
       </div>
     </>
   )
+}
+
+/* 8 давтамжийн бүсийг (Haptic Score) багана болгож амьд харуулна — DoD-ийн "8 бүс
+   тус тусдаа мэдрэгдэж байгааг гараар баталгаажуулах" шаардлагад зориулсан visual
+   preview. `useHapticEngine`-ийн ижил хэв маягийг дагана: React re-render хийхгүй,
+   RAF loop-оос ref-ээр DOM style-ыг шууд бичнэ (гүйцэтгэл). */
+function HapticBandPreview({ bandLevelsRef }: { bandLevelsRef: MutableRefObject<number[]> }) {
+  const barsRef = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    let raf: number;
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      const bands = bandLevelsRef.current;
+      barsRef.current.forEach((el, i) => {
+        if (!el) return;
+        const level = bands[i] ?? 0;
+        el.style.height = Math.max(4, level * 100) + "%";
+        el.style.opacity = String(0.35 + level * 0.65);
+      });
+    };
+    loop();
+    return () => cancelAnimationFrame(raf);
+  }, [bandLevelsRef]);
+
+  return (
+    <div className="flex items-end gap-1.5 h-[120px] bg-white/[.03] border border-white/[.08] rounded-xl p-4 mt-3" aria-hidden="true">
+      {Array.from({ length: 8 }, (_, i) => (
+        <div key={i} className="flex-1 h-full flex items-end">
+          <div
+            ref={(el) => {
+              barsRef.current[i] = el;
+            }}
+            className="w-full rounded-t-sm transition-[height,opacity] duration-100 ease-linear"
+            style={{ height: "4%", backgroundColor: bandToColor(i, 8) }}
+          />
+        </div>
+      ))}
+    </div>
+  );
 }

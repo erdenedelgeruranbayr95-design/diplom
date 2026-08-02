@@ -11,6 +11,8 @@ import { uploadSongWithAnalysis } from "@/lib/songs/upload";
 import Icon from "@/components/ui/Icon";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import { FIELD_CAPTION_CLS, FIELD_INPUT_CLS, FIELD_LABEL_CLS } from "@/components/ui/form-styles";
+import { LICENSE_OPTIONS } from "@/lib/songs/license-options";
+import type { SongLicense } from "@/types/song";
 
 const labelCls = FIELD_LABEL_CLS;
 const captionCls = FIELD_CAPTION_CLS;
@@ -20,6 +22,7 @@ export default function UploadSongView({ onBack }: { onBack: () => void }) {
   const [mode, setMode] = useState<"file" | "url">("file");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [license, setLicense] = useState<SongLicense>("ORIGINAL");
 
   async function addTrack(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,6 +34,8 @@ export default function UploadSongView({ onBack }: { onBack: () => void }) {
     const genre = ((f.get("genre") as string) || "").trim() || "Бусад";
     const audio = f.get("audio") as File | null;
     const url = ((f.get("url") as string) || "").trim();
+    const license = (f.get("license") as SongLicense) || "ORIGINAL";
+    const licenseSrc = ((f.get("licenseSrc") as string) || "").trim();
 
     if (title.length < 2) {
       setMsg("❌ Дууны нэрээ оруулна уу");
@@ -52,6 +57,10 @@ export default function UploadSongView({ onBack }: { onBack: () => void }) {
       setMsg("❌ Дууны холбоос (URL) оруулна уу");
       return;
     }
+    if (license === "LICENSED" && licenseSrc.length < 1) {
+      setMsg("❌ Гэрээт лиценз сонгосон бол эх сурвалж/гэрээний тайлбар заавал бичнэ үү");
+      return;
+    }
 
     setBusy(true);
     try {
@@ -61,6 +70,8 @@ export default function UploadSongView({ onBack }: { onBack: () => void }) {
         genre,
         file: mode === "file" ? audio : undefined,
         sourceUrl: mode === "url" ? url : undefined,
+        license,
+        licenseSrc: license === "LICENSED" ? licenseSrc : undefined,
       });
       form.reset();
       if (analyzed) setMsg("✅ «" + title + "» нэмэгдэж, анализ дууслаа.");
@@ -144,6 +155,28 @@ export default function UploadSongView({ onBack }: { onBack: () => void }) {
               Дууны холбоос (URL) *
             </span>
             <input className={inputCls} name="url" type="url" placeholder="https://example.com/song.mp3" />
+          </label>
+        )}
+
+        <label className={labelCls}>
+          <span className={captionCls}>Лиценз *</span>
+          <select
+            className={inputCls}
+            name="license"
+            value={license}
+            onChange={(e) => setLicense(e.target.value as SongLicense)}
+          >
+            {LICENSE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {license === "LICENSED" && (
+          <label className={labelCls}>
+            <span className={captionCls}>Гэрээ/эх сурвалжийн тайлбар *</span>
+            <input className={inputCls} name="licenseSrc" type="text" placeholder="ж: Гэрээний холбоос эсвэл дугаар" />
           </label>
         )}
 

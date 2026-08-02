@@ -1,20 +1,28 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { SessionUser } from "@/types/auth";
+import type { PaymentRow } from "@/types/song";
 import BackBar from "../BackBar";
 import { SectionTitle } from "@/components/ui/PageHeader";
 import { Empty } from "@/components/ui/States";
 import StatusBadge, { type StatusTone } from "@/components/ui/StatusBadge";
 import { ActionButton } from "@/components/ui/ActionGroup";
-import { loadPayments } from "@/lib/data/library";
+import { getMyPayments } from "@/lib/api/client";
 import { PREVIEW_SEC } from "@/lib/player/constants";
 import Icon from "@/components/ui/Icon";
 import { TableCard } from "@/components/ui/Surface";
 
-const PAYMENT_STATUS_TONE: Record<string, StatusTone> = {
-  "Амжилттай": "aqua",
-  "Хүлээгдэж байна": "warm",
-  "Цуцлагдсан": "rose",
+const PAYMENT_STATUS_TONE: Record<PaymentRow["status"], StatusTone> = {
+  SUCCESS: "aqua",
+  PENDING: "warm",
+  FAILED: "rose",
+};
+
+const PAYMENT_STATUS_LABEL: Record<PaymentRow["status"], string> = {
+  SUCCESS: "Амжилттай",
+  PENDING: "Хүлээгдэж байна",
+  FAILED: "Амжилтгүй",
 };
 
 /* Захиалгын удирдлага — Player.jsx-аас тусад нь гаргасан.
@@ -37,9 +45,8 @@ function PlanFeature({ children, off, tone = "aqua" }: { children: React.ReactNo
 }
 
 export default function BillingView({
-  email, user, isAdmin, renewDate, onSubscribe, onCancelSub, onBack,
+  user, isAdmin, renewDate, onSubscribe, onCancelSub, onBack,
 }: {
-  email: string;
   user: SessionUser | null;
   isAdmin: boolean;
   renewDate: string;
@@ -47,7 +54,14 @@ export default function BillingView({
   onCancelSub: () => void;
   onBack: () => void;
 }) {
-  const payments = loadPayments(email)
+  const [payments, setPayments] = useState<PaymentRow[]>([]);
+
+  useEffect(() => {
+    getMyPayments()
+      .then(setPayments)
+      .catch(() => setPayments([]));
+  }, [user?.sub?.active]);
+
   const active = user?.sub?.active
   const renews = user?.sub?.renews ? +new Date(user.sub.renews) : 0
   const daysLeft = renews ? Math.max(0, Math.ceil((renews - Date.now()) / 86400000)) : 0
@@ -220,10 +234,10 @@ export default function BillingView({
               className="grid grid-cols-[1fr_1fr_1fr_.9fr_.8fr] max-nav:grid-cols-[1fr_auto_auto] gap-3 max-nav:gap-2.5 items-center py-3 px-5 max-nav:px-3.5 border-b border-white/[.06] last:border-b-0 text-body transition-colors duration-150 hover:bg-white/[.03]"
               key={p.id}
             >
-              <span className="text-dim min-w-0 truncate">{new Date(p.date).toLocaleDateString('mn-MN')}</span>
+              <span className="text-dim min-w-0 truncate">{new Date(p.createdAt).toLocaleDateString('mn-MN')}</span>
               <span className="max-nav:hidden min-w-0 truncate">{p.plan}</span>
               <span className="text-dim max-nav:hidden min-w-0 truncate">{p.method}</span>
-              <StatusBadge label={p.status} tone={PAYMENT_STATUS_TONE[p.status] ?? "faint"} />
+              <StatusBadge label={PAYMENT_STATUS_LABEL[p.status]} tone={PAYMENT_STATUS_TONE[p.status] ?? "faint"} />
               <b className="text-right tabular-nums whitespace-nowrap">{p.amount}</b>
             </div>
           ))}

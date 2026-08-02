@@ -1,6 +1,7 @@
 "use client";
 
 import Icon from "@/components/ui/Icon";
+import LyricsPanel from "./LyricsPanel";
 
 type TrackLike = {
   title: string;
@@ -8,6 +9,7 @@ type TrackLike = {
   cover?: string | null;
   genre?: string | null;
   description?: string | null;
+  lyrics?: string | null;
   releaseYear?: number | null;
 };
 
@@ -33,7 +35,15 @@ function buildCredits(track: TrackLike | null): Credit[] {
   }));
 }
 
-export default function NowPlayingSidebar({ track, playing }: { track: TrackLike | null; playing: boolean }) {
+export default function NowPlayingSidebar({
+  track,
+  playing,
+  currentTime = 0,
+}: {
+  track: TrackLike | null;
+  playing: boolean;
+  currentTime?: number;
+}) {
   const credits = buildCredits(track);
 
   return (
@@ -130,6 +140,8 @@ export default function NowPlayingSidebar({ track, playing }: { track: TrackLike
                 ))}
               </div>
             </section>
+
+            <LyricsPanel lyrics={track.lyrics} currentTime={currentTime} />
           </>
         ) : (
           <div className="relative min-h-[420px] flex-1 overflow-hidden rounded-card border border-white/[.08] bg-black/40 shadow-[0_18px_54px_rgba(0,0,0,.45)]">

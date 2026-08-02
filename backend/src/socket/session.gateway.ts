@@ -13,9 +13,13 @@ import type { Server, Socket } from 'socket.io';
 import { QrService } from '../qr/qr.service';
 import { verifyDesktopAuth } from './ws-auth.util';
 
+/* Үе шат 4: 8-бүсийн Haptic Score байгаа үед `bands` (8 элементтэй массив, 0..1)
+   дамжуулна — phone/BLE тал `bands[zone]`-аар setBand() дуудна. `band`/`level`
+   (хуучин 3-бүсийн fallback) ХЭВЭЭР — Score-гүй үед ч ажиллах ёстой (regression-гүй). */
 interface BeatEvent {
   band: 'bass' | 'mid' | 'high';
   level: number;
+  bands?: number[];
 }
 interface TrackInfo {
   title: string;

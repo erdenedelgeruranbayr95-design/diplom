@@ -1,13 +1,14 @@
-import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, createHash } from 'crypto';
-import { Role } from '@prisma/client';
+import { Role, UserStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterParentDto } from './dto/register-parent.dto';
+import { decryptField } from '../common/crypto/field-encryption';
 
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const BCRYPT_ROUNDS = 10;
@@ -16,25 +17,28 @@ function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex');
 }
 
-function toSession(user: {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatarColor: string | null;
-  hearingProfile: string | null;
-  subActive: boolean;
-  subPlan: string | null;
-  subSince: Date | null;
-  subRenews: Date | null;
-}) {
+function toSession(
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    avatarColor: string | null;
+    hearingProfile: string | null;
+    subActive: boolean;
+    subPlan: string | null;
+    subSince: Date | null;
+    subRenews: Date | null;
+  },
+  hearingProfileKey: string,
+) {
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     role: user.role,
     avatarColor: user.avatarColor,
-    hearingProfile: user.hearingProfile,
+    hearingProfile: user.hearingProfile ? decryptField(user.hearingProfile, hearingProfileKey) : null,
     sub: user.subActive
       ? {
           active: user.subActive,
@@ -53,6 +57,11 @@ export class AuthService {
     private jwt: JwtService,
     private config: ConfigService,
   ) {}
+
+  private toSessionUser(user: Parameters<typeof toSession>[0]) {
+    const key = this.config.get<string>('HEARING_PROFILE_ENC_KEY') || 'dev-only-insecure-hearing-key';
+    return toSession(user, key);
+  }
 
   private signAccessToken(user: { id: string; email: string; role: string }) {
     return this.jwt.sign(
@@ -90,7 +99,7 @@ export class AuthService {
 
     const accessToken = this.signAccessToken(user);
     const refreshToken = await this.issueRefreshToken(user.id);
-    return { accessToken, refreshToken, user: toSession(user) };
+    return { accessToken, refreshToken, user: this.toSessionUser(user) };
   }
 
   /* PARENT бүртгэл — childEmail-ээр одоо байгаа USER-тэй нэн даруй ParentLink үүсгэнэ (approval алхамгүй, диплом хэмжээнд хангалттай). */
@@ -116,7 +125,7 @@ export class AuthService {
 
     const accessToken = this.signAccessToken(user);
     const refreshToken = await this.issueRefreshToken(user.id);
-    return { accessToken, refreshToken, user: toSession(user) };
+    return { accessToken, refreshToken, user: this.toSessionUser(user) };
   }
 
   async login(dto: LoginDto) {
@@ -127,9 +136,21 @@ export class AuthService {
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна');
 
+    /* Түдгэлзүүлсэн (BANNED) хэрэглэгч ШИНЭ session нээж чадахгүй — нууц үг зөв ч гэсэн.
+       JwtStrategy.validate() нь ОДОО БАЙГАА access token-ыг дараагийн хүсэлт бүрт шалгадаг,
+       харин энд шинэ токен олгохоос ӨМНӨ шалгах шаардлагатай (эс бол suspend хийхээс
+       өмнө нэвтэрч байгаагүй хэрэглэгч ч суспенд байхдаа шинэ session нээх боломжтой болно). */
+    if (user.status === UserStatus.BANNED) {
+      throw new ForbiddenException('Таны бүртгэл түдгэлзүүлэгдсэн байна');
+    }
+
+    /* Root Panel-ийн "Сүүлд нэвтэрсэн" багана — зөвхөн энд, амжилттай нэвтэрсэн
+       мөчид л шинэчилнэ (register/refresh биш, жинхэнэ login үйлдэл). */
+    await this.prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+
     const accessToken = this.signAccessToken(user);
     const refreshToken = await this.issueRefreshToken(user.id);
-    return { accessToken, refreshToken, user: toSession(user) };
+    return { accessToken, refreshToken, user: this.toSessionUser(user) };
   }
 
   async refresh(refreshToken: string | undefined) {
@@ -149,7 +170,7 @@ export class AuthService {
     const accessToken = this.signAccessToken(user);
     const newRefreshToken = await this.issueRefreshToken(user.id);
 
-    return { accessToken, refreshToken: newRefreshToken, user: toSession(user) };
+    return { accessToken, refreshToken: newRefreshToken, user: this.toSessionUser(user) };
   }
 
   async logout(refreshToken: string | undefined) {
@@ -161,6 +182,6 @@ export class AuthService {
   async me(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException();
-    return toSession(user);
+    return this.toSessionUser(user);
   }
 }

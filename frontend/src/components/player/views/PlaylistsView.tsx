@@ -15,14 +15,13 @@ import Icon from "@/components/ui/Icon";
 import PlaylistDetail from "./playlists/PlaylistDetail";
 import { useTrackActions } from "../PlayerContext";
 import { usePlaylistLibrary } from "@/lib/player/hooks/usePlaylistLibrary";
-import { createPlaylist, deletePlaylist } from "@/lib/data/library";
 import { indexTracksById, resolveTracks } from "@/lib/player/track-index";
 import type { PlayerTrack } from "@/types/player";
 
 export default function PlaylistsView({ email, tracks, onBack }: { email: string; tracks: PlayerTrack[]; onBack: () => void }) {
   const toast = useToast();
   const { play } = useTrackActions();
-  const { playlists } = usePlaylistLibrary(email);
+  const { playlists, createPlaylist, deletePlaylist, addTrack, removeTrack } = usePlaylistLibrary(email);
   const [name, setName] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -35,13 +34,13 @@ export default function PlaylistsView({ email, tracks, onBack }: { email: string
       toast.error("Жагсаалтын нэрээ оруулна уу");
       return;
     }
-    createPlaylist(email, name.trim());
+    createPlaylist(name.trim()).catch(() => toast.error("Жагсаалт үүсгэхэд алдаа гарлаа"));
     setName("");
     toast.success("«" + name.trim() + "» жагсаалт үүслээ");
   }
 
   function remove(playlist: { id: string; name: string }) {
-    deletePlaylist(email, playlist.id);
+    deletePlaylist(playlist.id).catch(() => toast.error("Устгахад алдаа гарлаа"));
     if (openId === playlist.id) setOpenId(null);
     toast.info("«" + playlist.name + "» устгагдлаа");
   }
@@ -56,9 +55,10 @@ export default function PlaylistsView({ email, tracks, onBack }: { email: string
     return (
       <PlaylistDetail
         playlist={openPlaylist}
-        email={email}
         trackIndex={trackIndex}
         allTracks={tracks}
+        onAddTrack={(songId) => addTrack(openPlaylist.id, songId)}
+        onRemoveTrack={(songId) => removeTrack(openPlaylist.id, songId)}
         onClose={() => setOpenId(null)}
       />
     );

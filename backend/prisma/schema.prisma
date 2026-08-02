@@ -14,6 +14,8 @@ datasource db {
 enum Role {
   ROOT
   ADMIN
+  CURATOR
+  MODERATOR
   THERAPIST
   USER
   PARENT
@@ -37,6 +39,48 @@ enum UserStatus {
   BANNED
 }
 
+enum TrackAction {
+  LIKE
+  SAVE
+}
+
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+enum SongAnalysisStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+// Дипломын хамгийн эрсдэлтэй зүйл (ROADMAP-7-PHASES.md): зохиогчийн эрхийн
+// нэхэмжлэл ирвэл бүтээгдэхүүнийг зогсооно. Тиймээс лиценз ЗААВАЛ талбар,
+// upload-ын үед сервер талд шалгана (см. songs.controller.ts).
+enum SongLicense {
+  CC_BY
+  CC_BY_SA
+  CC_BY_NC
+  CC0
+  ORIGINAL // Хэрэглэгч өөрөө зохиосон/эзэмшигч
+  LICENSED // Тусдаа гэрээ/лиценз баримттай (licenseSrc-д тайлбарлана)
+}
+
 model User {
   id           String     @id @default(cuid())
   name         String
@@ -45,17 +89,22 @@ model User {
   role         Role       @default(USER)
   status       UserStatus @default(ACTIVE)
   createdAt    DateTime   @default(now())
+  lastLoginAt  DateTime?
 
   // Профайлын тохиргоо (ProfileView). `hearingProfile` нь ЭМЗЭГ эрүүл мэндийн
   // мэдээлэл тул заавал биш — хэрэглэгч өөрөө хүсвэл л бөглөнө (§14).
   avatarColor    String?
   hearingProfile String?
 
+  // Хурдан унших зориулалттай хуулбарласан талбарууд (denormalized cache) —
+  // `Subscription`-той үргэлж хамт update хийгдэнэ (жинхэнэ мэдээлэл Subscription
+  // моделд байна). JWT/session-д дахин query хийхгүйгээр PRO эрхийг шалгахад ашиглана.
   subActive Boolean   @default(false)
   subPlan   String?
   subSince  DateTime?
   subRenews DateTime?
 
+  subscription  Subscription?
   refreshTokens RefreshToken[]
   notifications NotificationRead[]
 
@@ -69,6 +118,142 @@ model User {
   parentLinksAsParent             ParentLink[]          @relation("ParentOf")
   parentLinksAsChild              ParentLink[]          @relation("ChildOf")
   listenHistory                   ListenHistory[]
+
+  sensoryProfile  SensoryProfile?
+  trackActions    UserTrackAction[]
+  playlists       Playlist[]
+  payments        Payment[]
+  auditLogs       AuditLog[]        @relation("AuditActor")
+  reportsFiled    Report[]          @relation("ReportedBy")
+  reportsResolved Report[]          @relation("ReportResolvedBy")
+}
+
+// Админ/ROOT-ийн хийсэн бүх өөрчлөх (mutating) үйлдлийн мөрдөгдөх бүртгэл —
+// `common/interceptors/audit-log.interceptor.ts` нь бүх PATCH/POST/DELETE route дээр
+// (@Roles шаардсан, GET биш) автоматаар бичнэ.
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  actor     User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  action    String // "PATCH /users/:id/status" гэх мэт route дүрслэл
+  target    String? // нөлөөлсөн объектын ID (жишээ: target userId)
+  meta      Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+}
+
+// Хэрэглэгчийн мэдүүлсэн тохирохгүй контент/зөрчлийн бүртгэл (дуу, хэрэглэгч гм).
+model Report {
+  id           String       @id @default(cuid())
+  reporterId   String
+  reporter     User         @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType   String // "song" | "user" гэх мэт
+  targetId     String
+  reason       String
+  status       ReportStatus @default(OPEN)
+  resolvedById String?
+  resolvedBy   User?        @relation("ReportResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedAt   DateTime?
+  createdAt    DateTime     @default(now())
+
+  @@index([status, createdAt])
+}
+
+// Калибровкийн үр дүн (Calibrate → useCalibrationFlow). Хэрэглэгч тутамд ганц мөр —
+// төхөөрөмж/browser солиход ижил тохиргоо гарахын тулд localStorage-аас энд шилжив.
+model SensoryProfile {
+  userId     String   @id
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vibLevel   Int      @default(1)
+  lightLevel Int      @default(1)
+  bands      Json // { bass: boolean, mid: boolean, high: boolean }
+  deviceMap  Json? // { bass: "left" | "right" | ... } зэрэг биеийн байрлал-оноолт
+  calibrated Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+}
+
+// Дуртай/хадгалсан дуу. Зөвхөн backend-д байршсан Song-той ажиллана (static каталог
+// эсвэл IndexedDB-ийн admin-нэмсэн дуунуудад ажиллахгүй — тэдгээр нь клиент талын
+// синтетик ID-тэй тул FK холбоо байгуулах боломжгүй).
+model UserTrackAction {
+  userId    String
+  songId    String
+  action    TrackAction
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song      Song        @relation(fields: [songId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@id([userId, songId, action])
+  @@index([userId, action])
+}
+
+model Playlist {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime        @default(now())
+  tracks    PlaylistTrack[]
+
+  @@index([userId])
+}
+
+model PlaylistTrack {
+  id         String   @id @default(cuid())
+  playlistId String
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  songId     String
+  song       Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  position   Int
+  addedAt    DateTime @default(now())
+
+  @@unique([playlistId, songId])
+  @@index([playlistId, position])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      String
+  currency    String        @default("MNT")
+  method      String
+  status      PaymentStatus @default(SUCCESS)
+  providerRef String?
+  plan        String?
+  createdAt   DateTime      @default(now())
+
+  // `providerRef` (webhook-ийн provider талын гүйлгээний ID) NULL-гүй үед DB
+  // түвшинд НЭГ УДАА л бичигдэхийг баталгаажуулна — payments.service.ts-ийн
+  // `findFirst` шалгалт (race window-той) дангаараа хангалтгүй, хоёр webhook
+  // нэгэн зэрэг ирвэл энэ unique constraint нь давхар мөр бичихээс сэргийлнэ
+  // (transaction нь unique violation-оор бүтэлгүйтнэ, давхар PRO төлбөр DB-д
+  // бичигдэхгүй).
+  @@unique([providerRef])
+  @@index([userId, createdAt])
+}
+
+// Хэрэглэгч тутамд ганц идэвхтэй захиалга (одоогийн статус) — түүхэн бүх төлбөрийн
+// гүйлгээ `Payment`-д хадгалагдана, харин "одоо PRO эсэх" гэдгийг энд нэг мөрөөр
+// хөтөлнө. QPay/SocialPay-ийн webhook callback үүнийг шинэчилнэ (payments.service.ts).
+// `User.subActive/subPlan/...` талбарууд үргэлж энэ моделтой синхрон явна (§7 тайлбар харна уу).
+model Subscription {
+  id          String             @id @default(cuid())
+  userId      String             @unique
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider    String // "socialpay-demo" | "qpay" гэх мэт
+  providerRef String? // Provider талын захиалга/invoice ID — webhook-ийг дахин ирэхэд idempotency шалгахад ашиглана
+  plan        String
+  status      SubscriptionStatus @default(ACTIVE)
+  renewsAt    DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([provider, providerRef])
 }
 
 model RefreshToken {
@@ -129,6 +314,11 @@ model Song {
   artistRef   Artist?  @relation(fields: [artistId], references: [id], onDelete: SetNull)
   genre       String?
   description String?
+  // Уг үг (lyrics) — Үе шат 6 хүртээмжийн шаардлага: сонсголын бэрхшээлтэй хэрэглэгч
+  // хөгжмийн агуулгыг текстээр унших боломжтой байх ёстой. LRC-төстэй энгийн формат:
+  // мөр бүр `[mm:ss.xx] текст` (цаг тэмдэглэгээгүй мөр ч бас зөвшөөрнө — тухайн үед
+  // цаг тэмдэглэгээгүйгээр л, гэхдээ бүхэлдээ харагдана). Заавал биш талбар.
+  lyrics      String?
   releaseYear Int?
   coverUrl    String?
   featured    Boolean  @default(false)
@@ -138,6 +328,18 @@ model Song {
   uploadedBy  String
   uploader    User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
+
+  // ---- Лиценз (заавал) + нийтлэлийн төлөв (Үе шат 5) ----
+  license     SongLicense?
+  licenseSrc  String? // Гэрээ/эх сурвалжийн холбоос эсвэл тайлбар (LICENSED үед ялангуяа чухал)
+  published   Boolean      @default(false)
+  publishedAt DateTime?
+  jamendoId   String? // Jamendo-с импортолсон бол эх track ID (давхар импортоос сэргийлнэ)
+
+  // ---- Presigned S3 upload баталгаажуулалт (Үе шат 5) ----
+  // Клиент presigned URL авч, MinIO руу шууд PUT хийгээд `confirm`-оор мэдэгдэнэ.
+  // uploadConfirmed=false үед файл MinIO-д байгаа ч Song жагсаалтад (list/featured/...) гарахгүй.
+  uploadConfirmed Boolean @default(true) // presigned бус (legacy multer / sourceUrl) upload-д шууд true
 
   // ---- client-side анализын үр дүн (backend зөвхөн хадгална, тооцоолохгүй) ----
   analyzedBpm    Int?
@@ -151,11 +353,33 @@ model Song {
   waveformPeaks  Json?
   analyzedAt     DateTime?
 
-  sessions      TherapySession[]
-  listenHistory ListenHistory[]
+  // ---- Haptic Score (Python worker: librosa STFT→8 бүс, onset, beat, chroma) ----
+  // `fileHash` нь idempotency LOOKUP түлхүүр — ижил файлыг өөр хэрэглэгч/өөр Song мөрөөр
+  // 2 дахь удаа upload хийхэд worker дахин задлахгүй, өмнөх Score-г л дахин холбоно.
+  // ЗОРИУДААР unique биш: хэд хэдэн Song мөр ижил fileHash-тай байж болно (өөр хэрэглэгч
+  // яг ижил mp3 upload хийвэл), unique constraint энэ тохиолдолд update-ийг эвдэнэ.
+  fileHash       String?
+  scoreUrl       String?
+  analysisStatus SongAnalysisStatus @default(PENDING)
+  analysisError  String?
+  musicalKey     String?
+
+  // ---- HLS/AAC хөрвүүлэлт + ковер боловсруулалт (Үе шат 5, worker ffmpeg/Pillow) ----
+  // Заавал биш баяжуулалт — hlsUrl null бол Player эх fileUrl-ээр (mp3/wav) тоглуулна.
+  hlsUrl         String?
+  coverThumbUrl  String? // 96×96 WebP — жагсаалт/карт
+  coverMediumUrl String? // 400×400 WebP — Player дэлгэц
+  coverLargeUrl  String? // 1200×1200 WebP — дэлгэрэнгүй/дэлгэц дүүргэх
+
+  sessions        TherapySession[]
+  listenHistory   ListenHistory[]
+  trackActions    UserTrackAction[]
+  playlistEntries PlaylistTrack[]
 
   @@index([uploadedBy])
   @@index([artistId])
+  @@index([fileHash])
+  @@index([published])
 }
 
 model ListenHistory {
@@ -168,6 +392,8 @@ model ListenHistory {
   durationMs      Int?
   bpm             Int?
   visualizerStyle String?
+  vibrations      Boolean? // тухайн сонсголд чичиргээ асаалттай байсан эсэх
+  device          String? // "phone" | "gamepad" | "ble-vest" | null (зөвхөн дэлгэц)
 
   @@index([userId, playedAt])
   @@index([songId])

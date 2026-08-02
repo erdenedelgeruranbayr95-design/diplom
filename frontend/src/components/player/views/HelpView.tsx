@@ -27,7 +27,39 @@ const FAQ = [
   { q: 'Хадгалсан дуу, тохиргоо минь алга болох уу?', a: 'Одоогийн демо хувилбар өгөгдлийг зөвхөн энэ төхөөрөмжид хадгална. Production хувилбарт бүртгэлээр олон төхөөрөмж хооронд sync хийгдэнэ.' },
 ]
 
-export default function HelpView({ onOpenCalibrate, onBack }: { onOpenCalibrate: () => void; onBack: () => void }) {
+/* Монгол дохионы хэлний (MSL) тайлбар видео — хүртээмжийн шаардлага (roadmap:
+   "MSL дохионы хэлний видео — тусламж · онбординг"). Бодит видео файл (mp4/webm,
+   доод тал нь энэ 6 сэдвийн товч танилцуулга) бэлэн болоогүй тул `videoUrl`
+   props-оор ирэхгүй бол чиг real placeholder card харуулж (хуурамч видео биш,
+   ил тод "хараахан байхгүй" төлөв) — HAVE-ний бус SHOULD-ний код зам бэлэн. */
+function MslVideoSection({ videoUrl }: { videoUrl?: string }) {
+  return (
+    <div className="mt-8">
+      <SectionTitle title="Монгол дохионы хэл (MSL)" />
+      {videoUrl ? (
+        <video controls className="w-full max-w-[560px] rounded-2xl border border-line" src={videoUrl}>
+          <track kind="captions" />
+        </video>
+      ) : (
+        <div className="border border-dashed border-line rounded-2xl p-6 flex items-center gap-4 bg-white/[.02]">
+          <span className="w-11 h-11 flex-none rounded-xl flex items-center justify-center text-dim bg-white/[.05]" aria-hidden="true">
+            <Icon name="music" size={20} />
+          </span>
+          <div className="min-w-0">
+            <b className="block text-body font-semibold text-ink">Дохионы хэлний видео удахгүй нэмэгдэнэ</b>
+            <p className="text-dim text-note leading-[1.55] mt-0.5">
+              Энэ хэсэгт МЭДРЭХ-ийг хэрхэн ашиглахыг Монгол дохионы хэлээр тайлбарласан видео байрлана. Видео бэлэн болмогц
+              энд шууд харагдана — код тал бүрэн бэлэн (см. <code className="mono !text-micro">HelpView.tsx</code>-ийн{" "}
+              <code className="mono !text-micro">MslVideoSection</code>).
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function HelpView({ onOpenCalibrate, onBack, mslVideoUrl }: { onOpenCalibrate: () => void; onBack: () => void; mslVideoUrl?: string }) {
   return (
     <>
       <BackBar title="Тусламж — Хэрхэн ашиглах вэ?" onBack={onBack} />
@@ -45,6 +77,8 @@ export default function HelpView({ onOpenCalibrate, onBack }: { onOpenCalibrate:
           </div>
         ))}
       </div>
+
+      <MslVideoSection videoUrl={mslVideoUrl} />
 
       <div className="mt-8">
         <SectionTitle title="Түгээмэл асуулт" />

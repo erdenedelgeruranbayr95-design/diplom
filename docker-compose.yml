@@ -1,0 +1,129 @@
+# Бүтэн production stack — api · web · worker · postgres · redis · minio.
+#
+# Хэрэглээ:
+#   1. .env.production файл үүсгэж (доорх бүх ${VAR}-ийг бөглөнө, ялангуяа
+#      бүх *_SECRET / *_PASSWORD талбарыг ЖИНХЭНЭ санамсаргүй утгаар).
+#   2. docker compose --env-file .env.production up -d --build
+#
+# Локал хөгжүүлэлтэд (backend/docker-compose.yml) DB/Redis/MinIO портуудыг шууд
+# нээж, host дээрх npm run dev-ээр ажилладаг байсан бол ЭНЭ файл бол бүрэн
+# containerized production stack — DB/Redis портууд гаднаас ХАРАГДАХГҮЙ
+# (зөвхөн Docker дотоод сүлжээгээр, api/worker-т л хүрдэг), TLS-ийг урд талын
+# reverse proxy (Nginx/Caddy, доор тайлбарласан) хариуцна.
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: medreh
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD заавал (.env.production-д тодорхойл)}
+      POSTGRES_DB: medreh
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U medreh']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER заавал}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD заавал}
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://medreh:${POSTGRES_PASSWORD}@postgres:5432/medreh?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET заавал — change_me ХЭРЭГЛЭХГҮЙ}
+      COOKIE_SECRET: ${COOKIE_SECRET:?COOKIE_SECRET заавал}
+      HAPTIC_CALLBACK_SECRET: ${HAPTIC_CALLBACK_SECRET:?HAPTIC_CALLBACK_SECRET заавал}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:?PAYMENT_WEBHOOK_SECRET заавал — QPay/SocialPay webhook үүнгүйгээр 401 буцна}
+      HEARING_PROFILE_ENC_KEY: ${HEARING_PROFILE_ENC_KEY:?HEARING_PROFILE_ENC_KEY заавал — байхгүй бол dev-fallback (ИНСЕКЮР) түлхүүр ашиглана}
+      CORS_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost:3001}
+      PORT: 3000
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: medreh-media
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000/medreh-media}
+      JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      NODE_ENV: production
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - '3000:3000'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/api/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      BACKEND_INTERNAL_URL: http://api:3000
+      NODE_ENV: production
+    ports:
+      - '3001:3001'
+
+  worker:
+    build: ./worker
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      REDIS_URL: redis://redis:6379
+      BACKEND_URL: http://api:3000
+      HAPTIC_CALLBACK_SECRET: ${HAPTIC_CALLBACK_SECRET:?HAPTIC_CALLBACK_SECRET заавал}
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: medreh-media
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000/medreh-media}
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+  uploads:

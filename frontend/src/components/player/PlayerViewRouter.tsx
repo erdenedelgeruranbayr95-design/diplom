@@ -29,6 +29,7 @@ import StatsView from "./views/StatsView";
 import TherapistView from "./views/TherapistView";
 import UploadSongView from "./views/UploadSongView";
 import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
+import type { DeviceRouter } from "@/lib/haptics/DeviceRouter";
 import type { SessionUser } from "@/types/auth";
 import type { PlayerTrack, Prefs, ViewName } from "@/types/player";
 import type { ListeningStats, Playlist } from "@/types/track";
@@ -101,6 +102,12 @@ export interface SettingsSlice {
   canVibrate: boolean;
   deviceSync: ReturnType<typeof useDeviceSync>;
   signalBarsRef: MutableRefObject<(HTMLSpanElement | null)[]>;
+  /** Одоо тоглож буй дуу Haptic Score (8-бүс, worker бэлдсэн) авсан эсэх. */
+  hasHapticScore: boolean;
+  /** 8 бүсийн одоогийн энерги (0..1) — Score байхгүй үед хоосон массив. */
+  bandLevelsRef: MutableRefObject<number[]>;
+  /** Холбогдсон HapticDevice-уудыг удирдах (DevicesView-ийн "Холбох"/"Тест" товч). */
+  deviceRouter: DeviceRouter;
 }
 
 /** Дэлгэцээс дуудагдах гадаад үйлдлүүд. */
@@ -156,7 +163,6 @@ export default function PlayerViewRouter({ view, catalog, collections, selection
   if (view === "billing") {
     return (
       <BillingView
-        email={session.email}
         user={session.user}
         isAdmin={session.isAdmin}
         renewDate={session.renewDate}
@@ -209,6 +215,9 @@ export default function PlayerViewRouter({ view, catalog, collections, selection
         canVibrate={settings.canVibrate}
         onBack={goHome}
         deviceSync={settings.deviceSync}
+        hasHapticScore={settings.hasHapticScore}
+        bandLevelsRef={settings.bandLevelsRef}
+        deviceRouter={settings.deviceRouter}
       />
     );
   }

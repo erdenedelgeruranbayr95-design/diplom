@@ -16,6 +16,7 @@ export type PlayerTrack = Track & {
   songId?: string;
   artistId?: string;
   description?: string;
+  lyrics?: string;
   releaseYear?: number;
   duration?: number;
 };

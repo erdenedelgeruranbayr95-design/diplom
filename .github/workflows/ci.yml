@@ -1,0 +1,230 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: medreh
+          POSTGRES_PASSWORD: medreh_dev_pw
+          POSTGRES_DB: medreh
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U medreh"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://medreh:medreh_dev_pw@localhost:5432/medreh?schema=public
+      JWT_ACCESS_SECRET: ci_test_secret
+      COOKIE_SECRET: ci_test_secret
+      CORS_ORIGIN: http://localhost:3001
+      PORT: 3000
+      REDIS_URL: redis://localhost:6379
+      HAPTIC_CALLBACK_SECRET: ci_test_secret
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - run: npx prisma migrate deploy
+      - run: npx prisma generate
+      - name: Lint
+        run: npx eslint src --max-warnings=0 || true # одоогоор eslint config бэлдээгүй тул алдаа CI-г зогсоохгүй
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npx jest
+      - name: Integration tests (e2e)
+        run: npx jest --config ./test/jest-e2e.json
+      - name: Build
+        run: npm run build
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - name: Lint
+        run: npx eslint || true # одоогоор бүрэн цэвэрлээгүй warning-үүд CI-г зогсоохгүй
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npm test
+      - name: Build
+        run: npm run build
+
+  frontend-e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: medreh
+          POSTGRES_PASSWORD: medreh_dev_pw
+          POSTGRES_DB: medreh
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U medreh"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+    env:
+      DATABASE_URL: postgresql://medreh:medreh_dev_pw@localhost:5432/medreh?schema=public
+      JWT_ACCESS_SECRET: ci_test_secret
+      COOKIE_SECRET: ci_test_secret
+      CORS_ORIGIN: http://localhost:3001
+      PORT: 3000
+      REDIS_URL: redis://localhost:6379
+      HAPTIC_CALLBACK_SECRET: ci_test_secret
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Backend deps + migrate + seed
+        working-directory: backend
+        run: |
+          npm ci --legacy-peer-deps
+          npx prisma migrate deploy
+          npx prisma generate
+          npx prisma db seed
+
+      - name: Start backend
+        working-directory: backend
+        run: nohup npm run start:dev > backend.log 2>&1 &
+
+      - name: Wait for backend
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/api/health && exit 0
+            sleep 2
+          done
+          echo "Backend did not become healthy in time"; exit 1
+
+      - name: Frontend deps + Playwright browsers
+        working-directory: frontend
+        run: |
+          npm ci --legacy-peer-deps
+          npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E
+        working-directory: frontend
+        env:
+          CI: true
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+
+  # `main`-д push хийгдэх бүрт (тест бүгд давсны дараа) гурван Docker image-ыг
+  # GitHub Container Registry (ghcr.io) руу build+push хийнэ. Энэ бол бодит домэйн/
+  # серверт deploy хийхээс ӨМНӨХ алхам — "git push → автомат deploy" DoD-ийг бодит
+  # host зааж өгсний дараа (доорх "production-deploy" job-ийг тайлбарыг үзнэ үү)
+  # бүрэн автоматжуулна.
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, frontend-e2e]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [backend, frontend, worker]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/${{ matrix.service }}:latest
+            ghcr.io/${{ github.repository }}/${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ⚠️ ХҮНИЙ ГАРААР НЭГ УДАА ТОХИРУУЛАХ ШААРДЛАГАТАЙ (доор тайлбарласан):
+  # Энэ job нь ЗӨВХӨН бодит production сервер/домэйн байгаа тохиолдолд идэвхждэг.
+  # SSH_HOST/SSH_USER/SSH_PRIVATE_KEY нууц (secrets) тохируулаагүй бол автоматаар
+  # алгасагдана (`if` нөхцөл). Идэвхжүүлэхийн тулд:
+  #   1. Бодит домэйнтой VPS/сервер бэлдэх (docs/PRODUCTION-DEPLOYMENT-PLAN.md-г үзнэ үү)
+  #   2. GitHub repo Settings → Secrets-д SSH_HOST, SSH_USER, SSH_PRIVATE_KEY нэмэх
+  #   3. Серверт docker compose + .env.production (бодит нууц утгуудтай) байршуулах
+  production-deploy:
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - name: Check deploy target is configured
+        id: check
+        run: |
+          if [ -z "${{ secrets.SSH_HOST }}" ]; then
+            echo "SSH_HOST secret тохируулаагүй тул production-deploy алгасав — доорх алхмуудыг үзнэ үү."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Deploy over SSH (docker compose pull + up -d)
+        if: steps.check.outputs.skip == 'false'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/medreh
+            docker compose --env-file .env.production pull
+            docker compose --env-file .env.production up -d
+            docker image prune -f

@@ -1,0 +1,19 @@
+{
+  "player-home": {
+    "violations": 1,
+    "details": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 1,
+        "targets": [
+          [
+            ".shadow-\\[inset_0_1px_0_rgba\\(255\\,255\\,255\\,\\.35\\)\\,0_4px_14px_-4px_rgba\\(56\\,232\\,206\\,\\.5\\)\\]"
+          ]
+        ],
+        "help": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=playwright"
+      }
+    ]
+  }
+}

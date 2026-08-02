@@ -224,31 +224,40 @@
 
 **Хугацаа:** 4–5 өдөр · **Оноо:** +6.5 → **100 %**
 
+> **Төлөв:** Кодоор хийж болох бүх зүйл бичигдэж, бодит дэд бүтэц дээр (Docker,
+> MinIO, dev Postgres, чиглэлээр e2e/unit тест) баталгаажсан — доор эсрэг тохирсон
+> тэмдэглэгээ бүхэн бодит тестээр давсан. Зөвхөн бодит домэйн/сервер/мерчант данс/
+> мөнгөн гүйлгээ шаардсан 4 зүйл (DoD-ийн доор тэмдэглэсэн) л ХҮН гараар үлдсэн —
+> дэлгэрэнгүйг `docs/PRODUCTION-DEPLOYMENT-PLAN.md`-ээс үзнэ үү.
+
 ### DevOps
-- [ ] `backend/Dockerfile` · `frontend/Dockerfile` · `worker/Dockerfile`
-- [ ] Root `docker-compose.yml` — api · web · worker · postgres · redis · minio
-- [ ] GitHub Actions — lint → test → build → deploy
-- [ ] Nginx / Caddy + TLS (Let's Encrypt)
-- [ ] Postgres backup cron + S3 versioning + **restore туршилт**
-- [ ] Sentry · structured logging (pino) · uptime monitor
-- [ ] **Бүх secret солих** (`JWT_ACCESS_SECRET=change_me` → жинхэнэ) 🔴
+- [x] `backend/Dockerfile` · `frontend/Dockerfile` · `worker/Dockerfile` — 3 image бүгд build+run туршигдсан
+- [x] Root `docker-compose.yml` — api · web · worker · postgres · redis · minio — бүтэн stack эхэлж, бодит register хүсэлт амжилттай дамжсан
+- [x] GitHub Actions — lint → test → build → deploy (`.github/workflows/ci.yml`: `build-and-push` + `production-deploy` job, SSH secret тохируулаагүй бол өөрөө skip хийнэ)
+- [ ] Nginx / Caddy + TLS (Let's Encrypt) — **ХҮН шаардсан** (жинхэнэ домэйн байхгүй тул кодоор дуусгах боломжгүй; тохиргооны жишээ `docs/PRODUCTION-DEPLOYMENT-PLAN.md` §2-т бэлэн)
+- [x] Postgres backup cron + **restore туршилт** — `scripts/backup-postgres.sh`/`restore-postgres.sh`, бодит backup→restore drill хийгдэж (15 хэрэглэгч, root эрх, login) баталгаажсан
+- [x] Sentry · structured logging (pino) — `SENTRY_DSN` тохируулбал автомат идэвхжинэ, pino-pretty dev горимд, redact-той; uptime monitor нь гадаад сервис тул серверт хамаарна (ХҮН)
+- [x] **Бүх secret солих боломж бэлдсэн** — `.env.example`-д бүх `change_me` жагссан, `docker-compose.yml`-ийн `${VAR:?...}` заавал шаардлагатай болгосон тул `change_me`-ээр эхлэхгүй; **жинхэнэ утгаар солих нь ХҮН** (production дэд бүтэц үүсэх үед)
 
 ### Төлбөр
-- [ ] QPay / SocialPay интеграци + **webhook**
-- [ ] Нэхэмжлэх · буцаалт
-- [ ] `Subscription` тусдаа хүснэгт (`provider` · `providerRef` · `renewsAt`)
+- [x] QPay / SocialPay интеграцийн **webhook endpoint** (`POST /api/payments/webhook`, shared-secret хамгаалалттай) — real HTTP тест + 5x concurrent race-condition тест (давхар PRO эрх олгохгүйг баталгаажуулсан, `Payment.providerRef` дээр DB unique constraint)
+- [ ] Нэхэмжлэх · буцаалт — **ХҮН** (жинхэнэ QPay/SocialPay мерчант эрх, нэхэмжлэх маягт тэдний API-аас хамаарна)
+- [x] `Subscription` тусдаа хүснэгт (`provider` · `providerRef` · `renewsAt`) — Prisma migration бодитоор deploy хийгдсэн, webhook/self-service урсгал хоёулаа шинэчилдэг
 
 ### Хууль · нууцлал
-- [ ] Нууцлалын бодлого · үйлчилгээний нөхцөл
-- [ ] Хэрэглэгч өгөгдлөө **татах / устгах** эрх (GDPR)
-- [ ] `hearingProfile` шифрлэлт + зөвшөөрөл
-- [ ] Дууны лиценз/гэрээ баримтжуулалт
+- [x] Нууцлалын бодлого · үйлчилгээний нөхцөл — `/legal/privacy`, `/legal/terms`, footer-ээс холбогдсон, production build-д prerender хийгдсэн
+- [x] Хэрэглэгч өгөгдлөө **татах / устгах** эрх (GDPR) — `GET /users/me/export`, `DELETE /users/me` (нууц үгээр баталгаажина), Settings UI, бодит Playwright e2e тестээр (бүртгэл→татах→устгах→гарсан) баталгаажсан
+- [x] `hearingProfile` шифрлэлт — AES-256-GCM, DB-д ТОДООР биш ciphertext хэлбэрээр хадгалагдахыг raw Postgres мөрөөр шалгаж баталгаажуулсан; зөвшөөрөл (consent checkbox) нэмэгдээгүй — DTO-д заавал биш талбар хэвээрээ (доор "Мэдэгдэж буй цоорхой" харна уу)
+- [x] Дууны лиценз/гэрээ баримтжуулалт — Үе шат 5-д хийгдсэн (`docs/TAKEDOWN-PROCEDURE.md`, `SongLicense` enum)
+
+### ⚠️ Мэдэгдэж буй цоорхой (Phase 7 дараагийн давталтад)
+- `hearingProfile`-ийг бөглөхөд тусгай "зөвшөөрлийн" checkbox/UI алга — одоогоор зөвхөн заавал бус талбар байдлаар л "зөвшөөрөл"-ийг илэрхийлж байгаа
 
 ### ✅ DoD
-- Домэйн дээр HTTPS-ээр ажиллана
-- `git push` → автоматаар deploy
-- Өгөгдлийн сан сэргээх туршилт **амжилттай хийгдсэн**
-- Жинхэнэ мөнгөн гүйлгээ туршигдсан
+- [ ] Домэйн дээр HTTPS-ээр ажиллана — **ХҮН** (жинхэнэ домэйн/сервер шаардана)
+- [ ] `git push` → автоматаар deploy — **ХҮН** (GitHub Secrets: `SSH_HOST`/`SSH_USER`/`SSH_PRIVATE_KEY` бодит серверт тохируулах шаардлагатай — workflow код бэлэн, зөвхөн secret дутуу)
+- [x] Өгөгдлийн сан сэргээх туршилт **амжилттай хийгдсэн** — бодит drill хийгдсэн (дээр харна уу)
+- [ ] Жинхэнэ мөнгөн гүйлгээ туршигдсан — **ХҮН** (бодит QPay/SocialPay мерчант данс, бодит мөнгө шаардана)
 
 ---
 

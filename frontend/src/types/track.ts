@@ -27,15 +27,6 @@ export interface ListeningStats {
   days: Record<string, number>;
 }
 
-export interface Payment {
-  id: string;
-  date: number;
-  amount: string;
-  plan: string;
-  method: string;
-  status: string;
-}
-
 export interface Playlist {
   id: string;
   name: string;
