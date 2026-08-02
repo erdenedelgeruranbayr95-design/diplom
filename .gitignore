@@ -18,3 +18,7 @@ frontend/.env.local
 backend/coverage/
 frontend/test-results/
 frontend/playwright-report/
+
+worker/**/__pycache__/
+worker/venv/
+worker/.env
