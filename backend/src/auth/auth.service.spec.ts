@@ -1,10 +1,17 @@
-import { ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Role, UserStatus } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+
+const verifyIdTokenMock = jest.fn();
+jest.mock('google-auth-library', () => ({
+  OAuth2Client: jest.fn().mockImplementation(() => ({
+    verifyIdToken: verifyIdTokenMock,
+  })),
+}));
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -39,9 +46,10 @@ describe('AuthService', () => {
     jwt = new JwtService({ secret: 'test-secret' });
     const config = {
       getOrThrow: jest.fn().mockReturnValue('test-secret'),
-      get: jest.fn().mockReturnValue('test-hearing-profile-key'),
+      get: jest.fn((key: string) => (key === 'GOOGLE_CLIENT_ID' ? 'test-google-client-id' : 'test-hearing-profile-key')),
     } as unknown as ConfigService;
     service = new AuthService(prisma as unknown as PrismaService, jwt, config);
+    verifyIdTokenMock.mockReset();
   });
 
   describe('register', () => {
@@ -116,6 +124,65 @@ describe('AuthService', () => {
       expect(result.accessToken).toEqual(expect.any(String));
       expect(result.user).not.toHaveProperty('passwordHash');
       expect(result.user.email).toBe(baseUser.email);
+    });
+
+    it('rejects password login for a Google-only account (passwordHash is null)', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...baseUser, passwordHash: null });
+      await expect(service.login({ email: baseUser.email, password: 'whatever' } as never)).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('loginWithGoogle', () => {
+    const googlePayload = { email: 'bat@example.com', sub: 'google-sub-1', email_verified: true, name: 'Bat' };
+
+    it('rejects when GOOGLE_CLIENT_ID is not configured', async () => {
+      const config = { getOrThrow: jest.fn().mockReturnValue('test-secret'), get: jest.fn().mockReturnValue(undefined) } as unknown as ConfigService;
+      const svc = new AuthService(prisma as unknown as PrismaService, jwt, config);
+      await expect(svc.loginWithGoogle('some-token')).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects an invalid/unverifiable ID token', async () => {
+      verifyIdTokenMock.mockRejectedValue(new Error('bad token'));
+      await expect(service.loginWithGoogle('bad-token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('rejects a token whose email is not verified', async () => {
+      verifyIdTokenMock.mockResolvedValue({ getPayload: () => ({ ...googlePayload, email_verified: false }) });
+      await expect(service.loginWithGoogle('token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('links googleId onto an existing user found by email (does not create a duplicate)', async () => {
+      verifyIdTokenMock.mockResolvedValue({ getPayload: () => googlePayload });
+      prisma.user.findUnique
+        .mockResolvedValueOnce(null) // lookup by googleId: not linked yet
+        .mockResolvedValueOnce({ ...baseUser, passwordHash: 'existing-hash' }); // lookup by email: found
+      prisma.user.update.mockResolvedValueOnce({ ...baseUser, passwordHash: 'existing-hash', googleId: 'google-sub-1' });
+      prisma.user.update.mockResolvedValueOnce({ ...baseUser, passwordHash: 'existing-hash', googleId: 'google-sub-1' });
+      prisma.refreshToken.create.mockResolvedValue({});
+
+      await service.loginWithGoogle('token');
+      expect(prisma.user.create).not.toHaveBeenCalled();
+      expect(prisma.user.update).toHaveBeenCalledWith({ where: { id: baseUser.id }, data: { googleId: 'google-sub-1' } });
+    });
+
+    it('creates a new USER-role account when no existing user matches googleId or email', async () => {
+      verifyIdTokenMock.mockResolvedValue({ getPayload: () => googlePayload });
+      prisma.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+      const created = { ...baseUser, passwordHash: null, googleId: 'google-sub-1' };
+      prisma.user.create.mockResolvedValue(created);
+      prisma.user.update.mockResolvedValue(created);
+      prisma.refreshToken.create.mockResolvedValue({});
+
+      const result = await service.loginWithGoogle('token');
+      expect(prisma.user.create).toHaveBeenCalledWith({ data: { name: 'Bat', email: 'bat@example.com', googleId: 'google-sub-1' } });
+      expect(result.accessToken).toEqual(expect.any(String));
+    });
+
+    it('rejects a BANNED user even with a valid Google token', async () => {
+      verifyIdTokenMock.mockResolvedValue({ getPayload: () => googlePayload });
+      prisma.user.findUnique.mockResolvedValueOnce({ ...baseUser, status: UserStatus.BANNED, googleId: 'google-sub-1' });
+      await expect(service.loginWithGoogle('token')).rejects.toThrow(ForbiddenException);
+      expect(prisma.refreshToken.create).not.toHaveBeenCalled();
     });
   });
 

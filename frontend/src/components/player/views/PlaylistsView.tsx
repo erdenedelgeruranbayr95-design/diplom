@@ -68,7 +68,7 @@ export default function PlaylistsView({ email, tracks, onBack }: { email: string
     <>
       <BackBar title="Миний жагсаалтууд" onBack={onBack} />
 
-      <form className="flex gap-2.5 mb-7" onSubmit={create}>
+      <form className="flex max-nav:flex-col gap-2.5 mb-7" onSubmit={create}>
         <div className="relative flex-1">
           <svg
             width="16"
@@ -91,7 +91,7 @@ export default function PlaylistsView({ email, tracks, onBack }: { email: string
             aria-label="Шинэ жагсаалтын нэр"
           />
         </div>
-        <ActionButton type="submit" variant="primary" size="lg" className="flex-none">
+        <ActionButton type="submit" variant="primary" size="lg" className="flex-none max-nav:w-full">
           ＋ Үүсгэх
         </ActionButton>
       </form>

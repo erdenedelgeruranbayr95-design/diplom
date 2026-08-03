@@ -114,6 +114,15 @@ export async function login(email: string, password: string) {
   return data.user;
 }
 
+export async function loginWithGoogle(idToken: string) {
+  const data = await apiFetch<AuthResponse>("/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ idToken }),
+  });
+  accessToken = data.accessToken;
+  return data.user;
+}
+
 export async function refresh() {
   const data = await apiFetch<AuthResponse>("/auth/refresh", { method: "POST" }, false);
   accessToken = data.accessToken;

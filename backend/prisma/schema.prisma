@@ -85,7 +85,10 @@ model User {
   id           String     @id @default(cuid())
   name         String
   email        String     @unique
-  passwordHash String
+  // Google-ээр нэвтэрсэн хэрэглэгчид нууц үггүй тул заавал бус (nullable) —
+  // login endpoint-д аль нэг нь (passwordHash эсвэл googleId) байхыг шаардана.
+  passwordHash String?
+  googleId     String?    @unique
   role         Role       @default(USER)
   status       UserStatus @default(ACTIVE)
   createdAt    DateTime   @default(now())

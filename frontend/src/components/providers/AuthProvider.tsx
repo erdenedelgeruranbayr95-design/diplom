@@ -22,6 +22,7 @@ interface AuthContextValue {
   ready: boolean;
   login: (email: string, password: string) => Promise<SessionUser>;
   register: (name: string, email: string, password: string, password2: string) => Promise<SessionUser>;
+  loginWithGoogle: (idToken: string) => Promise<SessionUser>;
   logout: () => Promise<void>;
   updateUser: (patch: Partial<SessionUser>) => void;
   setSub: (sub: UserSub | null) => void;
@@ -71,6 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u);
     return u;
   }
+  async function loginWithGoogle(idToken: string) {
+    const u = await api.loginWithGoogle(idToken);
+    setUser(u);
+    return u;
+  }
   async function logout() {
     await api.logout();
     setUser(null);
@@ -92,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthCtx.Provider
-      value={{ user, role, isRoot, isAdmin, isCurator, isTherapist, isParent, subscribed, ready, login, register, logout, updateUser, setSub, cancelSub }}
+      value={{ user, role, isRoot, isAdmin, isCurator, isTherapist, isParent, subscribed, ready, login, register, loginWithGoogle, logout, updateUser, setSub, cancelSub }}
     >
       {children}
     </AuthCtx.Provider>

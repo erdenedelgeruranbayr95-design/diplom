@@ -88,21 +88,24 @@ export default function TopBar({
 
   return (
     <>
-      <header className="relative z-[6] flex items-center gap-6 max-nav:gap-3 h-[70px] px-6 max-nav:px-4 bg-[rgba(9,12,12,.78)] backdrop-blur-3xl [backdrop-filter:blur(22px)_saturate(1.2)] border-b border-white/[.07]">
+      <header className="relative z-[6] flex flex-wrap items-center gap-6 max-nav:gap-y-2.5 max-nav:gap-x-3 max-nav:h-auto max-nav:py-2.5 h-[70px] px-6 max-nav:px-3.5 bg-[rgba(9,12,12,.78)] backdrop-blur-3xl [backdrop-filter:blur(22px)_saturate(1.2)] border-b border-white/[.07]">
         <span className="font-display font-extrabold text-heading max-nav:text-lead tracking-[-.04em] whitespace-nowrap [&>sup]:font-body [&>sup]:text-micro [&>sup]:font-medium [&>sup]:ml-0.5">
           МЭДРЭХ<sup>®</sup>
           {isAdmin && (
-            <em className="not-italic font-mono text-micro tracking-[.2em] text-warm border border-warm/45 rounded-full py-[3px] px-[9px] ml-2.5 align-[3px]">
+            <em className="not-italic font-mono text-micro tracking-[.2em] text-warm border border-warm/45 rounded-full py-[3px] px-[9px] ml-2.5 align-[3px] max-nav:hidden">
               АДМИН
             </em>
           )}
         </span>
 
-        <div className="flex-1 flex items-center justify-center gap-3.5 min-w-0">
+        {/* Mobile (≤860px) дээр хайлт бүрэн өргөнөөрөө ДООД эгнээнд шилжинэ — лого +
+            эрхийн товчнуудтай нэг эгнээнд багтаахад input хэт нарийсаж, лого/subscribe
+            товчтой давхцаж байсныг эндээс засав (order-3 + basis-full). */}
+        <div className="flex-1 flex items-center justify-center gap-3.5 min-w-0 max-nav:order-3 max-nav:basis-full max-nav:justify-start">
           <button
             className={
               ICON_BTN +
-              " focus-visible:shadow-glow-aqua " +
+              " focus-visible:shadow-glow-aqua max-nav:hidden " +
               (view === "home" ? "text-aqua bg-aqua/[.12]" : "text-dim bg-white/[.05] hover:text-ink hover:bg-white/10")
             }
             onClick={() => setView("home")}
@@ -111,7 +114,7 @@ export default function TopBar({
           >
             <Icon name="home" size={19} />
           </button>
-          <div className="flex-1 max-w-[500px] max-viz:max-w-none mx-auto flex items-center gap-3 h-[46px] bg-white/[.05] border border-white/[.07] rounded-full px-[18px] text-dim transition-[border-color,background,box-shadow] duration-300 focus-within:bg-white/[.08] focus-within:border-aqua/60 focus-within:shadow-glow-aqua">
+          <div className="flex-1 max-w-[500px] max-viz:max-w-none mx-auto flex items-center gap-3 h-[46px] max-nav:h-10 bg-white/[.05] border border-white/[.07] rounded-full px-[18px] max-nav:px-3.5 text-dim transition-[border-color,background,box-shadow] duration-300 focus-within:bg-white/[.08] focus-within:border-aqua/60 focus-within:shadow-glow-aqua">
             <Icon name="search" size={17} />
             <input
               type="search"
@@ -136,13 +139,18 @@ export default function TopBar({
           </div>
         </div>
 
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-3.5 max-nav:gap-2 max-nav:ml-auto">
           {!subscribed && (
             <button
-              className="rounded-full text-body font-semibold border border-aqua bg-aqua text-on-aqua transition-[background,color,border-color,box-shadow,transform] duration-300 py-2.5 px-[22px] will-change-transform cursor-none hover:bg-aqua-hover hover:border-aqua-hover hover:text-on-aqua hover:shadow-sm hover:-translate-y-px active:translate-y-0 focus-visible:outline-none focus-visible:shadow-glow-aqua"
+              className="rounded-full text-body font-semibold border border-aqua bg-aqua text-on-aqua transition-[background,color,border-color,box-shadow,transform] duration-300 py-2.5 px-[22px] max-nav:py-0 max-nav:px-0 max-nav:w-10 max-nav:h-10 max-nav:text-[0px] will-change-transform cursor-none hover:bg-aqua-hover hover:border-aqua-hover hover:text-on-aqua hover:shadow-sm hover:-translate-y-px active:translate-y-0 focus-visible:outline-none focus-visible:shadow-glow-aqua"
               onClick={onSubscribe}
+              aria-label="Захиалга авах"
+              title="Захиалга авах"
             >
-              Захиалга авах
+              <span className="max-nav:hidden">Захиалга авах</span>
+              <span className="hidden max-nav:inline" aria-hidden="true">
+                <Icon name="card" size={17} />
+              </span>
             </button>
           )}
 

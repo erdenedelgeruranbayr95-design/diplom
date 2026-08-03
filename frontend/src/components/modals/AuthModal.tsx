@@ -13,6 +13,7 @@ import { ActionButton } from "@/components/ui/ActionGroup";
 import { FIELD_LABEL_CLS, FIELD_CAPTION_CLS, VALIDATED_INPUT_CLS } from "@/components/ui/form-styles";
 import type { SessionUser } from "@/types/auth";
 import Icon from "@/components/ui/Icon";
+import GoogleSignInButton from "./GoogleSignInButton";
 
 const labelCls = FIELD_LABEL_CLS;
 const captionCls = FIELD_CAPTION_CLS;
@@ -65,7 +66,7 @@ export default function AuthModal({
   onClose: () => void;
   onAuth: (u: SessionUser) => void;
 }) {
-  const { login, register } = useAuth();
+  const { login, register, loginWithGoogle } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState(""); // таб солиход арилахгүйн тулд controlled
   const [err, setErr] = useState("");
@@ -84,6 +85,22 @@ export default function AuthModal({
   }, [open]);
 
   if (!open) return null;
+
+  async function handleGoogleCredential(idToken: string) {
+    setErr("");
+    setOk("");
+    setBusy(true);
+    try {
+      const u = await loginWithGoogle(idToken);
+      setOk("Тавтай морил, " + u.name + "!");
+      onAuth(u);
+      setTimeout(onClose, 700);
+    } catch (e2) {
+      setErr((e2 as Error).message || "Google нэвтрэлт амжилтгүй боллоо");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -191,6 +208,14 @@ export default function AuthModal({
           >
             Бүртгүүлэх
           </button>
+        </div>
+
+        <GoogleSignInButton onCredential={handleGoogleCredential} />
+
+        <div className="flex items-center gap-3 my-4 text-faint text-caption">
+          <span className="h-px flex-1 bg-white/[.08]" aria-hidden="true" />
+          эсвэл
+          <span className="h-px flex-1 bg-white/[.08]" aria-hidden="true" />
         </div>
 
         <form className="flex flex-col gap-4" onSubmit={submit} key={mode}>

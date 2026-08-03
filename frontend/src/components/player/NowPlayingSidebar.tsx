@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Icon from "@/components/ui/Icon";
 import LyricsPanel from "./LyricsPanel";
 
 type TrackLike = {
+  id?: number | string;
   title: string;
   artist?: string | null;
   cover?: string | null;
@@ -45,9 +47,20 @@ export default function NowPlayingSidebar({
   currentTime?: number;
 }) {
   const credits = buildCredits(track);
+  const asideRef = useRef<HTMLElement | null>(null);
+
+  /* Lyrics/credits хэсэг рүү доош scroll хийсэн байхад дараагийн дуу автоматаар
+     (эсвэл гараар) солигдвол хуучин scroll offset хэвээр үлдэж, шинэ дууны cover
+     карт дэлгэцээс дээш "тасарч" харагдаж байсныг эндээс засав. */
+  useEffect(() => {
+    asideRef.current?.scrollTo({ top: 0 });
+  }, [track?.id, track?.title]);
 
   return (
-    <aside className="hidden xl:flex w-[340px] 2xl:w-[380px] flex-none overflow-y-auto border-l border-white/[.06] bg-[rgba(8,11,11,.62)] backdrop-blur-3xl">
+    <aside
+      ref={asideRef}
+      className="hidden xl:flex w-[340px] 2xl:w-[380px] flex-none overflow-y-auto border-l border-white/[.06] bg-[rgba(8,11,11,.62)] backdrop-blur-3xl"
+    >
       <div className="w-full min-h-0 px-5 py-6 pb-[120px] flex flex-col gap-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -73,30 +86,27 @@ export default function NowPlayingSidebar({
 
         {track ? (
           <>
+            {/* aspect-square тул aside-ийн бүтэн өргөнөөр (340-380px) квадрат болж,
+                харьцангуй хэт том харагдаж байсныг aspect-video (16:9) болгож жижигсгэв —
+                Тоглох/зогссон төлөв дээд header-т (badge) аль хэдийн харагддаг тул энд
+                ДАХИН давхардуулахгүй. */}
             <div className="relative overflow-hidden rounded-card border border-white/[.08] bg-[linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015))] shadow-[0_18px_54px_rgba(0,0,0,.45)]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,232,206,.16),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(217,165,76,.12),transparent_34%)]" />
               {track.cover ? (
-                <img src={track.cover} alt={track.title} className="relative z-[1] w-full aspect-square object-cover" loading="lazy" decoding="async" />
+                <img src={track.cover} alt={track.title} className="relative z-[1] w-full aspect-video object-cover" loading="lazy" decoding="async" />
               ) : (
-                <div className="relative z-[1] grid place-items-center w-full aspect-square bg-[linear-gradient(135deg,rgba(56,232,206,.12),rgba(255,255,255,.03))]">
-                  <Icon name="music" size={42} className="text-aqua/70" />
+                <div className="relative z-[1] grid place-items-center w-full aspect-video bg-[linear-gradient(135deg,rgba(56,232,206,.12),rgba(255,255,255,.03))]">
+                  <Icon name="music" size={36} className="text-aqua/70" />
                 </div>
               )}
-              <div className="absolute inset-x-0 bottom-0 z-[2] p-4 bg-[linear-gradient(180deg,transparent,rgba(4,6,6,.86))]">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-aqua/20 bg-[rgba(4,16,14,.72)] px-3 py-1 text-meta font-medium uppercase tracking-[.14em] text-aqua">
-                  <span className={"w-2 h-2 rounded-full " + (playing ? "bg-aqua shadow-[0_0_10px_rgba(56,232,206,.45)]" : "bg-faint")} />
-                  {playing ? "Тоглож байна" : "Сонгогдсон"}
-                </span>
-              </div>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <h4 className="font-display font-semibold text-[24px] tracking-[-.04em] leading-tight text-ink">{track.title}</h4>
-              <p className="text-copy text-dim leading-[1.45]">
-                {track.artist}
-                {track.releaseYear ? ` · ${track.releaseYear}` : ""}
-              </p>
-            </div>
+            {/* Гарчиг (track.title) дээд header-т (h3) аль хэдийн байгаа тул энд
+                ДАХИН том фонтоор давтахгүй — зөвхөн уран бүтээлч/он мэдээлэл. */}
+            <p className="text-copy text-dim leading-[1.45] -mt-1">
+              {track.artist}
+              {track.releaseYear ? ` · ${track.releaseYear}` : ""}
+            </p>
 
             <div className="flex flex-wrap gap-2">
               {track.genre && (

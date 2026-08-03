@@ -7,6 +7,11 @@ COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps
 
 COPY . .
+# `NEXT_PUBLIC_*` хувьсагчид Next.js build-ийн үед клиент bundle-д bake хийгддэг
+# (runtime env биш) тул build ARG-аар дамжуулна — docker-compose.yml-ийн
+# `build.args`-аар тохируулна, тохируулаагүй бол хоосон (Google товч харагдахгүй).
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
 # Build-ийн үед backend хаана ч байх нь хамаагүй — rewrites() зөвхөн runtime-д
 # хэрэглэгддэг тул build-ийн default (localhost:3000) хамаагүй.
 RUN npm run build

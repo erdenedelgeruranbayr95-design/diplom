@@ -9,11 +9,12 @@ export default function BackBar({ title, onBack }: { title: string; onBack: () =
       {/* "←" текст глиф → SVG (бусад icon-той ижил зузаан), hover-д сум зүүн тийш
           гулсана — буцах чиглэлийг харуулсан жижиг affordance */}
       <button
-        className="group inline-flex items-center gap-2 text-body font-medium text-dim border border-white/[.1] rounded-full py-2 pl-3 pr-4 min-h-[36px] whitespace-nowrap transition-[color,border-color,background] duration-250 hover:text-aqua hover:border-aqua/40 hover:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua"
+        className="group inline-flex items-center gap-2 text-body font-medium text-dim border border-white/[.1] rounded-full py-2 pl-3 pr-4 max-nav:p-2 min-h-[36px] whitespace-nowrap flex-none transition-[color,border-color,background] duration-250 hover:text-aqua hover:border-aqua/40 hover:bg-aqua/[.05] focus-visible:outline-none focus-visible:shadow-glow-aqua"
         onClick={onBack}
+        aria-label="Буцах"
       >
         <Icon name="arrowLeft" size={15} className="transition-transform duration-200 group-hover:-translate-x-0.5 motion-reduce:transform-none" />
-        Буцах
+        <span className="max-nav:hidden">Буцах</span>
       </button>
       <h2 className="font-display font-bold text-[clamp(18px,2.2vw,23px)] tracking-[-.03em] leading-tight text-ink min-w-0 truncate">{title}</h2>
     </div>

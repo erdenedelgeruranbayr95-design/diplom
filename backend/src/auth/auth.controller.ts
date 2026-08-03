@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterParentDto } from './dto/register-parent.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
@@ -58,6 +59,17 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const { accessToken, refreshToken, user } = await this.auth.login(dto);
+    this.setRefreshCookie(res, refreshToken);
+    return { accessToken, user };
+  }
+
+  /* Google Identity Services (frontend "Sign in with Google" товч)-ийн буцаадаг
+     ID token-ыг хүлээж авна. Шинэ хэрэглэгч бол автоматаар USER эрхээр бүртгэнэ. */
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('google')
+  async google(@Body() dto: GoogleLoginDto, @Res({ passthrough: true }) res: Response) {
+    const { accessToken, refreshToken, user } = await this.auth.loginWithGoogle(dto.idToken);
     this.setRefreshCookie(res, refreshToken);
     return { accessToken, user };
   }

@@ -335,7 +335,7 @@ export default function Player({
           <Sidebar view={view} likedTracks={likedTracks} savedTracks={savedTracks} recentTracks={recentTracks} />
 
           <div className="flex min-w-0 flex-1 max-nav:flex-col">
-            <PageContainer>
+            <PageContainer scrollKey={view + ":" + (detailTrack?.id ?? "")}>
               <PlayerViewRouter
                 view={view}
                 catalog={{ allTracks: catalog.allTracks, filteredTracks, genres: catalog.genres, genre, onGenre: setGenre, query }}

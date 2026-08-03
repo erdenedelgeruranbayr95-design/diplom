@@ -66,8 +66,8 @@ export default function Sidebar({
   const { setView } = useTrackActions();
 
   return (
-    <aside className="sp-side w-[270px] flex-none overflow-y-auto flex flex-col gap-6 bg-[rgba(8,11,11,.68)] p-[22px] border-r border-white/[.06]">
-      <nav className="flex flex-col gap-1 max-nav:flex-row max-nav:flex-wrap max-nav:gap-1.5" aria-label="Үндсэн цэс">
+    <aside className="sp-side w-[270px] max-nav:w-full flex-none max-nav:flex-none overflow-y-auto flex flex-col gap-6 max-nav:gap-0 bg-[rgba(8,11,11,.68)] p-[22px] max-nav:p-2.5 border-r border-white/[.06] max-nav:border-r-0 max-nav:border-b">
+      <nav className="flex flex-col gap-1 max-nav:flex-row max-nav:flex-wrap max-nav:gap-1.5 max-nav:justify-center" aria-label="Үндсэн цэс">
         <span className="mono !text-meta px-3 mb-1 max-nav:hidden">Тоглуулагч</span>
         {NAV_ITEMS.map((item) => {
           const active = view === item.view;

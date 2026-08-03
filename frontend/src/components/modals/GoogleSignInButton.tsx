@@ -1,0 +1,71 @@
+"use client";
+
+/* Google Identity Services (GSI) "Sign in with Google" товч — `accounts.google.com/gsi/client`
+   скриптийг ачаалж, Google-ийн өөрийнх нь HTML товчийг заасан div-д рендэр хийнэ. Товч
+   дарагдахад Google клиент талд ID token (JWT) үүсгэж `callback`-д дамжуулна — backend
+   энэ токеныг баталгаажуулна (auth.service.ts loginWithGoogle). GOOGLE_CLIENT_ID
+   тохируулаагүй бол (dev орчинд) юу ч рендэрлэхгүй, алдаа шидэхгүй. */
+import { useEffect, useRef } from "react";
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: { client_id: string; callback: (resp: { credential: string }) => void }) => void;
+          renderButton: (el: HTMLElement, options: Record<string, unknown>) => void;
+        };
+      };
+    };
+  }
+}
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+export default function GoogleSignInButton({ onCredential }: { onCredential: (idToken: string) => void }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || !containerRef.current) return;
+
+    let cancelled = false;
+
+    function render() {
+      if (cancelled || !window.google || !containerRef.current) return;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID as string,
+        callback: (resp) => onCredential(resp.credential),
+      });
+      window.google.accounts.id.renderButton(containerRef.current, {
+        type: "standard",
+        theme: "filled_black",
+        size: "large",
+        shape: "pill",
+        width: 336,
+        text: "continue_with",
+        locale: "mn",
+      });
+    }
+
+    if (window.google) {
+      render();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = render;
+    document.head.appendChild(script);
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!GOOGLE_CLIENT_ID) return null;
+
+  return <div ref={containerRef} className="flex justify-center" />;
+}

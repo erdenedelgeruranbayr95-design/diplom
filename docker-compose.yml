@@ -80,6 +80,7 @@ services:
       S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000/medreh-media}
       JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       NODE_ENV: production
     volumes:
       - uploads:/app/uploads
@@ -92,7 +93,13 @@ services:
       retries: 5
 
   web:
-    build: ./frontend
+    build:
+      context: ./frontend
+      # NEXT_PUBLIC_* хувьсагчид build-ийн үед клиент bundle-д bake хийгддэг тул
+      # build args-аар дамжуулна (runtime environment: биш). Тохируулаагүй бол
+      # хоосон — Google товч frontend дээр харагдахгүй, бусад бүх зүйл хэвийн.
+      args:
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     restart: unless-stopped
     depends_on:
       api:

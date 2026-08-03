@@ -160,6 +160,12 @@ export class UsersService {
   async changePassword(userId: string, dto: ChangePasswordDto) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('Хэрэглэгч олдсонгүй');
+    /* Google-ээр бүртгэгдсэн хэрэглэгч нууц үггүй тул энэ урсгал огт хамаарахгүй —
+       тэдэнд харуулах шаардлагатай бол frontend "нууц үг тохируулах" эсвэл
+       "Google-ээр нэвтэрсэн" гэсэн тусдаа мессежийг Settings-д харуулах хэрэгтэй. */
+    if (!user.passwordHash) {
+      throw new BadRequestException('Энэ бүртгэл Google-ээр нэвтэрдэг тул нууц үггүй');
+    }
 
     const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Одоогийн нууц үг буруу байна');
@@ -306,8 +312,12 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('Хэрэглэгч олдсонгүй');
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) throw new UnauthorizedException('Нууц үг буруу байна');
+    /* Google-ээр бүртгэгдсэн хэрэглэгч нууц үггүй тул JWT session өөрөө хангалттай
+       баталгаа (тухайн хэрэглэгч нэвтэрсэн үедээ л энэ endpoint-д хүрнэ). */
+    if (user.passwordHash) {
+      const valid = await bcrypt.compare(password, user.passwordHash);
+      if (!valid) throw new UnauthorizedException('Нууц үг буруу байна');
+    }
 
     await this.prisma.user.delete({ where: { id: userId } });
     return { ok: true };

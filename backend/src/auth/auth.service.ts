@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, createHash } from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import { Role, UserStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
@@ -52,11 +53,15 @@ function toSession(
 
 @Injectable()
 export class AuthService {
+  private readonly googleClient: OAuth2Client;
+
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
-  ) {}
+  ) {
+    this.googleClient = new OAuth2Client(this.config.get<string>('GOOGLE_CLIENT_ID'));
+  }
 
   private toSessionUser(user: Parameters<typeof toSession>[0]) {
     const key = this.config.get<string>('HEARING_PROFILE_ENC_KEY') || 'dev-only-insecure-hearing-key';
@@ -131,7 +136,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const email = dto.email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна');
+    if (!user || !user.passwordHash) throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна');
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна');
@@ -146,6 +151,55 @@ export class AuthService {
 
     /* Root Panel-ийн "Сүүлд нэвтэрсэн" багана — зөвхөн энд, амжилттай нэвтэрсэн
        мөчид л шинэчилнэ (register/refresh биш, жинхэнэ login үйлдэл). */
+    await this.prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+
+    const accessToken = this.signAccessToken(user);
+    const refreshToken = await this.issueRefreshToken(user.id);
+    return { accessToken, refreshToken, user: this.toSessionUser(user) };
+  }
+
+  /* Google "Sign in with Google" (Google Identity Services) — frontend-ээс ирэх ID
+     token-ыг Google-ийн өөрийнх нь public key-ээр баталгаажуулна (аудиенс =
+     GOOGLE_CLIENT_ID таарсан эсэхийг мөн шалгана). Имэйлээр одоо байгаа хэрэглэгч
+     олдвол googleId-г холбож нэвтрүүлнэ (нууц үгээр бүртгүүлсэн хэрэглэгч Google-ээр
+     ч нэвтрэх боломжтой болно), олдохгүй бол USER эрхээр шинээр бүртгэнэ. */
+  async loginWithGoogle(idToken: string) {
+    const clientId = this.config.get<string>('GOOGLE_CLIENT_ID');
+    if (!clientId) throw new BadRequestException('Google нэвтрэлт тохируулагдаагүй байна');
+
+    let payload;
+    try {
+      const ticket = await this.googleClient.verifyIdToken({ idToken, audience: clientId });
+      payload = ticket.getPayload();
+    } catch {
+      throw new UnauthorizedException('Google токен хүчингүй байна');
+    }
+    if (!payload?.email || !payload.sub) {
+      throw new UnauthorizedException('Google токен хүчингүй байна');
+    }
+    if (!payload.email_verified) {
+      throw new UnauthorizedException('Google имэйл баталгаажаагүй байна');
+    }
+
+    const email = payload.email.trim().toLowerCase();
+    const googleId = payload.sub;
+
+    let user = await this.prisma.user.findUnique({ where: { googleId } });
+    if (!user) {
+      user = await this.prisma.user.findUnique({ where: { email } });
+      if (user) {
+        user = await this.prisma.user.update({ where: { id: user.id }, data: { googleId } });
+      } else {
+        user = await this.prisma.user.create({
+          data: { name: payload.name || email.split('@')[0], email, googleId },
+        });
+      }
+    }
+
+    if (user.status === UserStatus.BANNED) {
+      throw new ForbiddenException('Таны бүртгэл түдгэлзүүлэгдсэн байна');
+    }
+
     await this.prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
     const accessToken = this.signAccessToken(user);

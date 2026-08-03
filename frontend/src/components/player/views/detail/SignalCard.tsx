@@ -87,16 +87,14 @@ export default function SignalCard({
         <dl className="mt-5 grid grid-cols-3 max-nav:grid-cols-1 gap-3">
           {bandMix.map((band) => (
             <div key={band.key} className="rounded-2xl border border-white/[.07] bg-white/[.025] px-3.5 py-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <dt className="text-note font-semibold text-dim">{band.label}</dt>
-                <dd className="mono !text-meta !tracking-[.14em] text-ink">{band.value}%</dd>
-              </div>
+              <dt className="text-note font-semibold text-dim">{band.label}</dt>
               <div className="mt-2 h-1.5 rounded-full bg-white/[.07] overflow-hidden">
                 <span
                   className="block h-full rounded-full transition-[width] duration-500"
                   style={{ width: Math.min(100, band.value) + "%", background: band.tone }}
                 />
               </div>
+              <dd className="mono !text-meta !tracking-[.14em] text-ink mt-2">{band.value}%</dd>
             </div>
           ))}
         </dl>
