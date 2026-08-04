@@ -129,6 +129,7 @@ model User {
   auditLogs       AuditLog[]        @relation("AuditActor")
   reportsFiled    Report[]          @relation("ReportedBy")
   reportsResolved Report[]          @relation("ReportResolvedBy")
+  loginAttempts   LoginAttempt[]
 }
 
 // Админ/ROOT-ийн хийсэн бүх өөрчлөх (mutating) үйлдлийн мөрдөгдөх бүртгэл —
@@ -147,6 +148,24 @@ model AuditLog {
 
   @@index([actorId, createdAt])
   @@index([createdAt])
+}
+
+// Нэвтрэх оролдлого бүрийн бүртгэл (амжилттай/амжилтгүй) — RootSecurity-ийн
+// "Blocked IP · Failed Login" хэсэгт бодит өгөгдөл харуулахад ашиглана.
+// `userId` заавал бус — буруу имэйлээр оролдвол (хэрэглэгч олдохгүй) ч бүртгэнэ.
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  success   Boolean
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([ip, createdAt])
+  @@index([email, createdAt])
+  @@index([success, createdAt])
 }
 
 // Хэрэглэгчийн мэдүүлсэн тохирохгүй контент/зөрчлийн бүртгэл (дуу, хэрэглэгч гм).
@@ -338,6 +357,7 @@ model Song {
   published   Boolean      @default(false)
   publishedAt DateTime?
   jamendoId   String? // Jamendo-с импортолсон бол эх track ID (давхар импортоос сэргийлнэ)
+  fmaId       String? // Free Music Archive-аас импортолсон бол эх track ID (давхар импортоос сэргийлнэ)
 
   // ---- Presigned S3 upload баталгаажуулалт (Үе шат 5) ----
   // Клиент presigned URL авч, MinIO руу шууд PUT хийгээд `confirm`-оор мэдэгдэнэ.
@@ -350,9 +370,10 @@ model Song {
   beatTimestamps Json?
   rms            Float?
   peak           Float?
-  bassEnergy     Float?
-  midEnergy      Float?
-  trebleEnergy   Float?
+  bassEnergy     Float? // Хуучирсан 3-бүсийн харагдац — bandEnergies-ийн 8-бүсэд шилжсэн ч
+  midEnergy      Float? // одоо байгаа мөрүүдийн (upload хийгдсэн, дахин анализ хийгээгүй)
+  trebleEnergy   Float? // өгөгдлийг гээхгүйн тулд устгаагүй.
+  bandEnergies   Json? // 8 элементтэй массив [0..1], analyze.ts-ийн computeBandEnergy() 8-бүсийн гаралт
   waveformPeaks  Json?
   analyzedAt     DateTime?
 

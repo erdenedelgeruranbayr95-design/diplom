@@ -69,4 +69,11 @@ export class AnalyzeSongDto {
   @IsArray()
   @IsNumber({}, { each: true })
   waveformPeaks?: number[];
+
+  /* 8 логарифм бүсийн энерги [0..1] — Python worker-ийн Haptic Score-той (BAND_EDGES_HZ)
+     зах тохирсон, `analyze.ts`-ийн computeBandEnergies8() гаралт. */
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  bandEnergies?: number[];
 }

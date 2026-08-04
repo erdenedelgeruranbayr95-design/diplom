@@ -17,6 +17,8 @@ export function useDeviceSync(onPhoneConnected?: () => void) {
   const socketRef = useRef<Socket | null>(null);
   const onPhoneConnectedRef = useRef(onPhoneConnected);
   onPhoneConnectedRef.current = onPhoneConnected;
+  const qrTokenRef = useRef<string | null>(null);
+  qrTokenRef.current = qrToken;
 
   function ensureSocket(): Socket {
     if (!socketRef.current) {
@@ -34,6 +36,16 @@ export function useDeviceSync(onPhoneConnected?: () => void) {
       s.on("phone:disconnected", () => {
         setQrState("waiting");
         setConnectedAt(null);
+      });
+      /* Сүлжээ тасарч socket.io өөрөө дахин холбогдоход (autoConnect) сервер талын
+         session mapping шинэ socket.id-тай холбогдоогүй үлдэнэ — тул идэвхтэй байсан
+         token-оор session-оо дахин үүсгэж, холбогдсон утсыг алдахгүйгээр сэргээнэ. */
+      s.io.on("reconnect", () => {
+        const token = qrTokenRef.current;
+        if (!token) return;
+        s.emit("desktop:create-session", { token }, (ack: AckResponse) => {
+          if (!ack.ok) setQrState("error");
+        });
       });
     }
     return socketRef.current;

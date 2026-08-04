@@ -55,7 +55,7 @@ export class BleVestDevice implements HapticDevice {
     this.characteristic.writeValueWithoutResponse(payload).catch(() => {});
   }
 
-  pulse(strength: number, _durationMs?: number): void {
+  pulse(strength: number): void {
     // Ганц импульс — бүх бүсийг зэрэг дунд эрчимээр (zone-мэдээлэлгүй дуудлагад).
     for (let zone = 0; zone < 8; zone++) this.write(zone, strength);
   }

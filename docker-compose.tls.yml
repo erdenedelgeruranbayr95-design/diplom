@@ -1,0 +1,55 @@
+# TLS reverse-proxy override — жинхэнэ домэйн/сертификат бэлэн болсны дараа ашиглана.
+#
+# Хэрэглээ:
+#   docker compose -f docker-compose.yml -f docker-compose.tls.yml --env-file .env.production up -d --build
+#
+# Юу хийдэг:
+#   - `api`/`web`-ийн host порт нээлтийг (3000/3001) хаана — гаднаас зөвхөн nginx-ээр л хүрнэ
+#     (Docker дотоод сүлжээгээр api/web-д хүрэх боломж хэвээр үлдэнэ).
+#   - `nginx` (Certbot-той хамт) 80/443 портыг сонсож, `PUBLIC_DOMAIN`-д HTTPS-ээр
+#     үйлчилнэ, HTTP хүсэлтийг HTTPS рүү redirect хийнэ.
+#
+# Урьдчилсан нөхцөл (хүний/DNS/domain даалгавар — код биш):
+#   1. `PUBLIC_DOMAIN` (жишээ нь medreh.example.com) A/AAAA бичлэгээ энэ серверийн
+#      IP рүү чиглүүлсэн байх ёстой (docker-compose код үүнийг автоматаар хийж чадахгүй).
+#   2. Эхний ажиллуулалтад сертификат байхгүй тул `certbot` container-ийг гараар,
+#      эсвэл `scripts/init-tls.sh`-ээр (доор тайлбарласан) нэг удаа ажиллуулж
+#      Let's Encrypt сертификат авна.
+services:
+  api:
+    ports: !reset []
+
+  web:
+    ports: !reset []
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:?PUBLIC_DOMAIN заавал (жишээ нь medreh.example.com)}
+    volumes:
+      - ./nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - certbot-www:/var/www/certbot:ro
+      - certbot-certs:/etc/letsencrypt:ro
+    command: >
+      /bin/sh -c "envsubst '$$PUBLIC_DOMAIN' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf &&
+      nginx -g 'daemon off;'"
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    # Сертификатын шинэчлэлтийг өдөрт 2 удаа шалгана (Let's Encrypt-ийн зөвлөмж).
+    entrypoint: >
+      /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done"
+
+volumes:
+  certbot-www:
+  certbot-certs:

@@ -90,6 +90,45 @@ export class AdminService {
     };
   }
 
+  /** RootSecurity дэлгэц — "Blocked IP · Failed Login" хэсэгт бодит өгөгдөл өгнө.
+   *  "Blocked" гэдгийг Throttler-ийн адил цонхоор (сүүлийн 60 сек) тодорхойлно —
+   *  нэвтрэлтийн `Throttle({ limit: 5, ttl: 60000 })`-той нийцтэй босго (>=5 амжилтгүй
+   *  оролдлого/IP = throttled гэсэн үг), гэхдээ IP-ийн ТҮҮХЭН бүртгэлийг харуулна
+   *  (Throttler өөрөө зөвхөн идэвхтэй цонхыг санадаг, dashboard-д харуулах боломжгүй). */
+  async securityOverview() {
+    const windowStart = new Date(Date.now() - 60 * 60 * 1000); // сүүлийн 1 цаг
+    const recentFailed = await this.prisma.loginAttempt.findMany({
+      where: { success: false, createdAt: { gte: windowStart }, ip: { not: null } },
+      select: { ip: true, email: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+    });
+
+    const byIp = new Map<string, { count: number; emails: Set<string>; lastAt: Date }>();
+    for (const a of recentFailed) {
+      const ip = a.ip as string;
+      const entry = byIp.get(ip) ?? { count: 0, emails: new Set<string>(), lastAt: a.createdAt };
+      entry.count += 1;
+      entry.emails.add(a.email);
+      if (a.createdAt > entry.lastAt) entry.lastAt = a.createdAt;
+      byIp.set(ip, entry);
+    }
+
+    const blockedIps = [...byIp.entries()]
+      .filter(([, v]) => v.count >= 5) // AuthController-ийн Throttle({ limit: 5, ttl: 60000 })-той нийцтэй босго
+      .map(([ip, v]) => ({ ip, failedCount: v.count, distinctEmails: v.emails.size, lastAttemptAt: v.lastAt }))
+      .sort((a, b) => b.failedCount - a.failedCount);
+
+    const recentFailedLogins = await this.prisma.loginAttempt.findMany({
+      where: { success: false },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: { id: true, email: true, ip: true, userAgent: true, createdAt: true },
+    });
+
+    return { blockedIps, recentFailedLogins, windowMinutes: 60 };
+  }
+
   /** Song устсан ч MinIO-д үлдсэн файлыг цэвэрлэнэ (`Song`-той холбоогүй объект).
    *  `scores/` (Haptic Score JSON) файлыг оролцуулахгүй — Song.scoreUrl нь local
    *  `/uploads/scores/`-д хадгалагддаг тул S3 key намайг таарахгүй, алдаатай устгахаас сэргийлнэ. */

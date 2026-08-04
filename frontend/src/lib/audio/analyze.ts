@@ -2,13 +2,17 @@
 
 /* Клиент талд (browser) ажилладаг аудио анализ — backend Node.js орчинд Web Audio API байхгүй тул
    энд тооцоолж, үр дүнг зөвхөн хадгалуулахаар backend рүү илгээнэ (POST /songs/:id/analyze).
-   Давтамжийн бүс хуваалт (bass/mid/high) нь Player.tsx-ийн тоглуулах үеийн RAF loop-той
-   ЯГ ИЖИЛ харьцаагаар тооцоологдоно (fftSize=256, ~8%/30%/62% of 128 bins) — playback үеийн
-   болон анализ үеийн тоо зөрөхгүй байх үүднээс. */
+   Давтамжийн бүс хуваалт нь Python worker-ийн Haptic Score-той (8 логарифм бүс,
+   `BAND_EDGES_HZ = [20,60,150,400,1000,2500,6000,12000,20000]`, см. worker/worker/analysis.py)
+   ЗАХ ТОХИРУУЛСАН — upload-ийн энгийн урьдчилсан preview (bandEnergies) болон Score-ийн
+   playback-ийн 8-бүс ижил давтамжийн заагтай байх тул хэрэглэгчид нийцтэй мэдрэгдэнэ.
+   (bassEnergy/midEnergy/trebleEnergy 3-бүс талбарууд Song.bandEnergies-тэй зэрэгцэн
+   ХЭВЭЭР үлдэнэ — хуучин upload хийсэн дуунуудын өгөгдлийг гээхгүйн тулд, см. schema.prisma.) */
 import type { AnalyzeSongPayload } from "@/types/song";
 
 const FFT_SIZE = 256;
 const WAVEFORM_POINTS = 200;
+const BAND_EDGES_HZ = [20, 60, 150, 400, 1000, 2500, 6000, 12000, 20000];
 
 export async function analyzeAudioFile(fileUrl: string): Promise<AnalyzeSongPayload> {
   const res = await fetch(fileUrl);
@@ -29,6 +33,7 @@ export async function analyzeAudioFile(fileUrl: string): Promise<AnalyzeSongPayl
   const { rms, peak, waveformPeaks } = computeWaveform(channel);
   const { beatCount, beatTimestamps, bpm } = detectBeats(channel, sampleRate);
   const { bassEnergy, midEnergy, trebleEnergy } = computeBandEnergy(channel, sampleRate);
+  const bandEnergies = computeBandEnergies8(channel, sampleRate);
 
   return {
     /* Дууны урт — decodeAudioData()-ийн буцаасан бодит утга. Дуу бүрийн duration-ийг
@@ -42,6 +47,7 @@ export async function analyzeAudioFile(fileUrl: string): Promise<AnalyzeSongPayl
     bassEnergy,
     midEnergy,
     trebleEnergy,
+    bandEnergies,
     waveformPeaks,
   };
 }
@@ -150,6 +156,46 @@ function computeBandEnergy(channel: Float32Array, sampleRate: number) {
     midEnergy: Number((midSum / sampled).toFixed(4)),
     trebleEnergy: Number((trebleSum / sampled).toFixed(4)),
   };
+}
+
+/* Worker-ийн Haptic Score-той ЗАХ ТОХИРУУЛСАН 8 логарифм бүсийн дундаж энергийг
+   тооцоолно (`BAND_EDGES_HZ`, см. файлын эхний тайлбар) — `computeBandEnergy()`-тэй
+   ижил sampled-window арга, зөвхөн bin→Hz хөрвүүлж 8 бүсэд хуваарилдгаараа ялгаатай.
+   FFT_SIZE (256) нь 3-бүсийн playback-той нийцүүлэхэд зориулагдсан бөгөөд эндхийн
+   доод давтамжийн (20-150Hz) 2 бүсийг ялгахад хэт бага нарийвчлалтай (~172Hz/bin)
+   тул энд ЗӨВХӨН энэ функцэд зориулж 8x том цонх (2048, ~21.5Hz/bin) ашиглана. */
+const BAND8_WINDOW = FFT_SIZE * 8;
+
+export function computeBandEnergies8(channel: Float32Array, sampleRate: number): number[] {
+  const windowSamples = BAND8_WINDOW;
+  const n = BAND8_WINDOW / 2;
+  const nyquist = sampleRate / 2;
+  const hzPerBin = nyquist / n;
+
+  // Давтамжийн зах бүрийг bin индекс болгож урьдчилан тооцоол — цонх бүрд дахин
+  // тооцохгүйн тулд (BAND_EDGES_HZ-ийн 9 зах → 8 бүс).
+  const binEdges = BAND_EDGES_HZ.map((hz) => Math.min(n, Math.max(0, Math.round(hz / hzPerBin))));
+
+  const windowCount = Math.max(1, Math.floor(channel.length / windowSamples));
+  const step = Math.max(1, Math.floor(windowCount / 300));
+
+  const sums = new Array(BAND_EDGES_HZ.length - 1).fill(0);
+  let sampled = 0;
+
+  for (let w = 0; w < windowCount; w += step) {
+    const start = w * windowSamples;
+    const mags = dftMagnitudes(channel, start, windowSamples, n);
+    for (let b = 0; b < sums.length; b++) {
+      const lo = binEdges[b];
+      const hi = Math.max(lo + 1, binEdges[b + 1]); // хамгийн багадаа 1 bin (доод захын бүс хэт нарийхан байж болно)
+      let sum = 0;
+      for (let i = lo; i < hi; i++) sum += mags[i] ?? 0;
+      sums[b] += sum / (hi - lo);
+    }
+    sampled++;
+  }
+
+  return sums.map((s) => Number((s / sampled).toFixed(4)));
 }
 
 /* Энгийн (Hann цонхтой) DFT magnitude тооцоолол — analyser.getByteFrequencyData(0-255)-тэй

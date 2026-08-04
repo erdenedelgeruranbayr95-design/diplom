@@ -133,21 +133,34 @@ export class AuthService {
     return { accessToken, refreshToken, user: this.toSessionUser(user) };
   }
 
-  async login(dto: LoginDto) {
+  /* `ip`/`userAgent` нь RootSecurity-ийн "Blocked IP · Failed Login" хэсэгт бодит
+     өгөгдөл харуулахад ашиглагдана (см. LoginAttempt model). Амжилттай ба амжилтгүй
+     оролдлого хоёуланг нь бүртгэнэ — зөвхөн алдаа шидэхээс өмнө биш, `return`-ийн
+     өмнө ч бичих ёстой тул `logAttempt` helper-ийг try/catch-гүйгээр дуудна. */
+  async login(dto: LoginDto, ip?: string, userAgent?: string) {
     const email = dto.email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || !user.passwordHash) throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна');
+    if (!user || !user.passwordHash) {
+      await this.logAttempt(email, null, false, ip, userAgent);
+      throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна');
+    }
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!valid) throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна');
+    if (!valid) {
+      await this.logAttempt(email, user.id, false, ip, userAgent);
+      throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна');
+    }
 
     /* Түдгэлзүүлсэн (BANNED) хэрэглэгч ШИНЭ session нээж чадахгүй — нууц үг зөв ч гэсэн.
        JwtStrategy.validate() нь ОДОО БАЙГАА access token-ыг дараагийн хүсэлт бүрт шалгадаг,
        харин энд шинэ токен олгохоос ӨМНӨ шалгах шаардлагатай (эс бол suspend хийхээс
        өмнө нэвтэрч байгаагүй хэрэглэгч ч суспенд байхдаа шинэ session нээх боломжтой болно). */
     if (user.status === UserStatus.BANNED) {
+      await this.logAttempt(email, user.id, false, ip, userAgent);
       throw new ForbiddenException('Таны бүртгэл түдгэлзүүлэгдсэн байна');
     }
+
+    await this.logAttempt(email, user.id, true, ip, userAgent);
 
     /* Root Panel-ийн "Сүүлд нэвтэрсэн" багана — зөвхөн энд, амжилттай нэвтэрсэн
        мөчид л шинэчилнэ (register/refresh биш, жинхэнэ login үйлдэл). */
@@ -156,6 +169,12 @@ export class AuthService {
     const accessToken = this.signAccessToken(user);
     const refreshToken = await this.issueRefreshToken(user.id);
     return { accessToken, refreshToken, user: this.toSessionUser(user) };
+  }
+
+  private async logAttempt(email: string, userId: string | null, success: boolean, ip?: string, userAgent?: string) {
+    await this.prisma.loginAttempt
+      .create({ data: { email, userId, success, ip, userAgent } })
+      .catch(() => {}); // Бүртгэл бичихэд гарсан алдаа нэвтрэх урсгалыг тасалдуулахгүй.
   }
 
   /* Google "Sign in with Google" (Google Identity Services) — frontend-ээс ирэх ID

@@ -26,6 +26,7 @@ function song(overrides: Partial<Song> & { id: string; title: string }): Song {
     bassEnergy: null,
     midEnergy: null,
     trebleEnergy: null,
+    bandEnergies: null,
     waveformPeaks: null,
     analyzedAt: null,
     fileHash: null,

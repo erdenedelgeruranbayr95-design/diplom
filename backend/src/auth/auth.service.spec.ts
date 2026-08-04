@@ -19,6 +19,7 @@ describe('AuthService', () => {
     user: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
     refreshToken: { create: jest.Mock; findUnique: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
     parentLink: { create: jest.Mock };
+    loginAttempt: { create: jest.Mock };
   };
   let jwt: JwtService;
 
@@ -42,6 +43,7 @@ describe('AuthService', () => {
       user: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
       refreshToken: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
       parentLink: { create: jest.fn() },
+      loginAttempt: { create: jest.fn().mockResolvedValue({}) },
     };
     jwt = new JwtService({ secret: 'test-secret' });
     const config = {
@@ -89,6 +91,43 @@ describe('AuthService', () => {
       const passwordHash = await bcrypt.hash('correct-password', 4);
       prisma.user.findUnique.mockResolvedValue({ ...baseUser, passwordHash });
       await expect(service.login({ email: baseUser.email, password: 'wrong-password' } as never)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('records a LoginAttempt row (success=false) on every rejected login, and (success=true) on success — for RootSecurity Blocked-IP/Failed-Login', async () => {
+      const passwordHash = await bcrypt.hash('correct-password', 4);
+
+      // unknown email
+      prisma.user.findUnique.mockResolvedValueOnce(null);
+      await expect(service.login({ email: 'nobody@x.com', password: 'x' } as never, '1.2.3.4', 'ua')).rejects.toThrow(UnauthorizedException);
+      expect(prisma.loginAttempt.create).toHaveBeenCalledWith({
+        data: { email: 'nobody@x.com', userId: null, success: false, ip: '1.2.3.4', userAgent: 'ua' },
+      });
+
+      // wrong password
+      prisma.user.findUnique.mockResolvedValueOnce({ ...baseUser, passwordHash });
+      await expect(service.login({ email: baseUser.email, password: 'wrong' } as never, '1.2.3.4', 'ua')).rejects.toThrow(UnauthorizedException);
+      expect(prisma.loginAttempt.create).toHaveBeenCalledWith({
+        data: { email: baseUser.email, userId: baseUser.id, success: false, ip: '1.2.3.4', userAgent: 'ua' },
+      });
+
+      // success
+      prisma.user.findUnique.mockResolvedValueOnce({ ...baseUser, passwordHash });
+      prisma.refreshToken.create.mockResolvedValue({});
+      prisma.user.update.mockResolvedValue({});
+      await service.login({ email: baseUser.email, password: 'correct-password' } as never, '1.2.3.4', 'ua');
+      expect(prisma.loginAttempt.create).toHaveBeenCalledWith({
+        data: { email: baseUser.email, userId: baseUser.id, success: true, ip: '1.2.3.4', userAgent: 'ua' },
+      });
+    });
+
+    it('does not let a LoginAttempt write failure break the login flow', async () => {
+      const passwordHash = await bcrypt.hash('correct-password', 4);
+      prisma.user.findUnique.mockResolvedValue({ ...baseUser, passwordHash });
+      prisma.refreshToken.create.mockResolvedValue({});
+      prisma.user.update.mockResolvedValue({});
+      prisma.loginAttempt.create.mockRejectedValueOnce(new Error('db down'));
+
+      await expect(service.login({ email: baseUser.email, password: 'correct-password' } as never)).resolves.toBeDefined();
     });
 
     it('rejects login for a BANNED user even with the correct password (cannot open a new session)', async () => {

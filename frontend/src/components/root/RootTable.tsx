@@ -91,27 +91,31 @@ export default function RootTable<T>({
               );
             }
             return (
-              <button
+              <span
                 key={col.key}
-                type="button"
-                className={
-                  cls +
-                  " inline-flex items-center gap-1.5 transition-colors duration-150 rounded focus-visible:outline-none focus-visible:shadow-glow-aqua " +
-                  (active ? "!text-aqua" : "hover:!text-ink")
-                }
-                onClick={() => table.toggleSort(col.key)}
-                aria-label={`${col.label} багнаар эрэмбэлэх`}
+                role="columnheader"
                 aria-sort={active ? (table.sort?.direction === "asc" ? "ascending" : "descending") : "none"}
               >
-                {col.label}
-                <span
-                  className={"flex transition-transform duration-200 " + (active ? "opacity-100" : "opacity-30")}
-                  style={active && table.sort?.direction === "desc" ? { transform: "rotate(180deg)" } : undefined}
-                  aria-hidden="true"
+                <button
+                  type="button"
+                  className={
+                    cls +
+                    " inline-flex items-center gap-1.5 transition-colors duration-150 rounded focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+                    (active ? "!text-aqua" : "hover:!text-ink")
+                  }
+                  onClick={() => table.toggleSort(col.key)}
+                  aria-label={`${col.label} багнаар эрэмбэлэх`}
                 >
-                  <Icon name="arrowDown" size={11} strokeWidth={2.4} />
-                </span>
-              </button>
+                  {col.label}
+                  <span
+                    className={"flex transition-transform duration-200 " + (active ? "opacity-100" : "opacity-30")}
+                    style={active && table.sort?.direction === "desc" ? { transform: "rotate(180deg)" } : undefined}
+                    aria-hidden="true"
+                  >
+                    <Icon name="arrowDown" size={11} strokeWidth={2.4} />
+                  </span>
+                </button>
+              </span>
             );
           })}
           {hasActions && <span className="mono text-right">Үйлдэл</span>}

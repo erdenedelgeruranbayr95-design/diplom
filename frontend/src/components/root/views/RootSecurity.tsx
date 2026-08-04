@@ -6,7 +6,7 @@ import { TableCard } from "@/components/ui/Surface";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { Empty } from "@/components/ui/States";
 import UserAvatar from "@/components/ui/UserAvatar";
-import { listUserSessions } from "@/lib/api/client";
+import { listUserSessions, getSecurityOverview, type BlockedIpRow, type FailedLoginRow } from "@/lib/api/client";
 import RootSection from "../RootSection";
 import RootUserActions from "../RootUserActions";
 import type { RootData } from "@/lib/root/hooks/useRootMetrics";
@@ -15,14 +15,40 @@ import type { AdminUserRow } from "@/types/auth";
 /* Аюулгүй байдлын тойм:
    1. Түдгэлзсэн бүртгэлүүд — шууд идэвхжүүлэх/нууц үг сэргээх боломжтой.
    2. JWT Sessions — сонгосон хэрэглэгчийн идэвхтэй RefreshToken-ууд (GET /users/:id/sessions).
-   "Blocked IP" · "Failed Login" одоогоор backend-д бүртгэгддэггүй (зөвхөн Throttler
-   ttl/limit-ээр хамгаалдаг) — хуурамч тоо харуулахгүйн тулд доор ил тодорхойлов. */
+   3. Blocked IP · Failed Login — LoginAttempt хүснэгтэд бодитоор бичигдсэн бүртгэл
+      (см. GET /security-overview) — "Blocked" гэдгийг сүүлийн 60 минутад >=5 амжилтгүй
+      оролдлоготой IP гэж тодорхойлно (AuthController-ийн Throttle({limit:5,ttl:60000})-той
+      нийцтэй босго). */
 export default function RootSecurity({ data }: { data: RootData }) {
   const [sessionTarget, setSessionTarget] = useState<AdminUserRow | null>(null);
   const [sessions, setSessions] = useState<{ id: string; createdAt: string; expiresAt: string }[] | null>(null);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const banned = data.users.filter((u) => u.status === "BANNED");
   const staff = data.users.filter((u) => u.role !== "ROOT");
+
+  const [blockedIps, setBlockedIps] = useState<BlockedIpRow[] | null>(null);
+  const [recentFailed, setRecentFailed] = useState<FailedLoginRow[] | null>(null);
+  const [loadingSecurity, setLoadingSecurity] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    getSecurityOverview()
+      .then((res) => {
+        if (!alive) return;
+        setBlockedIps(res.blockedIps);
+        setRecentFailed(res.recentFailedLogins);
+      })
+      .catch(() => {
+        if (alive) {
+          setBlockedIps([]);
+          setRecentFailed([]);
+        }
+      })
+      .finally(() => alive && setLoadingSecurity(false));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!sessionTarget) {
@@ -125,9 +151,58 @@ export default function RootSecurity({ data }: { data: RootData }) {
         </TableCard>
       )}
 
+      <div className="mt-8 mb-4">
+        <span className="mono !text-meta">Blocked IP (сүүлийн 60 минут, ≥5 амжилтгүй оролдлого)</span>
+      </div>
+      {loadingSecurity ? (
+        <p className="text-dim text-body">Ачаалж байна…</p>
+      ) : !blockedIps || blockedIps.length === 0 ? (
+        <Empty icon="eye" title="Блоклогдсон IP алга" hint="Сүүлийн 60 минутад 5-аас дээш амжилтгүй нэвтрэлт хийсэн IP энд гарна" />
+      ) : (
+        <TableCard>
+          <div className="grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-white/[.02]">
+            <span className="mono">IP хаяг</span>
+            <span className="mono">Амжилтгүй</span>
+            <span className="mono max-nav:hidden">Өөр имэйл</span>
+            <span className="mono text-right">Сүүлд</span>
+          </div>
+          {blockedIps.map((row) => (
+            <div key={row.ip} className="grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-3 items-center py-3 px-5 border-b border-white/[.06] last:border-b-0 text-body">
+              <span className="font-mono text-caption text-ink truncate">{row.ip}</span>
+              <span className="text-danger text-caption font-semibold">{row.failedCount}</span>
+              <span className="text-dim text-caption max-nav:hidden">{row.distinctEmails}</span>
+              <span className="text-dim text-caption text-right">{new Date(row.lastAttemptAt).toLocaleString("mn-MN")}</span>
+            </div>
+          ))}
+        </TableCard>
+      )}
+
+      <div className="mt-8 mb-4">
+        <span className="mono !text-meta">Сүүлийн амжилтгүй нэвтрэлтүүд</span>
+      </div>
+      {loadingSecurity ? (
+        <p className="text-dim text-body">Ачаалж байна…</p>
+      ) : !recentFailed || recentFailed.length === 0 ? (
+        <Empty icon="eye" title="Амжилтгүй нэвтрэлт алга" />
+      ) : (
+        <TableCard>
+          <div className="grid grid-cols-[1.4fr_1fr_1fr] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-white/[.02]">
+            <span className="mono">Имэйл</span>
+            <span className="mono">IP</span>
+            <span className="mono text-right">Огноо</span>
+          </div>
+          {recentFailed.map((row) => (
+            <div key={row.id} className="grid grid-cols-[1.4fr_1fr_1fr] gap-3 items-center py-3 px-5 border-b border-white/[.06] last:border-b-0 text-body">
+              <span className="text-ink truncate">{row.email}</span>
+              <span className="font-mono text-caption text-dim truncate">{row.ip || "—"}</span>
+              <span className="text-dim text-caption text-right">{new Date(row.createdAt).toLocaleString("mn-MN")}</span>
+            </div>
+          ))}
+        </TableCard>
+      )}
+
       <p className="mono !text-micro mt-6">
-        <StatusBadge label="Хязгаарлалт" tone="faint" /> Blocked IP · Failed Login дэлгэрэнгүй бүртгэл одоогоор
-        байхгүй — Throttler (60с/100 хүсэлт) л хамгаалдаг. 2FA · имэйл баталгаажуулалт хараахан хэрэгжээгүй.
+        <StatusBadge label="Хязгаарлалт" tone="faint" /> 2FA · имэйл баталгаажуулалт хараахан хэрэгжээгүй.
       </p>
     </RootSection>
   );

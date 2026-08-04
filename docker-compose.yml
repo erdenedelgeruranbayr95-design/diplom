@@ -79,6 +79,7 @@ services:
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000/medreh-media}
       JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
+      FMA_API_KEY: ${FMA_API_KEY:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       NODE_ENV: production

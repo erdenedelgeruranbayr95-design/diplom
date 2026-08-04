@@ -8,6 +8,7 @@ describe('AdminService', () => {
     auditLog: { findMany: jest.Mock; count: jest.Mock };
     payment: { findMany: jest.Mock };
     song: { findMany: jest.Mock };
+    loginAttempt: { findMany: jest.Mock };
     $queryRaw: jest.Mock;
   };
   let storage: { listAllKeys: jest.Mock; keyFromUrl: jest.Mock; delete: jest.Mock };
@@ -17,6 +18,7 @@ describe('AdminService', () => {
       auditLog: { findMany: jest.fn(), count: jest.fn() },
       payment: { findMany: jest.fn() },
       song: { findMany: jest.fn() },
+      loginAttempt: { findMany: jest.fn() },
       $queryRaw: jest.fn(),
     };
     storage = { listAllKeys: jest.fn(), keyFromUrl: jest.fn(), delete: jest.fn() };
@@ -119,6 +121,33 @@ describe('AdminService', () => {
 
       const result = await service.cleanupOrphanFiles();
       expect(result).toEqual({ deleted: 2, bytesFreed: 50 });
+    });
+  });
+
+  describe('securityOverview', () => {
+    it('groups failed logins by IP and only flags IPs with >=5 attempts as blocked', async () => {
+      const now = new Date();
+      prisma.loginAttempt.findMany
+        .mockResolvedValueOnce([
+          // 5 failed attempts from 9.9.9.9 (blocked), 2 from 1.1.1.1 (not blocked)
+          ...Array.from({ length: 5 }, (_, i) => ({ ip: '9.9.9.9', email: `a${i}@x.com`, createdAt: now })),
+          { ip: '1.1.1.1', email: 'b@x.com', createdAt: now },
+          { ip: '1.1.1.1', email: 'b@x.com', createdAt: now },
+        ])
+        .mockResolvedValueOnce([]); // recentFailedLogins query
+
+      const result = await service.securityOverview();
+      expect(result.blockedIps).toEqual([expect.objectContaining({ ip: '9.9.9.9', failedCount: 5, distinctEmails: 5 })]);
+      expect(result.blockedIps.find((b) => b.ip === '1.1.1.1')).toBeUndefined();
+    });
+
+    it('filters the failed-attempts query to exclude null IPs at the DB level (cannot block an unknown IP)', async () => {
+      prisma.loginAttempt.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+      await service.securityOverview();
+      expect(prisma.loginAttempt.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ ip: { not: null } }) }),
+      );
     });
   });
 });

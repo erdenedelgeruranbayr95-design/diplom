@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import * as songsApi from "@/lib/api/client";
 import { TRACKS } from "@/lib/data/tracks";
 import { idbGet } from "@/lib/data/idb";
-import { loadCustomMeta } from "@/lib/data/library";
+import { loadCustomMeta, loadSongsCache, saveSongsCache } from "@/lib/data/library";
 import { APP_EVENTS } from "@/lib/data/events";
 import { customMetaToPlayerTrack, songToPlayerTrack } from "@/lib/player/song-mapper";
 import { collectGenres } from "@/lib/player/track-index";
@@ -41,8 +41,13 @@ export function useTrackCatalog(enabled: boolean): TrackCatalog {
       .listSongs()
       .then((songs) => {
         if (alive) setBackendSongs(songs.map((song) => songToPlayerTrack(song)));
+        saveSongsCache(songs);
       })
-      .catch(() => {});
+      .catch(() => {
+        // Сүлжээгүй/backend уначихсан үед сүүлд амжилттай татсан каталогийг харуулна.
+        const cached = loadSongsCache();
+        if (alive && cached.length > 0) setBackendSongs(cached.map((song) => songToPlayerTrack(song)));
+      });
     return () => {
       alive = false;
     };

@@ -178,7 +178,6 @@ export function useHapticEngine({
               (window as unknown as { __LATENCY_DEBUG?: boolean }).__LATENCY_DEBUG
             ) {
               const latencyMs = (audioRef.current.currentTime - crossedAt) * 1000;
-              // eslint-disable-next-line no-console
               console.log("LATENCY_DEBUG", JSON.stringify({ latencyMs: Math.round(latencyMs * 100) / 100 }));
             }
             const bp = prefsRef.current;

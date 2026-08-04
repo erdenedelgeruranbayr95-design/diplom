@@ -41,6 +41,7 @@ export interface Song {
   bassEnergy: number | null;
   midEnergy: number | null;
   trebleEnergy: number | null;
+  bandEnergies: number[] | null; // 8 логарифм бүсийн энерги [0..1] — worker Haptic Score-той зах тохирсон
   waveformPeaks: number[] | null;
   analyzedAt: string | null;
 
@@ -102,6 +103,20 @@ export interface JamendoSearchResult {
   releaseYear: number | null;
 }
 
+/** GET /songs/fma/search мөр бүр — Jamendo-той ижил хэлбэр, зөвхөн `jamendoId` → `fmaId`. */
+export interface FmaSearchResult {
+  fmaId: string;
+  title: string;
+  artist: string;
+  album: string | null;
+  duration: number | null;
+  coverUrl: string | null;
+  audioUrl: string;
+  license: string | null;
+  licenseSrc: string | null;
+  releaseYear: number | null;
+}
+
 /** GET /storage/usage — ROOT/ADMIN. */
 export interface StorageUsage {
   totalObjects: number;
@@ -140,6 +155,7 @@ export interface AnalyzeSongPayload {
   bassEnergy?: number;
   midEnergy?: number;
   trebleEnergy?: number;
+  bandEnergies?: number[];
   waveformPeaks?: number[];
 }
 

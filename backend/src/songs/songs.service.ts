@@ -129,6 +129,7 @@ export class SongsService {
         bassEnergy: dto.bassEnergy,
         midEnergy: dto.midEnergy,
         trebleEnergy: dto.trebleEnergy,
+        bandEnergies: dto.bandEnergies,
         waveformPeaks: dto.waveformPeaks,
         analyzedAt: new Date(),
       },

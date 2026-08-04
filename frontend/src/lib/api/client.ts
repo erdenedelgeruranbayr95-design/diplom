@@ -23,6 +23,7 @@ import type {
   Artist,
   ArtistWithSongs,
   CreateHistoryPayload,
+  FmaSearchResult,
   HistoryPage,
   JamendoSearchResult,
   ListenHistoryRow,
@@ -252,6 +253,24 @@ export function getRevenue() {
   return apiFetch<{ total: number; count: number }>("/revenue");
 }
 
+// ---- ROOT: аюулгүй байдал (Blocked IP · Failed Login) ----
+export interface BlockedIpRow {
+  ip: string;
+  failedCount: number;
+  distinctEmails: number;
+  lastAttemptAt: string;
+}
+export interface FailedLoginRow {
+  id: string;
+  email: string;
+  ip: string | null;
+  userAgent: string | null;
+  createdAt: string;
+}
+export function getSecurityOverview() {
+  return apiFetch<{ blockedIps: BlockedIpRow[]; recentFailedLogins: FailedLoginRow[]; windowMinutes: number }>("/security-overview");
+}
+
 export function listAllPayments() {
   return apiFetch<(PaymentRow & { user: { id: string; name: string; email: string } })[]>("/payments");
 }
@@ -365,6 +384,17 @@ export function searchJamendo(q: string, limit = 20) {
 /** Ижил jamendoId-г 2 дахь удаа импортлоход одоо байгаа Song-ийг idempotent-ээр буцаана. */
 export function importJamendoTrack(jamendoId: string) {
   return apiFetch<Song>("/songs/jamendo/import", { method: "POST", body: JSON.stringify({ jamendoId }) });
+}
+
+/** CURATOR/MODERATOR/ADMIN/ROOT — Free Music Archive каталогоос хайх. `FMA_API_KEY` тохируулаагүй бол backend 400 буцаана. */
+export function searchFma(q: string, limit = 20) {
+  const params = new URLSearchParams({ q, limit: String(limit) });
+  return apiFetch<FmaSearchResult[]>(`/songs/fma/search?${params}`);
+}
+
+/** Ижил fmaId-г 2 дахь удаа импортлоход одоо байгаа Song-ийг idempotent-ээр буцаана. */
+export function importFmaTrack(fmaId: string) {
+  return apiFetch<Song>("/songs/fma/import", { method: "POST", body: JSON.stringify({ fmaId }) });
 }
 
 // ---- Haptic Score (Python worker, librosa) ----

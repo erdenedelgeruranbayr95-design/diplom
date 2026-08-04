@@ -38,6 +38,14 @@ export class AdminController {
     return this.admin.revenue();
   }
 
+  /* RootSecurity ("Аюулгүй байдал") дэлгэц — Blocked IP / Failed Login бодит бүртгэл. */
+  @UseGuards(RolesGuard)
+  @Roles(Role.ROOT)
+  @Get('security-overview')
+  securityOverview() {
+    return this.admin.securityOverview();
+  }
+
   @UseGuards(RolesGuard)
   @Roles(Role.ROOT, Role.ADMIN)
   @Get('payments')

@@ -7,6 +7,8 @@ import { AnalyzeSongDto } from './dto/analyze-song.dto';
 import { RequestUploadUrlDto } from './dto/request-upload-url.dto';
 import { JamendoSearchDto, JamendoImportDto } from './dto/jamendo-search.dto';
 import { JamendoService } from './jamendo.service';
+import { FmaSearchDto, FmaImportDto } from './dto/fma-search.dto';
+import { FmaService } from './fma.service';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -26,6 +28,7 @@ export class SongsController {
     private haptic: HapticService,
     private storage: StorageService,
     private jamendo: JamendoService,
+    private fma: FmaService,
   ) {}
 
   /* ---------- Presigned S3 upload (MinIO) ---------- */
@@ -111,6 +114,22 @@ export class SongsController {
   @Post('jamendo/import')
   jamendoImport(@Body() dto: JamendoImportDto, @CurrentUser() user: AuthUser) {
     return this.jamendo.importTrack(dto.jamendoId, user.userId);
+  }
+
+  /* ---------- FMA (Free Music Archive) каталог импорт (Creative Commons лицензтэй л) ---------- */
+
+  @UseGuards(RolesGuard)
+  @Roles(...CATALOG_ROLES)
+  @Get('fma/search')
+  fmaSearch(@Query() q: FmaSearchDto) {
+    return this.fma.search(q.q, q.limit);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(...CATALOG_ROLES)
+  @Post('fma/import')
+  fmaImport(@Body() dto: FmaImportDto, @CurrentUser() user: AuthUser) {
+    return this.fma.importTrack(dto.fmaId, user.userId);
   }
 
   /* Нүүр хуудасны "Хамгийн алдартай / Сүүлийн үеийн / Онцлох" — специфик endpoint-ууд,

@@ -8,6 +8,7 @@
 /** Хэрэглэгчээс хамааралгүй (глобал) түлхүүрүүд. */
 export const GLOBAL_KEYS = {
   customTracks: "medreh_custom_tracks",
+  songsCache: "medreh_songs_cache",
 } as const;
 
 /** Хэрэглэгч тус бүрийн түлхүүрийн угтвар — `<prefix>:<email>` хэлбэрээр ашиглана. */

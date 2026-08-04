@@ -57,8 +57,8 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const { accessToken, refreshToken, user } = await this.auth.login(dto);
+  async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const { accessToken, refreshToken, user } = await this.auth.login(dto, req.ip, req.headers['user-agent']);
     this.setRefreshCookie(res, refreshToken);
     return { accessToken, user };
   }
