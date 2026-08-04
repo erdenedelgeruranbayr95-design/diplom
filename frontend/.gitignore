@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Capacitor Android (build артефакт, локал IDE тохиргоо — код бус)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+android/app/src/main/assets/public/
+android/captor.config.json
+android/app/src/main/assets/capacitor.config.json
