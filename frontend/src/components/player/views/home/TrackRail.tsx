@@ -1,17 +1,52 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useIsPlayingTrack, useTrackActions } from "@/components/player/PlayerContext";
 import TrackPlayButton, { TrackCoverButton } from "@/components/player/shared/TrackPlayButton";
 import { InfoBtn, LikeBtn, SaveBtn } from "@/components/player/TrackButtons";
+import Icon from "@/components/ui/Icon";
 import type { PlayerTrack } from "@/types/player";
 
-/* Хэвтээ гүйдэг dashboard мөр — Үргэлжлүүлэн сонсох · Дуртай · Онцлох · Алдартай ·
-   Сүүлийн үеийн БҮГД ижил rail загвартай. Урьд нь энэ 5 секц HomeView дотор нэг
-   `TrackRail` дуудлагатай байсан ч картын доторх бүх prop гараар дамжиж байв. */
+/* Хэвтээ гүйдэг dashboard мөр — Үргэлжлүүлэн сонсох · Дуртай · Онцлох · Алдартай
+   БҮГД ижил rail загвартай. Урьд нь энэ секцүүд HomeView дотор нэг `TrackRail`
+   дуудлагатай байсан ч картын доторх бүх prop гараар дамжиж байв.
+
+   Хоёр талын сум товч нь mouse drag/trackpad-гүй хэрэглэгчид ч мөрийг гүйлгэх
+   боломж өгнө — төгсгөлд хүрмэгц харгалзах тал нь бүдгэрч, дарагдахгүй болно. */
 
 const RAIL_CLS =
   "relative isolate flex gap-4 overflow-x-auto pt-2 pb-2 -mx-1 px-1 [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]";
+
+/** Карт (186px) + gap (16px). Гүйлгэлтийг үүгээр тоймлож бүтэн картаар зогсооно. */
+const CARD_STEP = 202;
+
+const ARROW_CLS =
+  "absolute top-1/2 -translate-y-1/2 z-20 w-[38px] h-[38px] rounded-full flex items-center justify-center " +
+  "text-ink bg-[rgba(7,10,10,.82)] border border-white/[.1] backdrop-blur-md shadow-[0_8px_22px_rgba(0,0,0,.5)] " +
+  "transition-[opacity,transform,color,border-color] duration-[250ms] " +
+  "hover:scale-[1.08] hover:text-aqua hover:border-aqua/35 focus-visible:outline-none focus-visible:shadow-glow-aqua";
+
+function RailArrow({ side, show, onClick }: { side: "left" | "right"; show: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={side === "left" ? "Зүүн тийш гүйлгэх" : "Баруун тийш гүйлгэх"}
+      /* Тухайн тал руу гүйлгэх зайгүй бол нуугдана. DOM-оос хасахын оронд идэвхгүй
+         болгосон нь tab дараалал гэнэт үсрэхээс сэргийлнэ. */
+      aria-hidden={!show}
+      tabIndex={show ? 0 : -1}
+      className={
+        ARROW_CLS +
+        (side === "left" ? " left-1" : " right-1") +
+        (show ? " opacity-100" : " opacity-0 pointer-events-none")
+      }
+    >
+      <Icon name="chevronRight" size={18} className={side === "left" ? "rotate-180" : ""} />
+    </button>
+  );
+}
 
 function RailCard({ track }: { track: PlayerTrack }) {
   const { likedIds, savedIds, toggleLike, toggleSave, openDetail } = useTrackActions();
@@ -51,11 +86,48 @@ function RailCard({ track }: { track: PlayerTrack }) {
 }
 
 export default function TrackRail({ tracks, ariaLabel }: { tracks: PlayerTrack[]; ariaLabel: string }) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const sync = useCallback(() => {
+    const el = scroller.current;
+    if (!el) return;
+    /* 1px тэвчээр — зуум/subpixel үед scrollLeft бутархай гарч, төгсгөлд хүрсэн
+       атлаа сум идэвхтэй хэвээр үлдэхээс сэргийлнэ. */
+    setCanLeft(el.scrollLeft > 1);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    sync();
+    /* Цонхны өргөн (эсвэл sidebar) өөрчлөгдөхөд гүйлгэх зай нь өөрчлөгдөнө —
+       resize болгонд дахин тооцно. */
+    const observer = new ResizeObserver(sync);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [sync, tracks.length]);
+
+  const scrollPage = (direction: 1 | -1) => {
+    const el = scroller.current;
+    if (!el) return;
+    /* Багтах бүтэн картын тоогоор гүйлгэнэ — карт дундуураа тасарч зогсохгүй. */
+    const page = Math.max(CARD_STEP, Math.floor(el.clientWidth / CARD_STEP) * CARD_STEP);
+    el.scrollBy({ left: direction * page, behavior: "smooth" });
+  };
+
   return (
-    <div className={RAIL_CLS} role="list" aria-label={ariaLabel}>
-      {tracks.map((track) => (
-        <RailCard key={track.id} track={track} />
-      ))}
+    <div className="relative">
+      <div ref={scroller} className={RAIL_CLS} role="list" aria-label={ariaLabel} onScroll={sync}>
+        {tracks.map((track) => (
+          <RailCard key={track.id} track={track} />
+        ))}
+      </div>
+
+      <RailArrow side="left" show={canLeft} onClick={() => scrollPage(-1)} />
+      <RailArrow side="right" show={canRight} onClick={() => scrollPage(1)} />
     </div>
   );
 }

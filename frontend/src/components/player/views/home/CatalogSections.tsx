@@ -2,14 +2,14 @@
 
 import type { ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCirclePlus, faFire, faStar } from "@fortawesome/free-solid-svg-icons";
+import { faFire, faStar } from "@fortawesome/free-solid-svg-icons";
 import { SectionTitle } from "@/components/ui/PageHeader";
 import TrackRail from "./TrackRail";
 import type { HomeCatalog } from "@/lib/player/hooks/useHomeCatalog";
 
-/* Backend каталогийн 3 секц: Онцлох (featured) · Хамгийн алдартай (ListenHistory
-   тоолуураар) · Сүүлийн үеийн (createdAt). Гурав нь НЭГ дор ачаалагддаг тул нэг
-   skeleton rail-аар орлуулна — 3 хоосон гарчиг дараалахаас сэргийлнэ. */
+/* Backend каталогийн 2 секц: Онцлох (featured) · Хамгийн алдартай (ListenHistory
+   тоолуураар). Хоёул НЭГ дор ачаалагддаг тул нэг skeleton rail-аар орлуулна —
+   2 хоосон гарчиг дараалахаас сэргийлнэ. */
 
 function CatalogSkeleton() {
   return (
@@ -64,17 +64,6 @@ export default function CatalogSections({ catalog }: { catalog: HomeCatalog }) {
         }
         tracks={catalog.popularTracks}
         ariaLabel="Хамгийн алдартай дуунууд"
-      />
-
-      <RailSection
-        title={
-          <>
-            <FontAwesomeIcon icon={faCirclePlus} className="text-aqua mr-2" />
-            Сүүлийн үеийн
-          </>
-        }
-        tracks={catalog.newestTracks}
-        ariaLabel="Сүүлийн үеийн дуунууд"
       />
     </>
   );

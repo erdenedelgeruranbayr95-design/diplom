@@ -8,7 +8,13 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "setup": "npm install --legacy-peer-deps && npm run db:sync",
+    "db:sync": "prisma migrate deploy && prisma generate",
+    "db:check": "prisma migrate status",
     "start": "nest start",
+    "predev": "npm run db:sync",
+    "dev": "nest start --watch",
+    "prestart:dev": "npm run db:sync",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
