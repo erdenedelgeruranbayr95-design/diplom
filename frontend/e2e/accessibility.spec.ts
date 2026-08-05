@@ -83,6 +83,11 @@ test.describe("Хүртээмж — axe-core WCAG 2.2 AA audit", () => {
     const email = `e2e-a11y-calib-${Date.now()}@example.com`;
     await waitForLanding(page);
     await registerNewUser(page, { name: "A11y Calib", email });
+    /* Калибровк нэвтрэх үед АВТОМАТААР нээгдэхээ больсон тул Тохиргоо цэсээр гараар
+       нээнэ (calibration.spec.ts-тэй ижил дараалал). Энэ файл нь `MEASURE=1`-гүйгээр
+       ажилладаггүй (playwright.config.ts testIgnore) тул CI үүнийг барьж аваагүй. */
+    await page.getByRole("button", { name: "Мэдрэхүйн тохиргоо" }).click();
+    await page.getByRole("button", { name: "Калибровк дахин хийх" }).click();
     const dialog = page.getByRole("dialog", { name: "Мэдрэхүйн калибровк" });
     await expect(dialog).toBeVisible({ timeout: 10_000 });
     const results = await runAxe(page, "calibration-dialog");
