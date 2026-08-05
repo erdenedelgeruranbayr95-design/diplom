@@ -26,10 +26,6 @@ export function filterTracks(tracks: PlayerTrack[], { genre, query }: { genre: s
   });
 }
 
-/** "Бүгд" — төрлөөр шүүхгүй гэдгийг илэрхийлэх утга. */
+/** "Бүгд" — төрлөөр шүүхгүй гэдгийг илэрхийлэх утга. Төрлийн шүүлтүүрийн UI
+    устсан тул `filterTracks` үргэлж энэ утгыг авдаг болсон (зөвхөн хайлтаар шүүнэ). */
 export const ALL_GENRES = "Бүгд";
-
-/** Каталогоос давхардалгүй төрлийн жагсаалт (эхэнд нь "Бүгд"). */
-export function collectGenres(tracks: PlayerTrack[]): string[] {
-  return [ALL_GENRES, ...new Set(tracks.map((t) => t.genre))];
-}

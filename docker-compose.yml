@@ -101,6 +101,9 @@ services:
       # хоосон — Google товч frontend дээр харагдахгүй, бусад бүх зүйл хэвийн.
       args:
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+        # QR холболт/төхөөрөмжийн sync-д ЗААВАЛ — socket.io нь rewrites-аар дамждаггүй,
+        # хөтчөөс шууд энэ хаяг руу залгана. `PUBLIC_ORIGIN`-тэй ижил байх ёстой.
+        NEXT_PUBLIC_WS_URL: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN заавал — эс бол socket.io localhost руу залгаж QR холболт унана}
     restart: unless-stopped
     depends_on:
       api:

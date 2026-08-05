@@ -17,6 +17,8 @@ import DetailArtwork from "./detail/DetailArtwork";
 import DetailTrackTable from "./detail/DetailTrackTable";
 import SignalCard from "./detail/SignalCard";
 import WhyRecommended from "./detail/WhyRecommended";
+import SignalBars from "../shared/SignalBars";
+import TrackPlayButton from "../shared/TrackPlayButton";
 import { useIsPlayingTrack, useTrackActions } from "../PlayerContext";
 import { feelProfileFor } from "@/lib/player/constants";
 import { songToPlayerTrack } from "@/lib/player/song-mapper";
@@ -64,7 +66,11 @@ export default function DetailView({
       <BackBar title="Дууны дэлгэрэнгүй" onBack={onBack} />
       <div className="grid grid-cols-[minmax(300px,360px)_1fr] max-nav:grid-cols-1 gap-8 items-start">
         <div className="flex flex-col gap-4">
-          <div className="relative overflow-hidden rounded-card border border-white/[.08] bg-[linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015))] shadow-[0_20px_60px_rgba(0,0,0,.55)]">
+          {/* Cover зураг + түүн дээр амьд спектр ба тоглуулах/зогсоох товч.
+              Спектр нь урьд нь баруун баганын Signal картад тусдаа хайрцагт байсныг
+              энд НҮҮЛГЭВ — `signalBarsRef` ганц массив тул хоёр газар зэрэг зурж
+              болохгүй (сүүлд mount болсон нь өмнөхийг дарна). */}
+          <div className="group relative overflow-hidden rounded-card border border-white/[.08] bg-[linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015))] shadow-[0_20px_60px_rgba(0,0,0,.55)]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,232,206,.16),transparent_40%),radial-gradient(circle_at_85%_10%,rgba(217,165,76,.12),transparent_34%)]" />
             <img
               className="relative z-[1] w-full aspect-square object-cover"
@@ -72,6 +78,25 @@ export default function DetailView({
               alt={heroTrack.title}
               loading="lazy"
               decoding="async"
+            />
+
+            {/* Долгион зургийн доод хэсэгт. Гүн бараан налуу нь багануудыг ямар ч
+                өнгөтэй cover дээр уншигдахуйц болгоно. */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2]">
+              <div className="h-[92px] bg-[linear-gradient(180deg,transparent,rgba(4,8,8,.55)_42%,rgba(4,8,8,.88))]" />
+              <SignalBars
+                signalBarsRef={signalBarsRef}
+                count={32}
+                className="absolute inset-x-0 bottom-0 h-[76px] px-3 pb-3"
+                barClassName="shadow-[0_0_12px_rgba(56,232,206,.35)]"
+              />
+            </div>
+
+            {/* Тоглуулах/зогсоох — тоглож байх үед үргэлж, эс бөгөөс hover/focus дээр. */}
+            <TrackPlayButton
+              track={heroTrack}
+              className="absolute left-1/2 top-1/2 z-[3] -translate-x-1/2 -translate-y-1/2 w-[64px] h-[64px] rounded-full bg-aqua text-on-aqua flex items-center justify-center text-[22px] shadow-[0_10px_30px_rgba(0,0,0,.55)] transition-[opacity,transform,box-shadow] duration-300 hover:scale-[1.06] hover:shadow-[0_12px_36px_rgba(56,232,206,.45)] focus-visible:outline-none focus-visible:shadow-glow-aqua"
+              restingClassName="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
             />
           </div>
 
@@ -127,8 +152,9 @@ export default function DetailView({
           />
 
           {/* Signal карт — "амьд" эсэх нь зөвхөн харагдах төлөв (одоо тоглож байгаа дуу
-              энэ эсэх). Ямар ч тоглуулах логикт хүрэхгүй. */}
-          <SignalCard feel={feel} live={isPlaying} signalBarsRef={signalBarsRef} />
+              энэ эсэх). Ямар ч тоглуулах логикт хүрэхгүй. Спектр нь зүүн баганын
+              cover зураг дээр (`SignalBars`) — энд давхардуулахгүй. */}
+          <SignalCard feel={feel} live={isPlaying} />
         </div>
       </div>
     </>

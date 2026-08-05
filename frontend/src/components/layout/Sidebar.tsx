@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import SideList from "@/components/player/SideList";
 import { useTrackActions } from "@/components/player/PlayerContext";
 import Icon from "@/components/ui/Icon";
 import type { PlayerTrack, ViewName } from "@/types/player";
@@ -13,13 +12,18 @@ const NAV_ITEMS: { view: ViewName; label: string; icon: string }[] = [
   { view: "billing", label: "Захиалга", icon: "card" },
 ];
 
+/* Товч дээр дууны ТОО л харагдана — урьд нь товч бүрийн доор `<SideList>`-ээр
+   дуунуудын жагсаалт задарч, хажуугийн самбар хэт урт болдог байв. Дуунуудаа
+   харах бол товчийг дарж тусдаа дэлгэц рүү орно. */
 function CollectionTeaser({
   label,
+  count,
   onClick,
   accentClass,
   icon,
 }: {
   label: string;
+  count: number;
   onClick: () => void;
   accentClass: string;
   icon: ReactNode;
@@ -40,11 +44,18 @@ function CollectionTeaser({
         {icon}
       </span>
       <span className="mono !text-meta !tracking-[.15em] text-dim transition-colors duration-150 group-hover:!text-ink">{label}</span>
-      <span
-        className="ml-auto flex items-center text-dim opacity-0 -translate-x-1 transition-[opacity,transform] duration-150 group-hover:opacity-100 group-hover:translate-x-0"
-        aria-hidden="true"
-      >
-        <Icon name="chevronRight" size={13} strokeWidth={2} />
+      {/* Дэлгэц уншигчид "Дуртай дуунууд, 3 дуу" гэж бүтнээр нь уншина. */}
+      <span className="ml-auto flex items-center gap-1.5">
+        <span className="mono !text-meta text-faint transition-colors duration-150 group-hover:text-dim">
+          {count}
+          <span className="sr-only"> дуу</span>
+        </span>
+        <span
+          className="flex items-center text-dim opacity-0 -translate-x-1 transition-[opacity,transform] duration-150 group-hover:opacity-100 group-hover:translate-x-0"
+          aria-hidden="true"
+        >
+          <Icon name="chevronRight" size={13} strokeWidth={2} />
+        </span>
       </span>
     </button>
   );
@@ -61,8 +72,7 @@ export default function Sidebar({
   savedTracks: PlayerTrack[];
   recentTracks: PlayerTrack[];
 }) {
-  /* Тоглуулах/идэвхтэй дуу/дэлгэц солих нь контекстээс — өмнө нь Player-ээс Sidebar
-     руу, тэндээс SideList руу 4 prop дамжиж байсныг таслав. */
+  /* Дэлгэц солих нь контекстээс — өмнө нь Player-ээс Sidebar руу prop дамждаг байв. */
   const { setView } = useTrackActions();
 
   return (
@@ -96,35 +106,33 @@ export default function Sidebar({
       <div className="flex flex-col gap-3">
         <span className="mono !text-meta px-1 max-nav:hidden">Миний цуглуулга</span>
 
-        <div className="flex flex-col gap-2">
-          <CollectionTeaser
-            label="Дуртай дуунууд"
-            accentClass="text-aqua"
-            onClick={() => setView("liked")}
-            icon={<Icon name="heart" size={11} variant="fill" />}
-          />
-          {likedTracks.length > 0 && <SideList tracks={likedTracks} />}
-        </div>
+        <CollectionTeaser
+          label="Дуртай дуунууд"
+          count={likedTracks.length}
+          accentClass="text-aqua"
+          onClick={() => setView("liked")}
+          icon={<Icon name="heart" size={11} variant="fill" />}
+        />
 
-        <div className="flex flex-col gap-2 max-nav:hidden">
+        <div className="max-nav:hidden">
           <CollectionTeaser
             label="Хадгалсан дуунууд"
+            count={savedTracks.length}
             accentClass="text-warm"
             onClick={() => setView("saved")}
             icon={<Icon name="bookmark" size={11} variant="fill" />}
           />
-          {savedTracks.length > 0 && <SideList tracks={savedTracks} />}
         </div>
 
         {recentTracks.length > 0 && (
-          <div className="flex flex-col gap-2 max-nav:hidden">
+          <div className="max-nav:hidden">
             <CollectionTeaser
               label="Саяхан сонссон"
+              count={recentTracks.length}
               accentClass="text-dim"
               onClick={() => setView("recent")}
               icon={<Icon name="clock" size={12} strokeWidth={2} />}
             />
-            <SideList tracks={recentTracks} />
           </div>
         )}
       </div>

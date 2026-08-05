@@ -10,7 +10,6 @@
    Prop-ууд нь 6 сэдвээр БҮЛЭГЛЭГДСЭН (catalog · collections · selection · session ·
    settings · actions) — 37 хавтгай prop бол өөрөө нэг төрлийн нийлмэл байдал тул. */
 import type { MutableRefObject } from "react";
-import AchievementsView from "./views/AchievementsView";
 import AdminView from "./views/AdminView";
 import AnalysisView from "./views/AnalysisView";
 import ArtistView from "./views/ArtistView";
@@ -60,11 +59,9 @@ const COLLECTION_VIEWS = {
 /** Каталог ба хайлтын төлөв. */
 export interface CatalogSlice {
   allTracks: PlayerTrack[];
-  filteredTracks: PlayerTrack[];
-  genres: string[];
-  genre: string;
-  onGenre: (genre: string) => void;
+  /** Дээд талын хайлтын талбарын утга ба түүнд тохирсон дуунууд. */
   query: string;
+  filteredTracks: PlayerTrack[];
 }
 
 /** Хэрэглэгчийн цуглуулгууд. */
@@ -138,12 +135,9 @@ export default function PlayerViewRouter({ view, catalog, collections, selection
   if (view === "home") {
     return (
       <HomeView
-        genres={catalog.genres}
-        genre={catalog.genre}
-        onGenre={catalog.onGenre}
-        filteredTracks={catalog.filteredTracks}
         allTracks={catalog.allTracks}
         query={catalog.query}
+        filteredTracks={catalog.filteredTracks}
         userName={session.user?.name}
         recentTracks={collections.recent}
         likedTracks={collections.liked}
@@ -204,7 +198,6 @@ export default function PlayerViewRouter({ view, catalog, collections, selection
   if (view === "parent" && session.isParent) return <ParentView onGoHome={goHome} />;
   if (view === "upload" && session.subscribed && !session.isAdmin) return <UploadSongView onBack={goHome} />;
   if (view === "progress") return <ProgressView onBack={goHome} />;
-  if (view === "achievements") return <AchievementsView stats={collections.stats} onBack={goHome} />;
   if (view === "profile") return <ProfileView onBack={goHome} prefs={settings.prefs} onUpdatePrefs={settings.onUpdatePrefs} />;
 
   if (view === "devices") {

@@ -7,7 +7,7 @@ import type { PlayerTrack, ViewName } from "@/types/player";
 
    Урьд нь ЯГ ижил 8 prop (`curId`, `playing`, `onPlay`, `likes`, `saves`,
    `onToggleLike`, `onToggleSave`, `onInfo`) Player → HomeView → TrackRail → TrackCard,
-   Player → Sidebar → SideList, Player → LibraryView, Player → ArtistView,
+   Player → Sidebar, Player → LibraryView, Player → ArtistView,
    Player → PlaylistsView гэсэн 5 салаагаар дамжиж байв. Дунд давхаргууд эдгээрийг
    ЗӨВХӨН цааш нь дамжуулахын тулд өөрсдийн интерфейст оруулж, өөрчлөлт бүр 4-5
    файлыг хөндөж байсан.

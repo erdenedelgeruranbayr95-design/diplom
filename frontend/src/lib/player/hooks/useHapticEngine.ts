@@ -39,8 +39,13 @@ export interface HapticEngine {
   immersiveFlashRef: React.MutableRefObject<HTMLSpanElement | null>;
   /** Мэдрэх самбарын амьд 8 багана. */
   feelBarsRef: React.MutableRefObject<(HTMLSpanElement | null)[]>;
-  /** Дэлгэрэнгүй хуудасны "Signal" картын багана. */
+  /** Дэлгэрэнгүй хуудасны cover зураг дээрх багана. */
   signalBarsRef: React.MutableRefObject<(HTMLSpanElement | null)[]>;
+  /** "Одоо тоглож байна" хажуу самбарын cover зураг дээрх багана.
+   *  Тусдаа массив байх ЁСТОЙ: хажуу самбар нь Дэлгэрэнгүй хуудастай ЗЭРЭГ
+   *  харагддаг тул нэг массивыг хуваалцвал сүүлд mount болсон нь нөгөөгийн
+   *  ref-ийг дарж, зөвхөн нэг нь хөдөлдөг болно. */
+  sidebarBarsRef: React.MutableRefObject<(HTMLSpanElement | null)[]>;
 
   /* --- Визуалайзерт дамждаг агшин зуурын утгууд --- */
   levelRef: React.MutableRefObject<BandLevels>;
@@ -108,6 +113,7 @@ export function useHapticEngine({
   const immersiveFlashRef = useRef<HTMLSpanElement | null>(null);
   const feelBarsRef = useRef<(HTMLSpanElement | null)[]>([]);
   const signalBarsRef = useRef<(HTMLSpanElement | null)[]>([]);
+  const sidebarBarsRef = useRef<(HTMLSpanElement | null)[]>([]);
 
   const levelRef = useRef<BandLevels>({ lo: 0, mi: 0, hi: 0 });
   const beatFlashRef = useRef<BeatFlash | null>(null);
@@ -256,6 +262,10 @@ export function useHapticEngine({
           if (!el) return;
           el.style.height = Math.max(6, bandAverageAt(data, idx, signalBarsRef.current.length, span) * 100) + "%";
         });
+        sidebarBarsRef.current.forEach((el, idx) => {
+          if (!el) return;
+          el.style.height = Math.max(6, bandAverageAt(data, idx, sidebarBarsRef.current.length, span) * 100) + "%";
+        });
       } else {
         vizRef.current.forEach((el) => {
           if (el) el.style.height = "3px";
@@ -265,6 +275,9 @@ export function useHapticEngine({
           if (el) el.style.height = "5px";
         });
         signalBarsRef.current.forEach((el) => {
+          if (el) el.style.height = "6px";
+        });
+        sidebarBarsRef.current.forEach((el) => {
           if (el) el.style.height = "6px";
         });
       }
@@ -323,6 +336,7 @@ export function useHapticEngine({
     immersiveFlashRef,
     feelBarsRef,
     signalBarsRef,
+    sidebarBarsRef,
     levelRef,
     beatFlashRef,
     bandLevelsRef,

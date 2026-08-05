@@ -8,7 +8,7 @@
    таб-д харагдах ДЕМО pending-хүсэлт бичдэг (pushPaymentRequest, admin-payment-requests.ts) —
    энэ нь зөвхөн admin-side харуулалт, өмнөх автомат-success урсгалтай ЗЭРЭГЦЭЭ ажиллана,
    аль нэгийг нь өөрчлөхгүй. Backend/API/auth огт хөндөгдөөгүй. */
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { loadUsers, saveUsers } from "@/lib/auth/auth-storage";
@@ -18,9 +18,13 @@ import { ActionButton } from "@/components/ui/ActionGroup";
 import { subscribeMe } from "@/lib/api/client";
 import type { SessionUser, UserSub } from "@/types/auth";
 import Icon from "@/components/ui/Icon";
+import DemoCardForm from "./DemoCardForm";
 
 const PLAN = { name: "МЭДРЭХ PRO", price: "9'900₮", period: "сар бүр" };
 const QR_TTL_SEC = 300; // 05:00
+
+/** Төлбөрийн арга — QR (хуучин зан төлөв, анхдагч) эсвэл карт. */
+type PayMethod = "qr" | "card";
 /* Демо орчинд "SocialPay апп-аас баталгаажлаа" гэдгийг дуурайх — жинхэнэ банкны
    webhook/API-тай холбогдоогүй, зөвхөн UI-ийн харуулах хугацаа. */
 const DEMO_CONFIRM_DELAY_MS = 3200;
@@ -45,6 +49,9 @@ export default function SubscribeModal({
   onSubscribed: (sub: UserSub) => void;
 }) {
   const [payState, setPayState] = useState<PayState>("waiting");
+  const [method, setMethod] = useState<PayMethod>("qr");
+  const [cardBusy, setCardBusy] = useState(false);
+  const [cardErr, setCardErr] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(QR_TTL_SEC);
   const [qrNonce, setQrNonce] = useState(0);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -56,6 +63,9 @@ export default function SubscribeModal({
   useEffect(() => {
     if (!open) return;
     setPayState("waiting");
+    setMethod("qr");
+    setCardBusy(false);
+    setCardErr("");
     setSecondsLeft(QR_TTL_SEC);
     setQrNonce((n) => n + 1);
     /* Admin "PRO Management" таб-д харагдах ДЕМО "хүлээгдэж буй хүсэлт" бичлэг —
@@ -86,31 +96,52 @@ export default function SubscribeModal({
      transaction дотор үүсгэдэг) тул refresh/дахин нэвтрэх/өөр tab дээр ч PRO эрх болон
      төлбөрийн түүх хадгалагдана. localStorage legacy давхарга (loadUsers/saveUsers)
      хуучин ProfileView-той нийцтэй байлгахын тулд зэрэгцээ хэвээр үлдээв. */
+  /* Захиалгыг ИДЭВХЖҮҮЛЭХ цорын ганц газар — QR болон картын аль ч замаар ирсэн бай
+     ижил логик ажиллана (backend руу зөвхөн планы нэр явна, картын мэдээлэл ОГТ ЯВАХГҮЙ). */
+  const activate = useCallback(async (): Promise<boolean> => {
+    if (!user) return false;
+    let sub: UserSub | null;
+    try {
+      sub = await subscribeMe(PLAN.name);
+    } catch {
+      return false;
+    }
+    if (!sub) return false;
+    const now = new Date();
+    const users = loadUsers();
+    const u = users.find((x) => x.email === user.email);
+    if (u) {
+      u.sub = { active: sub.active, plan: sub.plan || "", since: now.getTime(), renews: sub.renews ? new Date(sub.renews).getTime() : now.getTime() };
+      saveUsers(users);
+    }
+    setPayState("success");
+    onSubscribed(sub);
+    return true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  /* ЗӨВХӨН QR горимд автоматаар "баталгаажлаа" гэж дуурайна. Картын горимд энэ
+     ажиллавал хэрэглэгч форм бөглөж амжаагүй байхад төлбөр хийгдчих байсан. */
   useEffect(() => {
-    if (!open || payState !== "waiting" || expired || !user) return;
-    confirmTimerRef.current = setTimeout(async () => {
-      let sub: UserSub | null;
-      try {
-        sub = await subscribeMe(PLAN.name);
-      } catch {
-        return; // сүлжээний алдаа — QR хугацаа дуусах хүртэл дахин оролдоно (таймер дараагийн tick-д)
-      }
-      if (!sub) return;
-      const now = new Date();
-      const users = loadUsers();
-      const u = users.find((x) => x.email === user.email);
-      if (u) {
-        u.sub = { active: sub.active, plan: sub.plan || "", since: now.getTime(), renews: sub.renews ? new Date(sub.renews).getTime() : now.getTime() };
-        saveUsers(users);
-      }
-      setPayState("success");
-      onSubscribed(sub);
+    if (!open || method !== "qr" || payState !== "waiting" || expired || !user) return;
+    confirmTimerRef.current = setTimeout(() => {
+      void activate(); // сүлжээний алдаа — QR хугацаа дуусах хүртэл дахин оролдоно
     }, DEMO_CONFIRM_DELAY_MS);
     return () => {
       if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, payState, expired, user, qrNonce]);
+  }, [open, method, payState, expired, user, qrNonce]);
+
+  /* Картын форм баталгаажсаны дараа — картын дугаар энд ч, цаашид ч дамжуулагдахгүй,
+     зөвхөн "төлбөр хийгдлээ" гэдэг дохио л ирнэ. */
+  async function payWithCard() {
+    setCardErr("");
+    setCardBusy(true);
+    const ok = await activate();
+    setCardBusy(false);
+    if (!ok) setCardErr("Төлбөр баталгаажсангүй. Сүлжээгээ шалгаад дахин оролдоно уу.");
+  }
 
   /* Амжилттай төлбөрийн дараа автоматаар хаана — захиалгын state (onSubscribed)
      аль хэдийн эх Player/BillingView-д шинэчлэгдсэн байна. */
@@ -182,6 +213,40 @@ export default function SubscribeModal({
               </div>
             ) : (
               <>
+                {/* Төлбөрийн арга — QR (анхдагч) эсвэл карт. */}
+                <div className="grid grid-cols-2 border border-white/[.08] rounded-xl overflow-hidden mb-5" role="tablist" aria-label="Төлбөрийн арга сонгох">
+                  {([
+                    { key: "qr" as const, label: "SocialPay QR", icon: "device" },
+                    { key: "card" as const, label: "Карт", icon: "card" },
+                  ]).map((m) => (
+                    <button
+                      key={m.key}
+                      role="tab"
+                      type="button"
+                      aria-selected={method === m.key}
+                      className={
+                        "flex items-center justify-center gap-2 font-display text-note tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+                        (method === m.key ? "bg-aqua text-on-aqua font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
+                      }
+                      onClick={() => setMethod(m.key)}
+                    >
+                      <Icon name={m.icon} size={15} />
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+
+                {method === "card" ? (
+                  <>
+                    <DemoCardForm busy={cardBusy} onPay={payWithCard} />
+                    {cardErr && (
+                      <p className="text-body text-danger mt-3" role="alert">
+                        {cardErr}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
                 <div className="flex justify-center mb-5">
                   <div className="relative rounded-panel p-6 bg-white/[.04] border border-white/[.1] backdrop-blur-xl shadow-[0_0_40px_rgba(56,232,206,.12)]">
                     <div className="relative bg-white p-4 rounded-2xl shadow-lg overflow-hidden">
@@ -232,6 +297,8 @@ export default function SubscribeModal({
                   )}
                   {expired ? "QR хугацаа дууссан" : "Төлбөр хүлээгдэж байна…"}
                 </div>
+                  </>
+                )}
               </>
             )}
 

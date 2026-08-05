@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { filterTracks, collectGenres, indexTracksById, resolveTracks, ALL_GENRES } from "./track-index";
+import { filterTracks, indexTracksById, resolveTracks, ALL_GENRES } from "./track-index";
 import type { PlayerTrack } from "@/types/player";
 
 function track(overrides: Partial<PlayerTrack> & { id: PlayerTrack["id"]; title: string; genre: string }): PlayerTrack {
@@ -35,13 +35,6 @@ describe("filterTracks", () => {
 
   it("trims whitespace from the query before matching", () => {
     expect(filterTracks(TRACKS, { genre: ALL_GENRES, query: "  батаа  " }).map((t) => t.id)).toEqual([1]);
-  });
-});
-
-describe("collectGenres", () => {
-  it("prepends ALL_GENRES and de-duplicates genres", () => {
-    const dup: PlayerTrack[] = [...TRACKS, track({ id: 4, title: "Дахин Поп", artist: "X", genre: "Поп" })];
-    expect(collectGenres(dup)).toEqual([ALL_GENRES, "Поп", "Ардын", "Электрон"]);
   });
 });
 

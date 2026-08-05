@@ -70,12 +70,19 @@ export class LibraryService {
 
   /* ---------- Сонсолтын статистик ---------- */
 
+  /* `total` · `byGenre` · `byTrack` · `days` нь бүгд СЕКУНД. Клиент тал үүнийг ингэж
+     үздэг: StatsView/ListeningSummary нь `fmtDur(total)`-оор ("5 мин"), achievements.ts
+     нь `stats.total / 3600`-оор цаг болгож, `useListeningStats` нь офлайн кэшдээ
+     секунд тутам 1-ээр нэмдэг. Урьд нь энд мөрийн ТОО буцаадаг байсан тул 305 секунд
+     сонссоныг дэлгэц дээр "3 сек" гэж харуулдаг байв.
+
+     `vib` нь ганцаараа ТООЛУУР хэвээр — "Мэдэрсэн чичиргээ" гэсэн шошготой, хэдэн
+     удаа чичиргээтэй сонссоныг заана (үргэлжлэх хугацаа биш). */
   async getStats(userId: string) {
-    const [total, byGenreRaw, recent] = await Promise.all([
-      this.prisma.listenHistory.count({ where: { userId } }),
+    const [rows, vib] = await Promise.all([
       this.prisma.listenHistory.findMany({
         where: { userId },
-        select: { song: { select: { genre: true } }, songId: true, playedAt: true, vibrations: true },
+        select: { song: { select: { genre: true } }, songId: true, playedAt: true, durationMs: true },
       }),
       this.prisma.listenHistory.count({ where: { userId, vibrations: true } }),
     ]);
@@ -83,15 +90,23 @@ export class LibraryService {
     const byGenre: Record<string, number> = {};
     const byTrack: Record<string, number> = {};
     const days: Record<string, number> = {};
-    for (const row of byGenreRaw) {
+    let total = 0;
+
+    for (const row of rows) {
+      /* `durationMs` заавал биш талбар — бичигдээгүй мөр 0 секунд болно, гэхдээ
+         `byTrack`-д түлхүүр нь үлдэнэ ("Сонссон дуу" тоолуур нь `Object.keys(...).length`
+         тул сонссон дуу гэж зөв тоологдоно). */
+      const sec = Math.round((row.durationMs ?? 0) / 1000);
+      total += sec;
+
       const genre = row.song?.genre || 'Бусад';
-      byGenre[genre] = (byGenre[genre] || 0) + 1;
-      byTrack[row.songId] = (byTrack[row.songId] || 0) + 1;
+      byGenre[genre] = (byGenre[genre] || 0) + sec;
+      byTrack[row.songId] = (byTrack[row.songId] || 0) + sec;
       const day = row.playedAt.toISOString().slice(0, 10);
-      days[day] = (days[day] || 0) + 1;
+      days[day] = (days[day] || 0) + sec;
     }
 
-    return { total, vib: recent, byGenre, byTrack, days };
+    return { total, vib, byGenre, byTrack, days };
   }
 
   /* ---------- Playlist ---------- */

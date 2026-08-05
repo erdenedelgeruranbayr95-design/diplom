@@ -10,13 +10,12 @@
      · секц бүрийн разметк → components/player/home/* */
 import { useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faBolt, faFeather, faHeart } from "@fortawesome/free-solid-svg-icons";
 import { SectionTitle } from "@/components/ui/PageHeader";
 import QuickAction from "@/components/player/shared/QuickAction";
 import { useTrackActions } from "@/components/player/PlayerContext";
 import ArtistRail from "./home/ArtistRail";
-import CatalogSections from "./home/CatalogSections";
-import GenreFilter from "./home/GenreFilter";
+import CatalogSections, { RailSection } from "./home/CatalogSections";
 import HomeGreeting from "./home/HomeGreeting";
 import ListeningSummary from "./home/ListeningSummary";
 import PlaylistGrid from "./home/PlaylistGrid";
@@ -24,19 +23,18 @@ import RecommendationRail, { type TrackRecommendation } from "./home/Recommendat
 import SearchResultGrid from "./home/SearchResultGrid";
 import TrackRail from "./home/TrackRail";
 import { useHomeCatalog } from "@/lib/player/hooks/useHomeCatalog";
+import { pickCalm, pickPowerful } from "@/lib/player/feel-groups";
 import { scoreRecommendations } from "@/lib/player/recommendations";
 import type { PlayerTrack } from "@/types/player";
 import type { ListeningStats, Playlist } from "@/types/track";
 
 export interface HomeViewProps {
-  genres: string[];
-  genre: string;
-  onGenre: (genre: string) => void;
-  /** Хайлт/төрлөөр шүүсэн жагсаалт. */
-  filteredTracks: PlayerTrack[];
   /** Каталогийн бүрэн жагсаалт (санал болголт, backend id-г тааруулахад). */
   allTracks: PlayerTrack[];
+  /** Дээд талын хайлтын талбарт бичсэн үг. Хоосон биш бол хайлтын горим асна. */
   query: string;
+  /** `query`-д тохирсон дуунууд (Player.tsx-ийн `filterTracks`). */
+  filteredTracks: PlayerTrack[];
   userName?: string;
   recentTracks: PlayerTrack[];
   likedTracks: PlayerTrack[];
@@ -48,12 +46,9 @@ export interface HomeViewProps {
 }
 
 export default function HomeView({
-  genres,
-  genre,
-  onGenre,
-  filteredTracks,
   allTracks,
   query,
+  filteredTracks,
   userName,
   recentTracks,
   likedTracks,
@@ -65,6 +60,7 @@ export default function HomeView({
 }: HomeViewProps) {
   const { currentId, likedIds, savedIds, setView } = useTrackActions();
   const catalog = useHomeCatalog(allTracks);
+  const searching = query.trim().length > 0;
 
   /* AI-санал болгол — зөвхөн бодит дата дээр тооцоологдоно, backend дуудлагагүй.
      Одоо тоглож буй дууг хасна. */
@@ -81,19 +77,27 @@ export default function HomeView({
     [allTracks, stats, likedIds, savedIds, recentTracks, currentId],
   );
 
+  /* Мэдрэмжээр ангилсан 2 секц — төрлийн чичиргээний профайлаас гарна. */
+  const powerfulTracks = useMemo(() => pickPowerful(allTracks), [allTracks]);
+  const calmTracks = useMemo(() => pickCalm(allTracks), [allTracks]);
+
+  /* Хайлтын горим — дээд талын талбарт үг бичсэн үед НҮҮРИЙН секцүүдийг нуугаад
+     зөвхөн үр дүнг харуулна (үр дүн доогуураа хаа нэгтээ алдагдахгүй). Хоосон болгонд
+     нүүр хэвийн байдалдаа буцна. Hook-ууд бүгд дээр дуудагдсаны ДАРАА энэ эрт буцаалт
+     хийгдэж байгаа тул hook-ийн дараалал зөрчигдөхгүй. */
+  if (searching) {
+    return <SearchResultGrid tracks={filteredTracks} query={query} />;
+  }
+
   return (
     <>
       <HomeGreeting userName={userName} isAdmin={isAdmin} isTherapist={isTherapist} isParent={isParent} />
 
       <ArtistRail artists={catalog.artists} loading={catalog.artistsLoading} />
 
-      {recentTracks.length > 0 && (
-        <div className="mb-9">
-          <SectionTitle title="Үргэлжлүүлэн сонсох" />
-          <TrackRail tracks={recentTracks} ariaLabel="Үргэлжлүүлэн сонсох" />
-        </div>
-      )}
-
+      {/* «Үргэлжлүүлэн сонсох» секцийг 2026-08-05-нд УСТГАВ — сая сонссон дуу нь
+          доорх «Санал болгох»-д давхардаж гарч байсан. `recentTracks` нь prop
+          хэвээр үлдэнэ: `scoreRecommendations` түүнийг оноо тооцоход ашигладаг. */}
       <RecommendationRail recommendations={recommendations} />
 
       {likedTracks.length > 0 && (
@@ -112,9 +116,29 @@ export default function HomeView({
 
       <CatalogSections catalog={catalog} />
 
-      <GenreFilter genres={genres} activeGenre={genre} onSelect={onGenre} />
+      {/* «Онцлох»-ын араас мэдрэмжээр нь ангилсан 2 секц. Ангилал нь дууны төрлийн
+          чичиргээний профайлаас гардаг тул шошго ба бодит мэдрэмж зөрөхгүй. */}
+      <RailSection
+        title={
+          <>
+            <FontAwesomeIcon icon={faBolt} className="text-aqua mr-2" />
+            Хүчтэй дуунууд
+          </>
+        }
+        tracks={powerfulTracks}
+        ariaLabel="Хүчтэй мэдрэгддэг дуунууд"
+      />
 
-      <SearchResultGrid tracks={filteredTracks} query={query} />
+      <RailSection
+        title={
+          <>
+            <FontAwesomeIcon icon={faFeather} className="text-aqua mr-2" />
+            Намуухан дуу
+          </>
+        }
+        tracks={calmTracks}
+        ariaLabel="Намуухан дуунууд"
+      />
     </>
   );
 }

@@ -11,7 +11,11 @@ COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps
 
 COPY prisma ./prisma
-RUN npx prisma generate
+# `npx prisma` БИШ — npx нь локал суусан хувилбарыг (5.22) үл тоож, сүлжээнээс
+# хамгийн сүүлийн major-ыг (7.x) татдаг бөгөөд тэр нь v5 схемийг хүлээж авахгүй
+# ("Validation Error Count: 1" → build унана). ENTRYPOINT-д аль хэдийн хэрэглэсэн
+# шийдлийг энд ч мөрдөж, суусан binary-г шууд дуудна.
+RUN node node_modules/prisma/build/index.js generate
 
 COPY . .
 RUN npm run build

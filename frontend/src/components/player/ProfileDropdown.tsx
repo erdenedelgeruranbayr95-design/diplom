@@ -124,7 +124,6 @@ export default function ProfileDropdown({
           <MenuItem icon="chart" label="Миний статистик" onClick={() => go("stats")} />
           <MenuItem icon="clock" label="Сонссон түүх" onClick={() => go("history")} />
           <MenuItem icon="trend" label="Миний ахиц" onClick={() => go("progress")} />
-          <MenuItem icon="trophy" label="Амжилтууд" onClick={() => go("achievements")} />
           <MenuItem icon="card" label="Захиалга удирдах" onClick={() => go("billing")} />
           <MenuItem icon="help" label="Тусламж" onClick={() => go("help")} />
 

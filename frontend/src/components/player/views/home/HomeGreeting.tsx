@@ -7,7 +7,6 @@ import {
   faGear,
   faHeadphones,
   faPeopleRoof,
-  faTrophy,
   faUserNurse,
 } from "@fortawesome/free-solid-svg-icons";
 import QuickAction from "@/components/player/shared/QuickAction";
@@ -41,7 +40,6 @@ export default function HomeGreeting({
         <QuickAction icon={<FontAwesomeIcon icon={faHeadphones} />} label="Жагсаалтууд" onClick={() => setView("playlists")} />
         <QuickAction icon={<FontAwesomeIcon icon={faClockRotateLeft} />} label="Сонссон түүх" onClick={() => setView("history")} />
         <QuickAction icon={<FontAwesomeIcon icon={faChartLine} />} label="Миний ахиц" onClick={() => setView("progress")} />
-        <QuickAction icon={<FontAwesomeIcon icon={faTrophy} />} label="Амжилтууд" onClick={() => setView("achievements")} />
         {isAdmin && <QuickAction icon={<FontAwesomeIcon icon={faGear} />} label="Хяналтын самбар" onClick={() => setView("admin")} />}
         {isTherapist && <QuickAction icon={<FontAwesomeIcon icon={faUserNurse} />} label="Эмчийн самбар" onClick={() => setView("therapist")} />}
         {isParent && <QuickAction icon={<FontAwesomeIcon icon={faPeopleRoof} />} label="Эцэг эхийн самбар" onClick={() => setView("parent")} />}

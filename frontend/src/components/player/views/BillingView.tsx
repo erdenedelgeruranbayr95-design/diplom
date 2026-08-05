@@ -66,6 +66,10 @@ export default function BillingView({
   const renews = user?.sub?.renews ? +new Date(user.sub.renews) : 0
   const daysLeft = renews ? Math.max(0, Math.ceil((renews - Date.now()) / 86400000)) : 0
 
+  /* PRO карт нь админд энгийн блок, бусдад дарагддаг товч. Элемент өөрөө солигдох тул
+     нэг хувьсагчаар шийдэж, разметкийг хоёр удаа бичихээс сэргийлнэ. */
+  const CardTag = isAdmin ? "div" : "button"
+
   return (
     <>
       <BackBar title="Захиалгын удирдлага" onBack={onBack} />
@@ -146,11 +150,16 @@ export default function BillingView({
           </ul>
         </div>
 
-        <div
+        {/* PRO карт БҮХЭЛДЭЭ дарагдана — өмнө нь зөвхөн доод талын жижиг товч дарагддаг,
+            тэр нь идэвхтэй захиалгатай үед бүр нуугддаг байв. Админ бол захиалга авах
+            шаардлагагүй тул энгийн `div` хэвээр (дотор нь товч ч гарахгүй). */}
+        <CardTag
           className={
-            "relative border rounded-md p-[22px] border-[rgba(56,232,206,.28)] bg-[rgba(56,232,206,.04)] " +
-            (active || isAdmin ? "border-[rgba(56,232,206,.5)] shadow-[0_0_0_1px_rgba(56,232,206,.2)]" : "")
+            "group relative border rounded-md p-[22px] text-left w-full flex flex-col border-[rgba(56,232,206,.28)] bg-[rgba(56,232,206,.04)] transition-[border-color,background,transform] duration-150 " +
+            (active || isAdmin ? "border-[rgba(56,232,206,.5)] shadow-[0_0_0_1px_rgba(56,232,206,.2)] " : "") +
+            (isAdmin ? "" : "hover:border-aqua/60 hover:bg-aqua/[.07] focus-visible:outline-none focus-visible:shadow-glow-aqua cursor-pointer")
           }
+          {...(isAdmin ? {} : { type: "button" as const, onClick: onSubscribe })}
         >
           {(active || isAdmin) && <span className="absolute top-4 right-4 font-mono text-micro">Идэвхтэй</span>}
           <span className="mono inline-flex items-center gap-2">
@@ -177,12 +186,15 @@ export default function BillingView({
               Advanced vibration
             </PlanFeature>
           </ul>
-          {!isAdmin && !active && (
-            <ActionButton variant="primary" className="mt-[18px] w-full text-center" onClick={onSubscribe}>
-              {user?.sub ? "Сэргээх" : "PRO авах"}
-            </ActionButton>
+          {/* Эцэг элемент нь өөрөө `<button>` тул энэ нь ЗААВАЛ `<span>` байх ёстой —
+              button дотор button байвал HTML буруу болж, дарахад давхар ажиллана. */}
+          {!isAdmin && (
+            <span className="mt-[18px] w-full inline-flex items-center justify-center gap-2 rounded-chip bg-aqua text-on-aqua font-semibold text-copy py-3 px-4 transition-[filter] duration-150 group-hover:brightness-110">
+              {active ? "Сунгах" : user?.sub ? "Сэргээх" : "PRO авах"}
+              <Icon name="arrowRight" size={15} />
+            </span>
           )}
-        </div>
+        </CardTag>
 
         <div className="relative border border-purple/[.28] bg-purple/[.04] rounded-md p-[22px] opacity-75">
           <span className="absolute top-4 right-4">

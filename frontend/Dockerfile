@@ -12,6 +12,13 @@ COPY . .
 # `build.args`-аар тохируулна, тохируулаагүй бол хоосон (Google товч харагдахгүй).
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
+# socket.io нь Next.js-ийн rewrites-аар ДАМЖДАГГҮЙ, хөтчөөс шууд залгадаг
+# (src/lib/socket/client.ts). Тохируулаагүй бол код нь `http://localhost:3000`
+# руу залгах тул production дээр QR холболт · төхөөрөмжийн sync · haptic урсгал
+# бүгд ЧИМЭЭГҮЙ унана. Утга нь нийтийн origin байна (nginx `/socket.io/`-г
+# api:3000 руу проксилдог — nginx/nginx.conf.template:37).
+ARG NEXT_PUBLIC_WS_URL=
+ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
 # Build-ийн үед backend хаана ч байх нь хамаагүй — rewrites() зөвхөн runtime-д
 # хэрэглэгддэг тул build-ийн default (localhost:3000) хамаагүй.
 RUN npm run build

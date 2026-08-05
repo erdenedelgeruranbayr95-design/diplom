@@ -55,12 +55,29 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 let accessToken: string | null = null;
 
-export function setAccessToken(token: string | null) {
+/* Токен солигдох бүрд нэмэгддэг тоолуур. Хүсэлт илгээгдсэнээс хойш ӨӨР хүсэлт аль
+   хэдийн токеныг сэргээсэн эсэхийг үүгээр мэдэж, шаардлагагүй refresh-ээс сэргийлнэ. */
+let tokenGeneration = 0;
+
+function applyAccessToken(token: string | null) {
   accessToken = token;
+  tokenGeneration++;
+}
+
+export function setAccessToken(token: string | null) {
+  applyAccessToken(token);
 }
 export function getAccessToken() {
   return accessToken;
 }
+
+/* Сервер талд refresh нь токеныг ЭРГҮҮЛДЭГ — хуучныг `revoked=true` болгож шинийг
+   олгоно (auth.service.ts). Тиймээс хоёр refresh зэрэг явбал нэг нь заавал хуучин
+   (аль хэдийн хүчингүй болсон) cookie-гоор очиж 401 авна. Практикт үүнийг StrictMode
+   өдөөдөг: AuthProvider-ийн mount effect dev үед 2 удаа ажиллаж, хуудас ачаалах бүрд
+   2 refresh зэрэг явуулдаг байв. Доорх single-flight нь зэрэг дуудалтуудыг НЭГ хүсэлт
+   болгон нийлүүлж, бүгдэд нь ижил үр дүнг өгнө. */
+let refreshInFlight: Promise<SessionUser> | null = null;
 
 interface AuthResponse {
   accessToken: string;
@@ -71,13 +88,18 @@ async function apiFetch<T>(path: string, opts: RequestInit = {}, retry = true): 
   const headers: Record<string, string> = { ...((opts.headers as Record<string, string>) || {}) };
   if (!(opts.body instanceof FormData)) headers["Content-Type"] = "application/json";
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+  const sentWithGeneration = tokenGeneration;
 
   const res = await fetch(BASE_URL + path, { ...opts, headers, credentials: "include" });
 
   if (res.status === 401 && retry && path !== "/auth/refresh") {
+    /* Энэ хүсэлт явсны дараа өөр хүсэлт аль хэдийн токеныг шинэчилсэн бол дахин
+       refresh хийх шаардлагагүй (илүү эргүүлэлт хийхгүй) — шинэ токеноор шууд
+       дахин оролдоно. */
+    if (tokenGeneration !== sentWithGeneration) return apiFetch<T>(path, opts, false);
     const refreshed = await refresh().catch(() => null);
     if (refreshed) return apiFetch<T>(path, opts, false);
-    accessToken = null;
+    applyAccessToken(null);
     dispatchEvent(new CustomEvent(APP_EVENTS.sessionExpired));
   }
 
@@ -102,7 +124,7 @@ export async function register(name: string, email: string, password: string, pa
     method: "POST",
     body: JSON.stringify({ name, email, password, password2 }),
   });
-  accessToken = data.accessToken;
+  applyAccessToken(data.accessToken);
   return data.user;
 }
 
@@ -111,7 +133,7 @@ export async function login(email: string, password: string) {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
-  accessToken = data.accessToken;
+  applyAccessToken(data.accessToken);
   return data.user;
 }
 
@@ -120,19 +142,31 @@ export async function loginWithGoogle(idToken: string) {
     method: "POST",
     body: JSON.stringify({ idToken }),
   });
-  accessToken = data.accessToken;
+  applyAccessToken(data.accessToken);
   return data.user;
 }
 
-export async function refresh() {
-  const data = await apiFetch<AuthResponse>("/auth/refresh", { method: "POST" }, false);
-  accessToken = data.accessToken;
-  return data.user;
+export function refresh(): Promise<SessionUser> {
+  /* Аль хэдийн явж буй refresh байвал ШИНЭ хүсэлт үүсгэхгүй, түүнийг нь хуваалцана. */
+  if (refreshInFlight) return refreshInFlight;
+
+  const inFlight = (async () => {
+    const data = await apiFetch<AuthResponse>("/auth/refresh", { method: "POST" }, false);
+    applyAccessToken(data.accessToken);
+    return data.user;
+  })().finally(() => {
+    /* Амжилттай ч, алдаатай ч цоожийг тавина — дараагийн ЖИНХЭНЭ шаардлагатай
+       refresh (жишээ нь 15 минутын дараа access token дуусахад) хийгдэх ёстой. */
+    refreshInFlight = null;
+  });
+
+  refreshInFlight = inFlight;
+  return inFlight;
 }
 
 export async function logout() {
   await apiFetch("/auth/logout", { method: "POST" }, false).catch(() => {});
-  accessToken = null;
+  applyAccessToken(null);
 }
 
 export function me() {

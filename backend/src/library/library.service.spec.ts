@@ -74,17 +74,33 @@ describe('LibraryService', () => {
   });
 
   describe('getStats', () => {
-    it('aggregates byGenre/byTrack/days from raw listen-history rows', async () => {
-      prisma.listenHistory.count.mockResolvedValueOnce(3).mockResolvedValueOnce(0);
+    /* Нийлбэр нь мөрийн ТОО биш, СОНССОН СЕКУНД байх ёстой — клиент бүх талбарыг
+       секунд гэж үздэг (см. getStats дээрх тайлбар). */
+    it('aggregates byGenre/byTrack/days as listened SECONDS, not row counts', async () => {
+      prisma.listenHistory.count.mockResolvedValue(2); // vib
       prisma.listenHistory.findMany.mockResolvedValue([
-        { song: { genre: 'Поп' }, songId: 's1', playedAt: new Date('2026-01-01T10:00:00Z'), vibrations: true },
-        { song: { genre: 'Поп' }, songId: 's1', playedAt: new Date('2026-01-01T12:00:00Z'), vibrations: false },
-        { song: { genre: null }, songId: 's2', playedAt: new Date('2026-01-02T09:00:00Z'), vibrations: true },
+        { song: { genre: 'Поп' }, songId: 's1', playedAt: new Date('2026-01-01T10:00:00Z'), durationMs: 180_000 },
+        { song: { genre: 'Поп' }, songId: 's1', playedAt: new Date('2026-01-01T12:00:00Z'), durationMs: 120_000 },
+        { song: { genre: null }, songId: 's2', playedAt: new Date('2026-01-02T09:00:00Z'), durationMs: 5_000 },
       ]);
       const result = await service.getStats('u1');
-      expect(result.byGenre).toEqual({ Поп: 2, Бусад: 1 });
-      expect(result.byTrack).toEqual({ s1: 2, s2: 1 });
-      expect(result.days).toEqual({ '2026-01-01': 2, '2026-01-02': 1 });
+      expect(result.total).toBe(305);
+      expect(result.vib).toBe(2);
+      expect(result.byGenre).toEqual({ Поп: 300, Бусад: 5 });
+      expect(result.byTrack).toEqual({ s1: 300, s2: 5 });
+      expect(result.days).toEqual({ '2026-01-01': 300, '2026-01-02': 5 });
+    });
+
+    /* `durationMs` бичигдээгүй мөр 0 секунд нэмнэ, ГЭХДЭЭ "Сонссон дуу" тоолуурт
+       (`Object.keys(byTrack).length`) орох ёстой тул түлхүүр нь заавал үлдэнэ. */
+    it('keeps a byTrack key for rows without durationMs', async () => {
+      prisma.listenHistory.count.mockResolvedValue(0);
+      prisma.listenHistory.findMany.mockResolvedValue([
+        { song: { genre: 'Рок' }, songId: 's9', playedAt: new Date('2026-01-01T10:00:00Z'), durationMs: null },
+      ]);
+      const result = await service.getStats('u1');
+      expect(result.total).toBe(0);
+      expect(Object.keys(result.byTrack)).toEqual(['s9']);
     });
   });
 

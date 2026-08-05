@@ -2,14 +2,15 @@
 
 import type { ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFire, faStar } from "@fortawesome/free-solid-svg-icons";
+import { faStar } from "@fortawesome/free-solid-svg-icons";
 import { SectionTitle } from "@/components/ui/PageHeader";
 import TrackRail from "./TrackRail";
 import type { HomeCatalog } from "@/lib/player/hooks/useHomeCatalog";
 
-/* Backend каталогийн 2 секц: Онцлох (featured) · Хамгийн алдартай (ListenHistory
-   тоолуураар). Хоёул НЭГ дор ачаалагддаг тул нэг skeleton rail-аар орлуулна —
-   2 хоосон гарчиг дараалахаас сэргийлнэ. */
+/* Backend каталогийн секц: Онцлох (featured).
+
+   «Хамгийн алдартай» (ListenHistory тоолуураар) секцийг 2026-08-05-нд УСТГАВ —
+   `useHomeCatalog`-оос `/songs/popular` дуудлага нь хамт хасагдсан. */
 
 function CatalogSkeleton() {
   return (
@@ -29,7 +30,7 @@ function CatalogSkeleton() {
 }
 
 /** Гарчигтай rail секц — жагсаалт хоосон бол огт зурагдахгүй. */
-export function RailSection({ title, tracks, ariaLabel }: { title: ReactNode; tracks: HomeCatalog["popularTracks"]; ariaLabel: string }) {
+export function RailSection({ title, tracks, ariaLabel }: { title: ReactNode; tracks: HomeCatalog["featuredTracks"]; ariaLabel: string }) {
   if (tracks.length === 0) return null;
   return (
     <div className="mb-9">
@@ -53,17 +54,6 @@ export default function CatalogSections({ catalog }: { catalog: HomeCatalog }) {
         }
         tracks={catalog.featuredTracks}
         ariaLabel="Онцлох дуунууд"
-      />
-
-      <RailSection
-        title={
-          <>
-            <FontAwesomeIcon icon={faFire} className="text-aqua mr-2" />
-            Хамгийн алдартай
-          </>
-        }
-        tracks={catalog.popularTracks}
-        ariaLabel="Хамгийн алдартай дуунууд"
       />
     </>
   );

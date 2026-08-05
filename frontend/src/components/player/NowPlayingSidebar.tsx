@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type MutableRefObject } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPause, faPlay } from "@fortawesome/free-solid-svg-icons";
 import Icon from "@/components/ui/Icon";
+import SignalBars from "./shared/SignalBars";
 import LyricsPanel from "./LyricsPanel";
 
 type TrackLike = {
@@ -41,10 +44,17 @@ export default function NowPlayingSidebar({
   track,
   playing,
   currentTime = 0,
+  onTogglePlay,
+  sidebarBarsRef,
 }: {
   track: TrackLike | null;
   playing: boolean;
   currentTime?: number;
+  /** Cover дээрх тоглуулах/зогсоох товч. Дамжуулаагүй бол товч харагдахгүй. */
+  onTogglePlay?: () => void;
+  /* RAF loop-оос тэжээгддэг амьд багануудын ref — Дэлгэрэнгүй хуудасны
+     `signalBarsRef`-ЭЭС ТУСДАА массив (хоёул зэрэг харагддаг). */
+  sidebarBarsRef?: MutableRefObject<(HTMLSpanElement | null)[]>;
 }) {
   const credits = buildCredits(track);
   const asideRef = useRef<HTMLElement | null>(null);
@@ -90,7 +100,9 @@ export default function NowPlayingSidebar({
                 харьцангуй хэт том харагдаж байсныг aspect-video (16:9) болгож жижигсгэв —
                 Тоглох/зогссон төлөв дээд header-т (badge) аль хэдийн харагддаг тул энд
                 ДАХИН давхардуулахгүй. */}
-            <div className="relative overflow-hidden rounded-card border border-white/[.08] bg-[linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015))] shadow-[0_18px_54px_rgba(0,0,0,.45)]">
+            {/* Cover + түүн дээр амьд долгион ба тоглуулах/зогсоох товч —
+                Дэлгэрэнгүй хуудасны cover-той ижил хэв маяг. */}
+            <div className="group relative overflow-hidden rounded-card border border-white/[.08] bg-[linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015))] shadow-[0_18px_54px_rgba(0,0,0,.45)]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,232,206,.16),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(217,165,76,.12),transparent_34%)]" />
               {track.cover ? (
                 <img src={track.cover} alt={track.title} className="relative z-[1] w-full aspect-video object-cover" loading="lazy" decoding="async" />
@@ -98,6 +110,30 @@ export default function NowPlayingSidebar({
                 <div className="relative z-[1] grid place-items-center w-full aspect-video bg-[linear-gradient(135deg,rgba(56,232,206,.12),rgba(255,255,255,.03))]">
                   <Icon name="music" size={36} className="text-aqua/70" />
                 </div>
+              )}
+
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2]">
+                <div className="h-[64px] bg-[linear-gradient(180deg,transparent,rgba(4,8,8,.55)_42%,rgba(4,8,8,.88))]" />
+                <SignalBars
+                  signalBarsRef={sidebarBarsRef}
+                  count={26}
+                  className="absolute inset-x-0 bottom-0 h-[52px] px-2.5 pb-2.5"
+                  barClassName="shadow-[0_0_12px_rgba(56,232,206,.35)]"
+                />
+              </div>
+
+              {/* Товч ҮРГЭЛЖ харагдана (hover дээр гарч ирдэг байсныг больсон): зогссон
+                  үед багана хавтгайрч, товч нь ▶ болдог тул тоглож байгаа эсэхийг нэг
+                  харцаар мэдэх ганц найдвартай тэмдэг нь энэ. */}
+              {onTogglePlay && (
+                <button
+                  type="button"
+                  onClick={onTogglePlay}
+                  aria-label={playing ? `Түр зогсоох: ${track.title}` : `Тоглуулах: ${track.title}`}
+                  className="absolute left-1/2 top-1/2 z-[3] -translate-x-1/2 -translate-y-1/2 w-[56px] h-[56px] rounded-full bg-aqua text-on-aqua flex items-center justify-center text-[19px] shadow-[0_10px_30px_rgba(0,0,0,.55)] transition-[transform,box-shadow] duration-300 hover:scale-[1.06] hover:shadow-[0_12px_36px_rgba(56,232,206,.45)] focus-visible:outline-none focus-visible:shadow-glow-aqua"
+                >
+                  <FontAwesomeIcon icon={playing ? faPause : faPlay} />
+                </button>
               )}
             </div>
 

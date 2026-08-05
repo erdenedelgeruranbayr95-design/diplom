@@ -9,3 +9,4 @@ export { useClosingTransition } from "./useClosingTransition";
 export { useFocusTrap } from "./useFocusTrap";
 export { useModalShell, type ModalShell, type ModalShellOptions } from "./useModalShell";
 export { useAppPreferences, readMotionPreference, MOTION_PREF_EVENT, type AppliedPreferences } from "./useAppPreferences";
+export { useRailScroll, type RailScroll } from "./useRailScroll";

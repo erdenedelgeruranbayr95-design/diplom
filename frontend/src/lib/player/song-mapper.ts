@@ -1,7 +1,18 @@
-import { TRACKS } from "@/lib/data/tracks";
 import type { PlayerTrack } from "@/types/player";
 import type { Song } from "@/types/song";
 import type { Track } from "@/types/track";
+
+/* Обложкагүй дууны нөөц зураг. Урьд нь эдгээрийг статик демо каталог
+   (`lib/data/tracks.ts`-ийн TRACKS) -оос авдаг байсан — SoundHelix демо дуунуудыг
+   устгахад тэр файл ч хамт устсан тул зургийн замууд нь энд шууд үлдэв. */
+const FALLBACK_COVERS = [
+  "/gallery/gal-01.jpg",
+  "/gallery/gal-02.jpg",
+  "/gallery/gal-03.jpg",
+  "/gallery/gal-04.jpg",
+  "/gallery/gal-05.jpg",
+  "/gallery/gal-06.jpg",
+] as const;
 
 /* Backend `Song` болон IndexedDB-ийн custom мета → тоглуулагчийн `PlayerTrack`.
 
@@ -10,9 +21,9 @@ import type { Track } from "@/types/track";
      · DetailView.tsx — `toTrack()` (fallback нь одоогийн track)
    Хоёулаа энд нэгдэв; fallback эх сурвалж нь параметр болов. */
 
-/** Обложка байхгүй үед статик каталогоос тогтвортой (нэрнээс хамаарсан) зураг сонгоно. */
+/** Обложка байхгүй үед тогтвортой (нэрнээс хамаарсан) нөөц зураг сонгоно. */
 export function fallbackCover(title: string): string {
-  return TRACKS[Math.abs(title.length) % TRACKS.length].cover as string;
+  return FALLBACK_COVERS[Math.abs(title.length) % FALLBACK_COVERS.length];
 }
 
 /** Backend Song → PlayerTrack. `fallback` нь өмнөх мэдэгдэж байсан track (сонголттой). */

@@ -12,6 +12,24 @@ import { ActionButton } from "@/components/ui/ActionGroup";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import Icon from "@/components/ui/Icon";
 
+/* QR дотор `localhost` орвол утас өөрийнхөө localhost руу очих тул хосолт чимээгүй
+   унана. Desktop-оо localhost-оор нээсэн тохиолдолд `NEXT_PUBLIC_WS_URL`-ийн host-ыг
+   (LAN IP) зээлж, порт/протоколоо хэвээр үлдээнэ — ингэснээр localhost, LAN IP аль
+   хаягаар нээсэн ч QR үргэлж утаснаас хүрэх хаяг агуулна. */
+function pairingOrigin(): string {
+  const { protocol, hostname, port, origin } = window.location;
+  if (hostname !== "localhost" && hostname !== "127.0.0.1") return origin;
+  const ws = process.env.NEXT_PUBLIC_WS_URL;
+  if (!ws) return origin;
+  try {
+    const lanHost = new URL(ws).hostname;
+    if (lanHost === "localhost" || lanHost === "127.0.0.1") return origin;
+    return `${protocol}//${lanHost}${port ? ":" + port : ""}`;
+  } catch {
+    return origin;
+  }
+}
+
 export default function PairingCard({
   open,
   onClose,
@@ -81,7 +99,7 @@ export default function PairingCard({
                     transition={{ delay: 0.1, type: "spring", stiffness: 260, damping: 22 }}
                   >
                     {deviceSync.qrToken ? (
-                      <QRCodeSVG value={`${window.location.origin}/mobile/${deviceSync.qrToken}`} size={188} />
+                      <QRCodeSVG value={`${pairingOrigin()}/mobile/${deviceSync.qrToken}`} size={188} />
                     ) : (
                       <span className="w-[188px] h-[188px] flex items-center justify-center text-dim text-xs">Уншиж байна…</span>
                     )}

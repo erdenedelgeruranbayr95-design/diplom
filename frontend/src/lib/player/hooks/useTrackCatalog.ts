@@ -2,18 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import * as songsApi from "@/lib/api/client";
-import { TRACKS } from "@/lib/data/tracks";
 import { idbGet } from "@/lib/data/idb";
 import { loadCustomMeta, loadSongsCache, saveSongsCache } from "@/lib/data/library";
 import { APP_EVENTS } from "@/lib/data/events";
 import { customMetaToPlayerTrack, songToPlayerTrack } from "@/lib/player/song-mapper";
-import { collectGenres } from "@/lib/player/track-index";
 import type { PlayerTrack } from "@/types/player";
 
-/* Дууны каталогийн 3 эх сурвалжийг нэг жагсаалт болгож нийлүүлнэ:
-     1. `TRACKS`      — статик демо каталог (bundle дотор)
-     2. GET /songs    — backend Song каталог (Artist-тэй холбоотой, seed Монгол дуунууд)
-     3. IndexedDB     — админы нэмсэн дуунууд (blob URL-ууд)
+/* Дууны каталогийн 2 эх сурвалжийг нэг жагсаалт болгож нийлүүлнэ:
+     1. GET /songs    — backend Song каталог (Artist-тэй холбоотой, seed Монгол дуунууд)
+     2. IndexedDB     — админы нэмсэн дуунууд (blob URL-ууд)
+
+   (Гурав дахь эх сурвалж болох SoundHelix статик демо каталог 2026-08-05-нд устсан —
+   каталогт зөвхөн бодит дуу үлдэнэ.)
 
    Урьд нь энэ гурав Player.tsx-ийн 2 том useEffect + 1 мөрийн `ALL` нийлбэрээр
    тархсан байсан. Blob URL-ийн амьдралын мөчлөг (revokeObjectURL) энд хаагдана —
@@ -23,8 +23,6 @@ import type { PlayerTrack } from "@/types/player";
 export interface TrackCatalog {
   /** Гурван эх сурвалж нийлсэн бүрэн жагсаалт (энэ дараалал хэвээр). */
   allTracks: PlayerTrack[];
-  /** Шүүлтийн товчнуудад — "Бүгд" + давхардалгүй төрлүүд. */
-  genres: string[];
   backendSongs: PlayerTrack[];
   customTracks: PlayerTrack[];
 }
@@ -90,8 +88,6 @@ export function useTrackCatalog(enabled: boolean): TrackCatalog {
     };
   }, [enabled]);
 
-  const allTracks = useMemo(() => [...TRACKS, ...backendSongs, ...customTracks] as PlayerTrack[], [backendSongs, customTracks]);
-  const genres = useMemo(() => collectGenres(allTracks), [allTracks]);
-
-  return { allTracks, genres, backendSongs, customTracks };
+  const allTracks = useMemo(() => [...backendSongs, ...customTracks] as PlayerTrack[], [backendSongs, customTracks]);
+  return { allTracks, backendSongs, customTracks };
 }

@@ -122,6 +122,23 @@ input[type="search"]::-webkit-search-decoration {
   appearance: none;
   -webkit-appearance: none;
 }
+/* Нууц үгийн натив "нүд" (харах) товч. ЗӨВХӨН `.has-reveal`-тэй талбарт нуана —
+   AuthModal-ийн PassInput өөрийн харах/нуух товчтой тул хоёр нүд зэрэгцэн гарч ирдэг.
+   Өөрийн товчгүй бусад талбарт (SecuritySettings, StaffCreationForm ...) нативийг нь
+   нуувал нууц үгээ харах ганц арга нь алга болох тул тэнд хэвээр үлдээв. */
+input.has-reveal::-ms-reveal,
+input.has-reveal::-ms-clear {
+  display: none;
+}
+/* Safari/Chrome-ийн нууц үгийн менежерийн түлхүүр товч — мөн адил давхардуулдаг.
+   `display:none` энд ажиллахгүй (хөтөч үл тоодог) тул харагдацыг нь унтраана. */
+input.has-reveal::-webkit-credentials-auto-fill-button,
+input.has-reveal::-webkit-strong-password-auto-fill-button {
+  visibility: hidden;
+  pointer-events: none;
+  margin: 0;
+  width: 0;
+}
 /* алдаатай оролт: зөвхөн өнгө биш, тод хүрээгээр ч дамжуулна (өнгө сохор хэрэглэгч) */
 [aria-invalid="true"] {
   border-color: var(--color-danger) !important;

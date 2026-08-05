@@ -40,7 +40,6 @@ export type ViewName =
   | "history"
   | "therapist"
   | "progress"
-  | "achievements"
   | "parent"
   | "upload";
 

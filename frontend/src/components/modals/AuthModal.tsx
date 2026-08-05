@@ -23,8 +23,10 @@ function PassInput({ name, autoComplete, invalid }: { name: string; autoComplete
   const [show, setShow] = useState(false);
   return (
     <span className="relative flex">
+      {/* `has-reveal` — доорх өөрийн нүд товчтой давхардах хөтчийн натив харах товчийг
+          нуух CSS дэгээ (polish.css). */}
       <input
-        className={inputCls + " w-full pr-11"}
+        className={inputCls + " has-reveal w-full pr-11"}
         name={name}
         type={show ? "text" : "password"}
         placeholder="••••••••"
@@ -85,6 +87,19 @@ export default function AuthModal({
   }, [open]);
 
   if (!open) return null;
+
+  /* Таб солиход имэйлийг ЦЭВЭРЛЭНЭ. Урьд нь `email` state зөвхөн модал нээгдэхэд
+     цэвэрлэгддэг байсан тул: Chrome "Нэвтрэх" табыг login форм гэж танин хадгалсан
+     имэйлээ autofill хийж (polish.css нь autofill-ийн шар дэвсгэрийг бараан болгодог
+     учир НҮДЭЭР ЯЛГАРАХГҮЙ), Бүртгүүлэх рүү шилжихэд өөр хүний имэйл дагаж үлддэг байв.
+     Нууц үгнүүд `key={mode}` remount-аар аль хэдийн цэвэрлэгддэг тул имэйлийг ч
+     цэвэрлэх нь тууштай зан төлөв. */
+  function switchMode(next: "login" | "register") {
+    setMode(next);
+    setEmail("");
+    setErr("");
+    setOk("");
+  }
 
   async function handleGoogleCredential(idToken: string) {
     setErr("");
@@ -185,11 +200,7 @@ export default function AuthModal({
               "font-display text-note tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
               (mode === "login" ? "bg-aqua text-on-aqua font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
             }
-            onClick={() => {
-              setMode("login");
-              setErr("");
-              setOk("");
-            }}
+            onClick={() => switchMode("login")}
           >
             Нэвтрэх
           </button>
@@ -200,11 +211,7 @@ export default function AuthModal({
               "font-display text-note tracking-[-.02em] py-3 px-2 transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
               (mode === "register" ? "bg-aqua text-on-aqua font-semibold" : "text-dim hover:bg-white/[.05] hover:text-ink")
             }
-            onClick={() => {
-              setMode("register");
-              setErr("");
-              setOk("");
-            }}
+            onClick={() => switchMode("register")}
           >
             Бүртгүүлэх
           </button>
@@ -227,12 +234,21 @@ export default function AuthModal({
           )}
           <label className={labelCls}>
             <span className={captionCls}>Имэйл</span>
+            {/* Бүртгүүлэх үед браузер/нууц үгийн менежерийн autofill-ийг унтраана —
+                хадгалсан ӨӨР бүртгэлийн имэйл шинэ бүртгэлийн формд орж ирэх нь
+                утгагүй (тэр имэйл аль хэдийн бүртгэлтэй тул алдаа л өгнө). Нэвтрэх
+                үед харин autofill ХЭРЭГТЭЙ тул хэвээр үлдээв.
+                `name`-ийг ч сольсон нь Chrome-ийн эвристик таних (autocomplete="off"-ыг
+                үл тоох) тохиолдлыг бас хаана — submit() имэйлийг `email` state-ээс
+                уншдаг тул FormData-ийн түлхүүр өөрчлөгдөх нь аюулгүй. */}
             <input
               className={inputCls}
-              name="email"
+              name={mode === "login" ? "email" : "reg-email"}
               type="email"
               placeholder="you@mail.com"
-              autoComplete="email"
+              autoComplete={mode === "login" ? "email" : "off"}
+              data-lpignore={mode === "register" ? "true" : undefined}
+              data-1p-ignore={mode === "register" ? "" : undefined}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               aria-invalid={err.includes("Имэйл") || undefined}

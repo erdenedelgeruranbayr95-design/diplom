@@ -81,7 +81,6 @@ export default function Player({
   const [artistId, setArtistId] = useState<string | null>(null);
   const [analysisSongId, setAnalysisSongId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [genre, setGenre] = useState(ALL_GENRES);
 
   /* ---------- overlay-ууд ---------- */
   const [immersive, setImmersive] = useState(false);
@@ -158,7 +157,10 @@ export default function Player({
 
   /* ---------- дериватив жагсаалтууд ---------- */
   const trackIndex = useMemo(() => indexTracksById(catalog.allTracks), [catalog.allTracks]);
-  const filteredTracks = useMemo(() => filterTracks(catalog.allTracks, { genre, query }), [catalog.allTracks, genre, query]);
+  /* Төрлөөр шүүх UI (GenreFilter) устсан тул `genre` нь үргэлж «Бүгд». Хайлтын
+     талбар үлдсэн учир `query` хэвээр — доорх «тоглуулах» товч хайлтад тохирсон
+     эхний дууг эхлүүлнэ. */
+  const filteredTracks = useMemo(() => filterTracks(catalog.allTracks, { genre: ALL_GENRES, query }), [catalog.allTracks, query]);
   const recentTracks = useMemo(() => resolveTracks(playback.recentIds, trackIndex), [playback.recentIds, trackIndex]);
   const likedTracks = useMemo(() => resolveTracks(library.likedIds, trackIndex), [library.likedIds, trackIndex]);
   const savedTracks = useMemo(() => resolveTracks(library.savedIds, trackIndex), [library.savedIds, trackIndex]);
@@ -178,14 +180,9 @@ export default function Player({
   useAppPreferences({ largeText: library.prefs.largeText, reducedMotion: library.prefs.reducedMotion });
   useBodyClass("native-cursor", open);
 
-  /* анх удаа орж ирсэн хэрэглэгчид калибровк санал болгоно (админ/эмч/эцэг эхэд хэрэггүй) */
-  const calibrationOfferedRef = useRef(false);
-  useEffect(() => {
-    if (open && library.prefsReady && !library.prefs.calibrated && !calibrationOfferedRef.current && !isAdmin && !isTherapist && !isParent) {
-      calibrationOfferedRef.current = true;
-      setCalibrateOpen(true);
-    }
-  }, [open, library.prefsReady, library.prefs.calibrated, isAdmin, isTherapist, isParent]);
+  /* Калибровкийг нэвтрэх үед АВТОМАТААР санал болгохоо больсон — нэвтэрмэгц шууд нүүр
+     хуудас нээгдэнэ. Калибровк өөрөө хэвээр: Тохиргоо цэс (SettingsDropdown) болон
+     Тусламж хуудсаас (HelpView) хүссэн үедээ нээж болно. */
 
   /* нээгдэхэд: админ/эмч бол өөрийн самбараас, энгийн хэрэглэгч нүүрээс эхэлнэ */
   useEffect(() => {
@@ -338,7 +335,7 @@ export default function Player({
             <PageContainer scrollKey={view + ":" + (detailTrack?.id ?? "")}>
               <PlayerViewRouter
                 view={view}
-                catalog={{ allTracks: catalog.allTracks, filteredTracks, genres: catalog.genres, genre, onGenre: setGenre, query }}
+                catalog={{ allTracks: catalog.allTracks, query, filteredTracks }}
                 collections={{
                   liked: likedTracks,
                   saved: savedTracks,
@@ -371,7 +368,13 @@ export default function Player({
               />
             </PageContainer>
 
-            <NowPlayingSidebar track={playback.current} playing={playback.playing} currentTime={playback.time} />
+            <NowPlayingSidebar
+              track={playback.current}
+              playing={playback.playing}
+              currentTime={playback.time}
+              onTogglePlay={() => playback.togglePlay()}
+              sidebarBarsRef={haptics.sidebarBarsRef}
+            />
           </div>
         </div>
 
