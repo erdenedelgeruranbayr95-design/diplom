@@ -23,7 +23,10 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: process.env.CI
     ? {
-        command: "npm run dev",
+        // `next dev`-д PORT зааж өгөхгүй бол default 3000 дээр асдаг — тэр порт CI-д
+        // backend-ийн эзэлсэн байдаг тул EADDRINUSE-ээр унадаг байсан (см. ci.yml-ийн
+        // "Start backend" алхам). PORT=3001-ийг тодорхой зааж 3001 дээр асаана.
+        command: "npm run dev -- -p 3001",
         url: "http://localhost:3001",
         reuseExistingServer: false,
         timeout: 120_000,
