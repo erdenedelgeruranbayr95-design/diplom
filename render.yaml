@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: medreh-api
+    env: node
+    region: frankfurt
+    plan: starter
+    buildCommand: "cd backend && npm install --legacy-peer-deps && npm run build"
+    startCommand: "cd backend && npx prisma migrate deploy && npm run start:prod"
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: COOKIE_SECRET
+        sync: false
+      - key: HAPTIC_CALLBACK_SECRET
+        sync: false
+      - key: PAYMENT_WEBHOOK_SECRET
+        sync: false
+      - key: HEARING_PROFILE_ENC_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_REGION
+        value: us-east-1
+      - key: S3_BUCKET
+        value: medreh-media
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      - key: S3_PUBLIC_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
