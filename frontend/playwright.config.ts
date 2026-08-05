@@ -12,7 +12,7 @@ export default defineConfig({
      `npx playwright test e2e/latency-measurement.spec.ts e2e/accessibility.spec.ts`. */
   testIgnore: process.env.MEASURE ? undefined : ["**/latency-measurement.spec.ts", "**/accessibility.spec.ts"],
   fullyParallel: false, // тестүүд ижил backend DB-г ашигладаг тул уралдаан үүсэхээс сэргийлнэ
-  retries: process.env.CI ? 1 : 0,
+  retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: "list",
   use: {

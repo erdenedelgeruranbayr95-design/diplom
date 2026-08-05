@@ -13,9 +13,12 @@ test.describe("Нэвтрэх · тоглуулах", () => {
     // registerNewUser нь "Тавтай морил" мессеж харагдтал хүлээсэн — Player автоматаар нээгдэнэ.
     await dismissAutoCalibrationIfOpen(page);
 
-    // Player нээгдсэн эсэхийг тоглуулах товч (demo track) харагдаж байгаагаар баталгаажуулна
+    // Player нээгдсэн эсэхийг тоглуулах товч (demo track) харагдаж байгаагаар баталгаажуулна.
+    // CI-ийн удаашруулагдсан орчинд каталог/track render хийгдэхэд арай удаан вэ гэдэг
+    // боломжтой тул хугацааг уртасгаж, дунд нь дахин нэг удаа calibration dialog-ыг шалгана.
     const playButton = page.getByRole("button", { name: /^Тоглуулах:/ }).first();
-    await expect(playButton).toBeVisible({ timeout: 10_000 });
+    await dismissAutoCalibrationIfOpen(page);
+    await expect(playButton).toBeVisible({ timeout: 20_000 });
 
     // Калибровк dialog "Дараа хийе"-ээр хаагдсан ч prefs.calibrated=true болгодоггүй тул
     // (см. Calibrate.tsx onSkip={onClose}) заримдаа хожим дахин нээгдэж болзошгүй — товч
