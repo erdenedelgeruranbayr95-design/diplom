@@ -26,7 +26,9 @@ export async function registerNewUser(page: Page, opts: { name: string; email: s
   await page.locator("#dock").getByRole("button", { name: "Нэвтрэх" }).click();
   await page.getByRole("tab", { name: "Бүртгүүлэх" }).click();
   await page.locator('input[name="name"]').fill(opts.name);
-  await page.locator('input[name="email"]').fill(opts.email);
+  // AuthModal.tsx: register горимд имэйл талбарын name нь "email" биш "reg-email"
+  // (браузерийн autofill эвристикээс хоргодохын тулд, см. AuthModal.tsx-ийн comment).
+  await page.locator('input[name="reg-email"]').fill(opts.email);
   await page.locator('input[name="pass"]').fill(password);
   await page.locator('input[name="pass2"]').fill(password);
   await page.getByRole("button", { name: "Бүртгүүлэх" }).click();

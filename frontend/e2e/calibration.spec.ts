@@ -1,15 +1,19 @@
 import { test, expect } from "@playwright/test";
 import { waitForLanding, registerNewUser } from "./helpers";
 
-/* Роадмапын Үе шат 6 E2E: "калибровк". Шинэ хэрэглэгч бол Player өөрөө калибровкийг
-   автоматаар нээдэг (Player.tsx auto-prompt) — 5 дэлгэцийг (Intro→Vibration→Light→
-   Bands→Summary, см. CalibrateSteps.tsx) бодит товч бүрээр нь дамжина. */
+/* Роадмапын Үе шат 6 E2E: "калибровк". Калибровкийг нэвтрэх үед АВТОМАТААР санал
+   болгохоо больсон (см. Player.tsx-ийн comment) — одоо Тохиргоо цэсээс ("Мэдрэхүйн
+   тохиргоо" товч → "Калибровк дахин хийх") гараар нээнэ, дараа нь 5 дэлгэцийг
+   (Intro→Vibration→Light→Bands→Summary, см. CalibrateSteps.tsx) бодит товч бүрээр нь дамжина. */
 test.describe("Мэдрэхүйн калибровк", () => {
   test("нэвтэрсэн хэрэглэгч калибровкийг эхнээс дуустал дамжина", async ({ page }) => {
     const email = `e2e-calib-${Date.now()}@example.com`;
 
     await waitForLanding(page);
     await registerNewUser(page, { name: "E2E Calib", email });
+
+    await page.getByRole("button", { name: "Мэдрэхүйн тохиргоо" }).click();
+    await page.getByRole("button", { name: "Калибровк дахин хийх" }).click();
 
     const dialog = page.getByRole("dialog", { name: "Мэдрэхүйн калибровк" });
     await expect(dialog).toBeVisible({ timeout: 10_000 });
