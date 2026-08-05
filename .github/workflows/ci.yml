@@ -158,7 +158,10 @@ jobs:
         if: failure()
         with:
           name: playwright-report
-          path: frontend/playwright-report/
+          # `reporter: "list"` (playwright.config.ts) playwright-report/ HTML
+          # тайлан vvсгэдэггvй — screenshot/trace бодитоор test-results/-д хадгалагддаг
+          # тул upload хийх зам ЗӨВ энд байх ёстой (эс тэгвэл артефакт хоосон vлддэг).
+          path: frontend/test-results/
           retention-days: 7
 
   # `main`-д push хийгдэх бүрт (тест бүгд давсны дараа) гурван Docker image-ыг

@@ -257,15 +257,22 @@ async function main() {
     for (const s of a.songs) {
       const existing = await prisma.song.findFirst({ where: { title: s.title, artistId: artist.id } });
       if (existing) {
-        /* Хуучин seed нь duration бичдэггүй байсан тул DB-д аль хэдийн байгаа мөрүүд
-           duration = null-тай үлдсэн (UI-д "—" харагдана). Дахин seed хийхэд тэдгээрийг
-           нөхөж бөглөнө — бусад талбарыг хөндөхгүй (гараар засварласан өгөгдөл хэвээр). */
+        /* Хуучин seed нь duration/published бичдэггүй байсан тул DB-д аль хэдийн байгаа
+           мөрүүд duration=null (UI-д "—" харагдана) эсвэл published=false (GET /songs-д
+           огт харагдахгүй) хэвээр үлдсэн байж болно. Дахин seed хийхэд тэдгээрийг нөхөж
+           бөглөнө — бусад талбарыг хөндөхгүй (гараар засварласан өгөгдөл хэвээр). */
+        const patch: { duration?: number; published?: boolean; publishedAt?: Date } = {};
         if (existing.duration === null) {
           const duration = placeholderDuration(songIndex);
-          if (duration !== null) {
-            await prisma.song.update({ where: { id: existing.id }, data: { duration } });
-            backfilled++;
-          }
+          if (duration !== null) patch.duration = duration;
+        }
+        if (!existing.published) {
+          patch.published = true;
+          patch.publishedAt = new Date();
+        }
+        if (Object.keys(patch).length > 0) {
+          await prisma.song.update({ where: { id: existing.id }, data: patch });
+          backfilled++;
         }
         songIndex++;
         continue;
@@ -282,6 +289,11 @@ async function main() {
           fileUrl: placeholderFile(songIndex),
           duration: placeholderDuration(songIndex),
           uploadedBy: (await prisma.user.findUniqueOrThrow({ where: { email: 'admin@medreh.mn' } })).id,
+          /* published=false нь схемийн default — үүнийг заагаагүй бол GET /songs
+             (songs.service.ts-ийн list(), зөвхөн published+uploadConfirmed шалгадаг)
+             seed хийсэн дуунуудыг ХЭЗЭЭ Ч буцаадаггүй, каталог үргэлж хоосон харагдана. */
+          published: true,
+          publishedAt: new Date(),
         },
       });
       songIndex++;
