@@ -51,6 +51,9 @@ import type {
   UpdateTherapySessionPayload,
 } from "@/types/therapy";
 
+// Vercel deploy: NEXT_PUBLIC_API_URL production backend рүү заасан эсэхийг баталгаажуулах
+// зорилгоор cache-invalidate хийсэн жижиг тайлбар мөр (build cache хуучин utga-г
+// дахин ашиглахаас сэргийлнэ).
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 let accessToken: string | null = null;
