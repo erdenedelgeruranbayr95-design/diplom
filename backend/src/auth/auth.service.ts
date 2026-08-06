@@ -123,9 +123,23 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
-    const user = await this.prisma.user.create({
-      data: { name: dto.name.trim(), email, passwordHash, role: Role.PARENT },
-    });
+const adminEmails = (this.config.get<string>('ADMIN_EMAILS') ?? '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+const role = adminEmails.includes(email)
+  ? Role.ADMIN
+  : Role.USER;
+
+user = await this.prisma.user.create({
+  data: {
+    name: payload.name || email.split('@')[0],
+    email,
+    googleId,
+    role,
+  },
+});
     await this.prisma.parentLink.create({ data: { parentId: user.id, childUserId: child.id } });
 
     const accessToken = this.signAccessToken(user);
