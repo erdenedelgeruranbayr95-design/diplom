@@ -123,23 +123,9 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
-const adminEmails = (this.config.get<string>('ADMIN_EMAILS') ?? '')
-  .split(',')
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean);
-
-const role = adminEmails.includes(email)
-  ? Role.ADMIN
-  : Role.USER;
-
-user = await this.prisma.user.create({
-  data: {
-    name: payload.name || email.split('@')[0],
-    email,
-    googleId,
-    role,
-  },
-});
+    const user = await this.prisma.user.create({
+      data: { name: dto.name.trim(), email, passwordHash, role: Role.PARENT },
+    });
     await this.prisma.parentLink.create({ data: { parentId: user.id, childUserId: child.id } });
 
     const accessToken = this.signAccessToken(user);
@@ -217,37 +203,17 @@ user = await this.prisma.user.create({
     const email = payload.email.trim().toLowerCase();
     const googleId = payload.sub;
 
-const adminEmails = (this.config.get<string>('ADMIN_EMAILS') ?? '')
-  .split(',')
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean);
-
-const role = adminEmails.includes(email) ? Role.ADMIN : Role.USER;
-
-let user = await this.prisma.user.findUnique({ where: { googleId } });
-
-if (!user) {
-  user = await this.prisma.user.findUnique({ where: { email } });
-
-  if (user) {
-    user = await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        googleId,
-        role, // админ имэйл бол role-г шинэчилнэ
-      },
-    });
-  } else {
-    user = await this.prisma.user.create({
-      data: {
-        name: payload.name || email.split('@')[0],
-        email,
-        googleId,
-        role,
-      },
-    });
-  }
-}
+    let user = await this.prisma.user.findUnique({ where: { googleId } });
+    if (!user) {
+      user = await this.prisma.user.findUnique({ where: { email } });
+      if (user) {
+        user = await this.prisma.user.update({ where: { id: user.id }, data: { googleId } });
+      } else {
+        user = await this.prisma.user.create({
+          data: { name: payload.name || email.split('@')[0], email, googleId },
+        });
+      }
+    }
 
     if (user.status === UserStatus.BANNED) {
       throw new ForbiddenException('Таны бүртгэл түдгэлзүүлэгдсэн байна');
