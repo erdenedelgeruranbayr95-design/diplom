@@ -217,17 +217,37 @@ user = await this.prisma.user.create({
     const email = payload.email.trim().toLowerCase();
     const googleId = payload.sub;
 
-    let user = await this.prisma.user.findUnique({ where: { googleId } });
-    if (!user) {
-      user = await this.prisma.user.findUnique({ where: { email } });
-      if (user) {
-        user = await this.prisma.user.update({ where: { id: user.id }, data: { googleId } });
-      } else {
-        user = await this.prisma.user.create({
-          data: { name: payload.name || email.split('@')[0], email, googleId },
-        });
-      }
-    }
+const adminEmails = (this.config.get<string>('ADMIN_EMAILS') ?? '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+const role = adminEmails.includes(email) ? Role.ADMIN : Role.USER;
+
+let user = await this.prisma.user.findUnique({ where: { googleId } });
+
+if (!user) {
+  user = await this.prisma.user.findUnique({ where: { email } });
+
+  if (user) {
+    user = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        googleId,
+        role, // админ имэйл бол role-г шинэчилнэ
+      },
+    });
+  } else {
+    user = await this.prisma.user.create({
+      data: {
+        name: payload.name || email.split('@')[0],
+        email,
+        googleId,
+        role,
+      },
+    });
+  }
+}
 
     if (user.status === UserStatus.BANNED) {
       throw new ForbiddenException('Таны бүртгэл түдгэлзүүлэгдсэн байна');
