@@ -23,10 +23,17 @@ export class AuthController {
   ) {}
 
   private setRefreshCookie(res: Response, token: string) {
+    /* Frontend (Vercel) болон backend (Render) өөр домэйнд байрладаг (cross-site) production
+       орчинд `SameSite=Lax` cookie нь fetch()-ийн cross-origin хvсэлтэд ЗААВАЛ илгээгддэггvй
+       (зөвхөн top-level navigation-д) — /auth/refresh хэзээ ч cookie авахгvй, хуудас
+       refresh хийхэд хэрэглэгч гарсан мэт харагддаг байсан. `SameSite=None` cross-site
+       cookie зөвшөөрдөг ч Secure=true (HTTPS) шаарддаг тул production дээр хоёуланг хамт
+       өөрчилнө; dev-д (localhost, same-site) хэвээр `Lax`+`Secure=false` vлдэнэ. */
+    const isProd = this.config.get('NODE_ENV') === 'production';
     res.cookie(REFRESH_COOKIE, token, {
       httpOnly: true,
-      secure: this.config.get('NODE_ENV') === 'production',
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       path: REFRESH_COOKIE_PATH,
       maxAge: REFRESH_COOKIE_MAX_AGE_MS,
     });
