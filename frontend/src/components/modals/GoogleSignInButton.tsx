@@ -20,6 +20,9 @@ declare global {
   }
 }
 
+// Vercel build cache invalidate хийх зорилготой тайлбар мөр — NEXT_PUBLIC_GOOGLE_CLIENT_ID
+// dashboard дээр шинэчлэгдсэн ч, энэ файл хөндөгдөөгүй бол webpack хуучин утгыг
+// bundle-д дахин ашиглаж болзошгүй.
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 export default function GoogleSignInButton({ onCredential }: { onCredential: (idToken: string) => void }) {
