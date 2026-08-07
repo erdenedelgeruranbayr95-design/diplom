@@ -4,6 +4,12 @@ import type { NextConfig } from "next";
 // `http://api:3000`) — локал хөгжүүлэлтэд өмнөх адил localhost:3000 үлдэнэ.
 const API_ORIGIN = process.env.BACKEND_INTERNAL_URL || "http://localhost:3000";
 
+// Next нь package-lock.json-оор workspace root-ыг таамагладаг. Хөгжүүлэгчийн home
+// хавтсанд (жиш. C:\Users\<nэр>\package-lock.json) санамсаргүй lockfile үүссэн бол
+// түүнийг root гэж андуурч, `output: "standalone"` build-д буруу файлуудыг мөрддөг.
+// Энэ хавтсыг тодорхой зааж өгснөөр гадны lockfile-аас үл хамаарна.
+const TRACING_ROOT = __dirname;
+
 // Capacitor Android build (см. docs/CAPACITOR-ANDROID-SETUP.md) статик HTML/JS
 // (`output: "export"`) шаардана — сервер талын rewrites/standalone дэмждэггүй.
 // Энгийн `next build` (Docker/web) горим бол өмнөх адил "standalone" хэвээр
@@ -18,8 +24,10 @@ const nextConfig: NextConfig = isCapacitorBuild
       // (build хийхийн өмнө .env.local/.env.production-д тохируулна уу).
       output: "export",
       images: { unoptimized: true },
+      outputFileTracingRoot: TRACING_ROOT,
     }
   : {
+      outputFileTracingRoot: TRACING_ROOT,
       // Docker image-ийг хамгийн бага хэмжээтэй болгоно — зөвхөн ажиллахад
       // шаардлагатай файлуудыг (`.next/standalone`) багтаана.
       output: "standalone",

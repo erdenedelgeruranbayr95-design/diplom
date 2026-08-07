@@ -2,19 +2,24 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+First, install dependencies and run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
+
+> **Порт 3001.** Backend (NestJS) нь 3000-г эзэлдэг тул frontend 3001 дээр ажиллана
+> — `npm run dev` үүнийг автоматаар зааж өгнө (`next dev -p 3001`). Порт 3000 дээр
+> асаавал backend `EADDRINUSE`-ээр унана. Мөн `backend/.env`-ийн
+> `CORS_ORIGIN=http://localhost:3001` энэ порттой тохирсон байх ёстой.
+
+API хүсэлтүүд `/api/*` рүү явж, [next.config.ts](next.config.ts)-ийн rewrite-аар
+backend руу дамждаг тул локал хөгжүүлэлтэд `.env` файл шаардлагагүй. Google-ээр
+нэвтрэх товчийг идэвхжүүлэх бол `.env.local`-д `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
+нэмнэ (см. [docs/ENV-MISSING-KEYS-GUIDE.md](../docs/ENV-MISSING-KEYS-GUIDE.md)).
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
