@@ -19,3 +19,12 @@ export class JamendoImportDto {
   @MinLength(1)
   jamendoId: string;
 }
+
+export class JamendoBatchImportDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(30)
+  limit?: number;
+}

@@ -5,7 +5,7 @@ import { CreateSongDto } from './dto/create-song.dto';
 import { UpdateSongDto } from './dto/update-song.dto';
 import { AnalyzeSongDto } from './dto/analyze-song.dto';
 import { RequestUploadUrlDto } from './dto/request-upload-url.dto';
-import { JamendoSearchDto, JamendoImportDto } from './dto/jamendo-search.dto';
+import { JamendoSearchDto, JamendoImportDto, JamendoBatchImportDto } from './dto/jamendo-search.dto';
 import { JamendoService } from './jamendo.service';
 import { FmaSearchDto, FmaImportDto } from './dto/fma-search.dto';
 import { FmaService } from './fma.service';
@@ -114,6 +114,24 @@ export class SongsController {
   @Post('jamendo/import')
   jamendoImport(@Body() dto: JamendoImportDto, @CurrentUser() user: AuthUser) {
     return this.jamendo.importTrack(dto.jamendoId, user.userId);
+  }
+
+  /* Анхны каталог vvсгэх/дvvргэх — Jamendo-ийн хамгийн сонсогддог CC трекvvдээс
+     багц импорт хийнэ (давхардсан jamendoId алгасна, дан трек унасан ч vргэлжилнэ). */
+  @UseGuards(RolesGuard)
+  @Roles(...CATALOG_ROLES)
+  @Post('jamendo/import-popular')
+  jamendoImportPopular(@Body() dto: JamendoBatchImportDto, @CurrentUser() user: AuthUser) {
+    return this.jamendo.importPopularBatch(dto.limit ?? 30, user.userId);
+  }
+
+  /* Одоо байгаа Artist мөрvvдийн зурггvй vлдсэнийг Jamendo-ийн artist профайл зурагаар
+     (эсвэл олдохгvй бол тухайн уран бvтээлчийн сvvлийн дууны coverUrl-аар) бөглөнө. */
+  @UseGuards(RolesGuard)
+  @Roles(...CATALOG_ROLES)
+  @Post('jamendo/backfill-artist-photos')
+  jamendoBackfillArtistPhotos() {
+    return this.jamendo.backfillArtistPhotos();
   }
 
   /* ---------- FMA (Free Music Archive) каталог импорт (Creative Commons лицензтэй л) ---------- */

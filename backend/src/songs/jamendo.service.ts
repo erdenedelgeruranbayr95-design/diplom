@@ -9,6 +9,7 @@ interface JamendoTrack {
   id: string;
   name: string;
   artist_name: string;
+  artist_id: string;
   album_name: string;
   duration: number; // секунд
   audio: string; // тоглуулах шууд URL (mp32/ogg — audioformat query-ээр сонгоно)
@@ -22,7 +23,25 @@ interface JamendoResponse {
   results: JamendoTrack[];
 }
 
+interface JamendoArtist {
+  id: string;
+  name: string;
+  image: string;
+}
+
+interface JamendoArtistResponse {
+  headers: { status: string; code: number; error_message?: string; results_count: number };
+  results: JamendoArtist[];
+}
+
 const JAMENDO_BASE = 'https://api.jamendo.com/v3.0';
+
+export interface BatchImportResult {
+  imported: number;
+  skipped: number;
+  failed: number;
+  details: { jamendoId: string; title: string; status: 'imported' | 'skipped' | 'failed'; reason?: string }[];
+}
 
 @Injectable()
 export class JamendoService {
@@ -99,13 +118,25 @@ export class JamendoService {
     const track = await this.fetchTrackById(jamendoId);
     if (!track) throw new NotFoundException('Jamendo track олдсонгүй');
 
-    // Home хуудасны "Алдартай дуучид" хэсэг тусдаа Artist хvснэгтээс (`/artists`)
-    // уншдаг тул зөвхөн Song.artist текст талбарыг бөглөөд орхивол тэр хэсэг
-    // vргэлж хоосон vлддэг байсан. Нэрээр нь олж, байхгvй бол шинээр vvсгэнэ.
+    return this.createSongFromTrack(track, jamendoId, uploaderId);
+  }
+
+  /** Home хуудасны "Алдартай дуучид" хэсэг тусдаа Artist хvснэгтээс (`/artists`)
+   *  уншдаг тул зөвхөн Song.artist текст талбарыг бөглөөд орхивол тэр хэсэг vргэлж
+   *  хоосон vлддэг байсан. Нэрээр нь олж, байхгvй бол шинээр vvсгэнэ. Jamendo-с
+   *  artist зураг олдвол (importPopularBatch-ийн урьдчилан татсан кэш) photoUrl-г
+   *  ч зэрэг бөглөнө — байхгvй бол хоосон vлдээж, дараа нь дуунуудынх нь coverUrl-аар
+   *  fallback хийх боломжийг Home талд vлдээнэ (см. HomeCatalog/ArtistRail). */
+  private async createSongFromTrack(
+    track: ReturnType<typeof mapJamendoTrack>,
+    jamendoId: string,
+    uploaderId: string,
+    artistPhotoUrl?: string,
+  ) {
     const artistRef = await this.prisma.artist.upsert({
       where: { name: track.artist },
-      update: {},
-      create: { name: track.artist },
+      update: artistPhotoUrl ? { photoUrl: artistPhotoUrl } : {},
+      create: { name: track.artist, photoUrl: artistPhotoUrl },
     });
 
     const song = await this.prisma.song.create({
@@ -113,6 +144,7 @@ export class JamendoService {
         title: track.title,
         artist: track.artist,
         artistId: artistRef.id,
+        description: track.album ? `Цомог: ${track.album}` : undefined,
         releaseYear: track.releaseYear,
         coverUrl: track.coverUrl || undefined,
         duration: track.duration,
@@ -131,6 +163,108 @@ export class JamendoService {
     });
 
     return song;
+  }
+
+  /** Системийг анх ажиллуулахад ашиглагдах анхны каталог — Jamendo-ийн хамгийн
+   *  сонсогддог (popularity_total) Creative Commons трекүүдээс `limit` ширхэгийг
+   *  импортолно. Аль хэдийн импортлогдсон jamendoId-г алгасна (идэмпотент, дахин
+   *  ажиллуулахад давхардуулахгvй). Нэг трек амжилтгvй болвол ЗОГСОХГvй, дараагийн
+   *  трек рvv vргэлжилнэ — эцэст нь хэдэн амжилттай/алгассан/амжилтгvй болсныг
+   *  тоймлож буцаана (см. BatchImportResult). */
+  async importPopularBatch(limit = 30, uploaderId: string): Promise<BatchImportResult> {
+    const url = new URL(`${JAMENDO_BASE}/tracks/`);
+    url.searchParams.set('client_id', this.clientId);
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('order', 'popularity_total');
+    url.searchParams.set('limit', String(limit));
+    url.searchParams.set('include', 'musicinfo');
+    url.searchParams.set('audioformat', 'mp32');
+
+    const res = await fetch(url.toString());
+    const data = (await res.json()) as JamendoResponse;
+    if (data.headers.status !== 'success') {
+      throw new BadRequestException(`Jamendo API алдаа: ${data.headers.error_message || 'Тодорхойгүй'}`);
+    }
+
+    const result: BatchImportResult = { imported: 0, skipped: 0, failed: 0, details: [] };
+
+    for (const raw of data.results) {
+      try {
+        const existing = await this.prisma.song.findFirst({ where: { jamendoId: raw.id } });
+        if (existing) {
+          result.skipped++;
+          result.details.push({ jamendoId: raw.id, title: raw.name, status: 'skipped', reason: 'аль хэдийн импортлогдсон' });
+          continue;
+        }
+
+        const track = mapJamendoTrack(raw);
+        await this.createSongFromTrack(track, raw.id, uploaderId);
+        result.imported++;
+        result.details.push({ jamendoId: raw.id, title: raw.name, status: 'imported' });
+      } catch (err) {
+        // Нэг трек унавал (сүлжээ, лиценз танигдаагvй г.м) бvх batch-ийг зогсоохгvй,
+        // логлоод дараагийн трек рvv vргэлжилнэ.
+        result.failed++;
+        result.details.push({ jamendoId: raw.id, title: raw.name, status: 'failed', reason: (err as Error).message });
+        this.logger.warn(`Jamendo batch import: track ${raw.id} (${raw.name}) амжилтгvй: ${(err as Error).message}`);
+      }
+    }
+
+    this.logger.log(
+      `Jamendo batch import дууслаа: ${result.imported} нэмэгдсэн, ${result.skipped} алгассан, ${result.failed} амжилтгvй`,
+    );
+    return result;
+  }
+
+  /** Одоо системд байгаа Artist бvрийн `photoUrl`-г Jamendo-ийн artist профайл
+   *  зургаар бөглөнө (байхгvй байгаа мөрvvдэд л). Jamendo зарим artist-д зураг
+   *  өгдөггvй тул (curl-аар баталгаажуулсан) тэр тохиолдолд тухайн уран бvтээлчийн
+   *  хамгийн шинэ дууных нь coverUrl-г цомгийн зураг мэтээр орлуулж ашиглана —
+   *  ингэснээр Popular Artists хэсэг vргэлж зурагтай карт харуулна. */
+  async backfillArtistPhotos(): Promise<{ updated: number; usedFallbackCover: number }> {
+    const artists = await this.prisma.artist.findMany({
+      where: { photoUrl: null },
+      include: { songs: { where: { coverUrl: { not: null } }, orderBy: { createdAt: 'desc' }, take: 1 } },
+    });
+
+    let updated = 0;
+    let usedFallbackCover = 0;
+
+    for (const artist of artists) {
+      let photoUrl: string | null = null;
+      try {
+        photoUrl = await this.fetchArtistImage(artist.name);
+      } catch (err) {
+        this.logger.warn(`Jamendo artist зураг татахад алдаа (${artist.name}): ${(err as Error).message}`);
+      }
+
+      if (!photoUrl && artist.songs[0]?.coverUrl) {
+        photoUrl = artist.songs[0].coverUrl;
+        usedFallbackCover++;
+      }
+
+      if (photoUrl) {
+        await this.prisma.artist.update({ where: { id: artist.id }, data: { photoUrl } });
+        updated++;
+      }
+    }
+
+    return { updated, usedFallbackCover };
+  }
+
+  private async fetchArtistImage(name: string): Promise<string | null> {
+    const url = new URL(`${JAMENDO_BASE}/artists/`);
+    url.searchParams.set('client_id', this.clientId);
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('namesearch', name);
+    url.searchParams.set('limit', '1');
+
+    const res = await fetch(url.toString());
+    const data = (await res.json()) as JamendoArtistResponse;
+    if (data.headers.status !== 'success') return null;
+
+    const image = data.results[0]?.image;
+    return image ? image : null;
   }
 }
 
