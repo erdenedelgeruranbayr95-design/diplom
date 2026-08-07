@@ -23,7 +23,9 @@ export default function MobilePageClient() {
 
   const [state, setState] = useState<PageState>("loading");
   const [track, setTrack] = useState<TrackInfo | null>(null);
-  const [enabled, setEnabled] = useState(true);
+  /* Хосолсны дараа чичиргээ шууд эхэлдэггүй — хэрэглэгч toggle-оо өөрөө асаах ёстой
+     (санамсаргvй хэрэглэгчид гэнэтийн чичиргээ ирэхээс сэргийлнэ). */
+  const [enabled, setEnabled] = useState(false);
   const [strength, setStrength] = useState(1); // VIB_LEVELS index
   const [pulse, setPulse] = useState(false);
 
