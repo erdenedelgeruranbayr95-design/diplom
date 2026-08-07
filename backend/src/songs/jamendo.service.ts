@@ -99,10 +99,20 @@ export class JamendoService {
     const track = await this.fetchTrackById(jamendoId);
     if (!track) throw new NotFoundException('Jamendo track олдсонгүй');
 
+    // Home хуудасны "Алдартай дуучид" хэсэг тусдаа Artist хvснэгтээс (`/artists`)
+    // уншдаг тул зөвхөн Song.artist текст талбарыг бөглөөд орхивол тэр хэсэг
+    // vргэлж хоосон vлддэг байсан. Нэрээр нь олж, байхгvй бол шинээр vvсгэнэ.
+    const artistRef = await this.prisma.artist.upsert({
+      where: { name: track.artist },
+      update: {},
+      create: { name: track.artist },
+    });
+
     const song = await this.prisma.song.create({
       data: {
         title: track.title,
         artist: track.artist,
+        artistId: artistRef.id,
         releaseYear: track.releaseYear,
         coverUrl: track.coverUrl || undefined,
         duration: track.duration,
