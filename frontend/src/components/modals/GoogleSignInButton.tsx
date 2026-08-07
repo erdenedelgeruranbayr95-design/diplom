@@ -12,7 +12,12 @@ declare global {
     google?: {
       accounts: {
         id: {
-          initialize: (config: { client_id: string; callback: (resp: { credential: string }) => void }) => void;
+          initialize: (config: {
+            client_id: string;
+            callback: (resp: { credential: string }) => void;
+            auto_select?: boolean;
+            cancel_on_tap_outside?: boolean;
+          }) => void;
           renderButton: (el: HTMLElement, options: Record<string, unknown>) => void;
         };
       };
@@ -38,6 +43,13 @@ export default function GoogleSignInButton({ onCredential }: { onCredential: (id
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID as string,
         callback: (resp) => onCredential(resp.credential),
+        /* auto_select=false: Google-ийн "One Tap" prompt (хэрэглэгч аль хэдийн энэ
+           сайтад Google-аар нэвтэрсэн бол хуудас нээгмэгц АВТОМАТААР гарч ирдэг,
+           renderButton()-ийн dark theme-д захирагддаггүй тусдаа цагаан card) идэвхгvй
+           болгоно — хэрэглэгч зөвхөн доор рендэрлэсэн (dark theme-той) товч дарж л
+           нэвтэрнэ. */
+        auto_select: false,
+        cancel_on_tap_outside: true,
       });
       window.google.accounts.id.renderButton(containerRef.current, {
         type: "standard",
