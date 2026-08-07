@@ -45,6 +45,7 @@ import type {
   CreateProgressPayload,
   CreateTherapySessionPayload,
   LinkedChild,
+  ParentLinkRow,
   Progress,
   TherapySession,
   TherapistAssignmentRow,
@@ -354,6 +355,22 @@ export function listTherapistAssignments() {
 
 export function removeTherapistAssignment(id: string) {
   return apiFetch<null>(`/assignments/therapists/${id}`, { method: "DELETE" });
+}
+
+// ---- Эцэг эх-хvvхэд холбоос (admin) ----
+export function createParentLink(parentId: string, childUserId: string) {
+  return apiFetch<ParentLinkRow>("/assignments/parents", {
+    method: "POST",
+    body: JSON.stringify({ parentId, childUserId }),
+  });
+}
+
+export function listParentLinks() {
+  return apiFetch<ParentLinkRow[]>("/assignments/parents");
+}
+
+export function removeParentLink(id: string) {
+  return apiFetch<null>(`/assignments/parents/${id}`, { method: "DELETE" });
 }
 
 // ---- Songs ----

@@ -14,7 +14,7 @@ import SongLibraryPanel from "@/components/admin/SongLibraryPanel";
 import ProManagementPanel from "@/components/admin/ProManagementPanel";
 import type { AdminUserRow, SessionUser } from "@/types/auth";
 import type { Song, SongLicense } from "@/types/song";
-import type { TherapistAssignmentRow } from "@/types/therapy";
+import type { ParentLinkRow, TherapistAssignmentRow } from "@/types/therapy";
 
 export default function AdminPanel({
   open,
@@ -46,6 +46,13 @@ export default function AdminPanel({
   const [assignMsg, setAssignMsg] = useState("");
   const [assigning, setAssigning] = useState(false);
 
+  const [parentLinks, setParentLinks] = useState<ParentLinkRow[]>([]);
+  const [linksLoading, setLinksLoading] = useState(true);
+  const [linkParentId, setLinkParentId] = useState("");
+  const [linkChildId, setLinkChildId] = useState("");
+  const [linkMsg, setLinkMsg] = useState("");
+  const [linking, setLinking] = useState(false);
+
   function loadSongs() {
     setSongsLoading(true);
     api
@@ -71,6 +78,14 @@ export default function AdminPanel({
       .catch(() => {})
       .finally(() => setAssignLoading(false));
   }
+  function loadParentLinks() {
+    setLinksLoading(true);
+    api
+      .listParentLinks()
+      .then(setParentLinks)
+      .catch(() => {})
+      .finally(() => setLinksLoading(false));
+  }
 
   /* Гарах animation · Escape · focus trap · backdrop-click — дөрвүүлээ нэг hook-т. */
   const { closing, handleClose, trapRef, backdropProps } = useModalShell({ open, onClose });
@@ -80,6 +95,7 @@ export default function AdminPanel({
     loadUsers();
     loadSongs();
     loadAssignments();
+    loadParentLinks();
     setMsg("");
   }, [open]);
 
@@ -163,6 +179,37 @@ export default function AdminPanel({
     }
   }
 
+  async function createLink(e: React.FormEvent) {
+    e.preventDefault();
+    setLinkMsg("");
+    if (!linkParentId || !linkChildId) {
+      setLinkMsg("❌ Эцэг эх болон хvvхэд хоёуланг сонгоно уу");
+      return;
+    }
+    setLinking(true);
+    try {
+      await api.createParentLink(linkParentId, linkChildId);
+      setLinkMsg("✅ Холбогдлоо");
+      setLinkParentId("");
+      setLinkChildId("");
+      loadParentLinks();
+    } catch (err) {
+      setLinkMsg("❌ " + (err as Error).message);
+    } finally {
+      setLinking(false);
+    }
+  }
+
+  async function removeLink(id: string) {
+    if (!confirm("Энэ холбоосыг цуцлах уу?")) return;
+    try {
+      await api.removeParentLink(id);
+      setParentLinks((prev) => prev.filter((l) => l.id !== id));
+    } catch (e) {
+      setLinkMsg("❌ " + (e as Error).message);
+    }
+  }
+
   async function addTrack(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMsg("");
@@ -221,6 +268,11 @@ export default function AdminPanel({
   const regular = users.filter((u) => u.role !== "ADMIN");
   const therapists = users.filter((u) => u.role === "THERAPIST");
   const patients = users.filter((u) => u.role === "USER");
+  const parents = users.filter((u) => u.role === "PARENT");
+  /* ParentLink.childUserId нь USER (эмчийн patients-тэй ижил эх) — эцэг эх хvvхдээ
+     сонгохдоо мєн энэ жагсаалтаас сонгоно (харилцаа THERAPIST-ийн patients-тэй давхцаж
+     болно, PARENT ба THERAPIST хоёр өөр context-д тухайн хэрэглэгчид хамаарна). */
+  const childUsers = patients;
 
   return (
     <div
@@ -272,6 +324,18 @@ export default function AdminPanel({
             loading={assignLoading}
             assignments={assignments}
             onRemove={removeAssignment}
+            parents={parents}
+            childUsers={childUsers}
+            linkParentId={linkParentId}
+            setLinkParentId={setLinkParentId}
+            linkChildId={linkChildId}
+            setLinkChildId={setLinkChildId}
+            linkMsg={linkMsg}
+            linking={linking}
+            onLinkSubmit={createLink}
+            linksLoading={linksLoading}
+            parentLinks={parentLinks}
+            onUnlink={removeLink}
           />
         )}
 

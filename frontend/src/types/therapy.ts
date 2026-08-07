@@ -84,3 +84,22 @@ export interface TherapistAssignmentRow {
     email: string;
   };
 }
+
+/* Admin-ий unscoped жагсаалт — TherapistAssignmentRow-той ижил зарчим,
+   parent/child хоёуланг агуулна (эцэг эх ↔ хvvхэд ParentLink). */
+export interface ParentLinkRow {
+  id: string;
+  parentId: string;
+  childUserId: string;
+  createdAt: string;
+  parent: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  child: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
