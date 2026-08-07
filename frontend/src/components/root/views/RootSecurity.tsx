@@ -89,9 +89,9 @@ export default function RootSecurity({ data }: { data: RootData }) {
           onChange={(e) => setSessionTarget(staff.find((u) => u.id === e.target.value) || null)}
           aria-label="Session харах хэрэглэгч сонгох"
         >
-          <option value="">— Хэрэглэгч сонгох —</option>
+          <option className="bg-surface text-ink" value="">— Хэрэглэгч сонгох —</option>
           {staff.map((u) => (
-            <option key={u.id} value={u.id}>
+            <option className="bg-surface text-ink" key={u.id} value={u.id}>
               {u.name} ({u.email})
             </option>
           ))}

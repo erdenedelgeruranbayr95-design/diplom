@@ -167,7 +167,7 @@ export default function UploadSongView({ onBack }: { onBack: () => void }) {
             onChange={(e) => setLicense(e.target.value as SongLicense)}
           >
             {LICENSE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
+              <option className="bg-surface text-ink" key={o.value} value={o.value}>
                 {o.label}
               </option>
             ))}

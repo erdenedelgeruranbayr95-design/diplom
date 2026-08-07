@@ -102,11 +102,11 @@ export default function CuratorSongEditor({ song, onChanged }: { song: Song; onC
         <label className="flex flex-col gap-1.5">
           <span className="mono !text-micro">Лиценз</span>
           <select className={selectCls} value={license} onChange={(e) => setLicense(e.target.value as SongLicense)}>
-            <option value="" disabled>
+            <option className="bg-surface text-ink" value="" disabled>
               Сонгоно уу…
             </option>
             {(Object.keys(LICENSE_LABEL) as SongLicense[]).map((key) => (
-              <option key={key} value={key}>
+              <option className="bg-surface text-ink" key={key} value={key}>
                 {LICENSE_LABEL[key]}
               </option>
             ))}

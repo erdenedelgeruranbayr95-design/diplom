@@ -80,7 +80,7 @@ export default function SongLibraryPanel({
             <span className={captionCls}>Лиценз *</span>
             <select className={inputCls} name="license" value={license} onChange={(e) => setLicense(e.target.value as SongLicense)}>
               {LICENSE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
+                <option className="bg-surface text-ink" key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}

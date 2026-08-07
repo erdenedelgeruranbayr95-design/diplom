@@ -88,8 +88,12 @@ export default function RootUserActions({ user, onChanged }: { user: AdminUserRo
           onChange={(e) => changeRole(e.target.value as UserRole)}
           aria-label={user.name + " — дүр солих"}
         >
+          {/* Native <option> элемент нь Tailwind-ийн текст өнгийг (text-ink) удамладаггүй —
+              browser өөрийн default (ихэвчлэн цайвар дэвсгэр дээр цайвар текст) ашигладаг
+              тул сонголтгvй байсан харагдацтай болдог. Системийн бусад select-vvдийн адил
+              bg-surface/text-ink class-аар шууд засна (см. StaffCreationForm.tsx гэх мэт). */}
           {ASSIGNABLE_ROLES.map((r) => (
-            <option key={r} value={r}>
+            <option className="bg-surface text-ink" key={r} value={r}>
               {ROLE_LABEL_SHORT[r]}
             </option>
           ))}
