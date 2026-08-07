@@ -129,7 +129,7 @@ export default function UsersTable({
         <Empty icon="users" title="Хэрэглэгч олдсонгүй" hint={q ? "Хайлтад тохирох хэрэглэгч алга" : "Одоогоор бүртгүүлсэн хэрэглэгч алга"} />
       ) : (
         <div className="border border-white/[.08] rounded-2xl max-h-[360px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]">
-          <div className="grid grid-cols-[1fr_1.5fr_.8fr_.7fr_.8fr_auto] max-[680px]:grid-cols-[1fr_auto_auto] gap-3 items-center py-3 px-4 border-b border-white/[.08] text-note bg-white/[.02] sticky top-0 z-[1]">
+          <div className="grid grid-cols-[.8fr_2fr_.8fr_.7fr_.8fr_auto] max-[680px]:grid-cols-[1fr_auto_auto] gap-3 items-center py-3 px-4 border-b border-white/[.08] text-note bg-white/[.02] sticky top-0 z-[1]">
             <span className="mono">Нэр</span>
             <span className="mono max-[680px]:hidden">Имэйл</span>
             <span className="mono max-[680px]:hidden">Эрх</span>
@@ -139,12 +139,14 @@ export default function UsersTable({
           </div>
           {filtered.map((u, i) => (
             <div
-              className="grid grid-cols-[1fr_1.5fr_.8fr_.7fr_.8fr_auto] max-[680px]:grid-cols-[1fr_auto_auto] gap-3 items-center py-3 px-4 border-b border-white/[.06] text-body transition-colors duration-150 last:border-b-0 hover:bg-white/[.03] [animation:row-in_.3s_cubic-bezier(.2,.8,.2,1)_backwards]"
+              className="grid grid-cols-[.8fr_2fr_.8fr_.7fr_.8fr_auto] max-[680px]:grid-cols-[1fr_auto_auto] gap-3 items-center py-3 px-4 border-b border-white/[.06] text-body transition-colors duration-150 last:border-b-0 hover:bg-white/[.03] [animation:row-in_.3s_cubic-bezier(.2,.8,.2,1)_backwards]"
               style={{ animationDelay: i >= 1 && i <= 7 ? `${Math.min(i, 7) * 0.03}s` : undefined }}
               key={u.id}
             >
               <span className="whitespace-nowrap overflow-hidden text-ellipsis">{u.name}</span>
-              <span className="text-dim overflow-hidden text-ellipsis whitespace-nowrap max-[680px]:hidden">{u.email}</span>
+              <span className="text-dim overflow-hidden text-ellipsis whitespace-nowrap max-[680px]:hidden" title={u.email}>
+                {u.email}
+              </span>
               <StatusBadge label={ROLE_LABEL[u.role]} tone={ROLE_TONE[u.role]} className="max-[680px]:hidden" />
               <span className="font-mono text-caption text-faint max-[680px]:hidden">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("mn-MN") : "—"}</span>
               <StatusBadge label={u.subActive ? "PRO" : "Үнэгүй"} tone={u.subActive ? "aqua" : "faint"} dot />
