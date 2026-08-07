@@ -77,7 +77,7 @@ export default function Sidebar({
 
   return (
     <aside className="sp-side w-[270px] max-nav:w-full flex-none max-nav:flex-none overflow-y-auto flex flex-col gap-6 max-nav:gap-0 bg-[rgba(8,11,11,.68)] p-[22px] max-nav:p-2.5 border-r border-white/[.06] max-nav:border-r-0 max-nav:border-b">
-      <nav className="flex flex-col gap-1 max-nav:flex-row max-nav:flex-wrap max-nav:gap-1.5 max-nav:justify-center" aria-label="Үндсэн цэс">
+      <nav className="flex flex-col gap-1 max-nav:grid max-nav:grid-cols-2 max-nav:gap-1.5" aria-label="Үндсэн цэс">
         <span className="mono !text-meta px-3 mb-1 max-nav:hidden">Тоглуулагч</span>
         {NAV_ITEMS.map((item) => {
           const active = view === item.view;
@@ -85,7 +85,7 @@ export default function Sidebar({
             <button
               key={item.view}
               className={
-                "relative flex items-center gap-3.5 w-full max-nav:w-auto text-left py-3 px-3.5 rounded-2xl text-copy font-medium transition-[background,color,border-color,transform] duration-150 border focus-visible:outline-none focus-visible:shadow-glow-aqua before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r-full before:transition-[height] before:duration-200 max-nav:before:hidden " +
+                "relative flex items-center gap-3.5 w-full text-left py-3 px-3.5 rounded-2xl text-copy font-medium transition-[background,color,border-color,transform] duration-150 border focus-visible:outline-none focus-visible:shadow-glow-aqua before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:rounded-r-full before:transition-[height] before:duration-200 max-nav:before:hidden " +
                 (active
                   ? "bg-aqua/[.11] text-aqua border-aqua/20 before:h-[18px] before:bg-aqua"
                   : "border-transparent text-dim hover:bg-white/[.05] hover:text-ink hover:border-white/[.05] before:h-0")

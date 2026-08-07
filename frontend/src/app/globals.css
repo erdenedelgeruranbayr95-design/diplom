@@ -164,7 +164,10 @@ html {
 
 body {
   margin: 0;
-  min-height: 100vh;
+  /* 100svh (small viewport height) — 100vh биш: mobile browser-ийн хаяг мөр/toolbar
+     нуугдах/гарахад 100vh тогтмол vлдэж, доод хэсэгт хоосон зай vvсгэх эсвэл
+     агуулга тайрагдах зан төлєв vvсгэдэг тvгээмэл асуудлыг эндээс шийднэ. */
+  min-height: 100svh;
   background:
     radial-gradient(1000px 520px at 15% -10%, rgba(56, 232, 206, 0.08), transparent 52%),
     radial-gradient(900px 460px at 88% 10%, rgba(180, 156, 255, 0.05), transparent 54%),
@@ -174,6 +177,14 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Player нээлттэй үед landing (page.tsx) DOM-д хэвээр үлдэж, <body>-ийн
+   scrollHeight-ийг хиймлээр нэмэгдүүлдэг байсныг таслах: body-г бүхэлд нь
+   түгжиж, дотоод scroll-ийг зөвхөн `<main id="main">` (.sp-main) хариуцна. */
+body.scroll-lock {
+  overflow: hidden;
+  height: 100svh;
 }
 
 ::selection {

@@ -179,6 +179,14 @@ export default function Player({
   /* ---------- тохиргоог бодит нөлөө болгох ---------- */
   useAppPreferences({ largeText: library.prefs.largeText, reducedMotion: library.prefs.reducedMotion });
   useBodyClass("native-cursor", open);
+  /* Landing page (page.tsx) Player нээгдсэн ч гэсэн DOM-оос unmount хийгддэггүй
+     (comment см. page.tsx) — Player өөрөө `fixed inset-0`-той ч, доор нь landing-ийн
+     бүх агуулга document flow дотор хэвээр үлдэж, <body>-ийн scrollHeight-ийг
+     нэмэгдүүлдэг байсан. Тэр нь `<main id="main">`-ийн дотоод scroll (overflow-y-auto)
+     ажиллаж байсан ч, window/body ЧАДАВХГvй ИХ scrollHeight-той vлдэж, mobile дээр
+     хуудас бодитоор доод landing-ийн агуулга руу scroll хийгддэг (Player дотор биш)
+     алдаа vvсгэдэг байсан. */
+  useBodyClass("scroll-lock", open);
 
   /* Калибровкийг нэвтрэх үед АВТОМАТААР санал болгохоо больсон — нэвтэрмэгц шууд нүүр
      хуудас нээгдэнэ. Калибровк өөрөө хэвээр: Тохиргоо цэс (SettingsDropdown) болон
