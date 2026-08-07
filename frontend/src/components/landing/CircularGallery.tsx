@@ -434,7 +434,12 @@ class App {
     if (!this.container.contains(e.target)) return;
     e.preventDefault();
     const delta = e.deltaY || e.wheelDelta || e.detail;
-    this.scroll.target += (delta > 0 ? this.scrollSpeed : -this.scrollSpeed) * 0.18;
+    // Delta-ийн БОДИТ хэмжээгээр пропорциональ хариу — өмнө нь чиглэл л харгалзаж,
+    // алхам бvр тогтмол (0.18 коэффициент) байсан тул хурдан/удаан scroll хийхэд
+    // ялгаагvй мэдрэгддэг, гэдрэг мэдрэмжтэй байсан. clamp нь touchpad-ийн онц
+    // том delta-г хэт хурдан харайлгахаас сэргийлнэ.
+    const clamped = Math.max(-120, Math.min(120, delta));
+    this.scroll.target += (clamped / 120) * this.scrollSpeed * 0.45;
     this.onCheckDebounce();
   }
   onKeyDown(e: KeyboardEvent) {
