@@ -18,6 +18,7 @@ export class HistoryService {
         durationMs: dto.durationMs,
         bpm: dto.bpm,
         visualizerStyle: dto.visualizerStyle,
+        vibrations: dto.vibrations,
       },
     });
   }
