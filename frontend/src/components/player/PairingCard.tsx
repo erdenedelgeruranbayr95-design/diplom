@@ -53,7 +53,7 @@ export default function PairingCard({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[20] flex items-end justify-center bg-black/40 backdrop-blur-sm p-4 max-nav:items-end"
+          className="fixed inset-0 z-[20] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -62,7 +62,7 @@ export default function PairingCard({
           role="presentation"
         >
           <motion.div
-            className="w-full max-w-[380px] mb-[110px] max-nav:mb-[96px] rounded-panel p-7 bg-[rgba(14,20,19,.72)] backdrop-blur-2xl border border-white/[.12] shadow-[0_24px_70px_rgba(0,0,0,.55)]"
+            className="w-full max-w-[380px] rounded-panel p-7 bg-[rgba(14,20,19,.72)] backdrop-blur-2xl border border-white/[.12] shadow-[0_24px_70px_rgba(0,0,0,.55)]"
             initial={{ opacity: 0, scale: 0.92, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 12 }}
