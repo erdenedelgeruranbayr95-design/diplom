@@ -12,7 +12,7 @@ export type AdminTab = "users" | "tracks" | "assign" | "pro";
 export default function AdminHeader({ tab, setTab, onClose }: { tab: AdminTab; setTab: (t: AdminTab) => void; onClose: () => void }) {
   const tabs: { v: AdminTab; label: string }[] = [
     { v: "users", label: "Хэрэглэгчид" },
-    { v: "assign", label: "Эмч томилолт" },
+    { v: "assign", label: "Томилолт" },
     { v: "tracks", label: "Дууны сан" },
     { v: "pro", label: "PRO" },
   ];
