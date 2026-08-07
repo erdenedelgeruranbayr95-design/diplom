@@ -37,8 +37,29 @@ export default function GoogleSignInButton({ onCredential }: { onCredential: (id
     if (!GOOGLE_CLIENT_ID || !containerRef.current) return;
 
     let cancelled = false;
+    let resizeObserver: ResizeObserver | null = null;
 
-    function render() {
+    function renderButton() {
+      if (cancelled || !window.google || !containerRef.current) return;
+      /* Google-ийн `width` параметр ЗӨВХӨН тогтмол пиксел авдаг ("100%"/"auto" зэрэг
+         дэмждэггүй) — өмнө нь тогтмол 336px заасан нь нарийн mobile viewport дээр
+         эцэг container-аас урт гарч, товч тайрагдах/давхцах асуудал үүсгэдэг байсан.
+         Container-ийн БОДИТ өргөнөөр дахин рендэрлэж, хэдийгээр (modal нээгдэх vед
+         animation) хэмжээ өөрчлөгдвөл ResizeObserver-оор дахин тааруулна. */
+      const width = Math.max(200, Math.min(336, Math.round(containerRef.current.clientWidth)));
+      containerRef.current.innerHTML = "";
+      window.google.accounts.id.renderButton(containerRef.current, {
+        type: "standard",
+        theme: "filled_black",
+        size: "large",
+        shape: "pill",
+        width,
+        text: "continue_with",
+        locale: "mn",
+      });
+    }
+
+    function init() {
       if (cancelled || !window.google || !containerRef.current) return;
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID as string,
@@ -51,36 +72,32 @@ export default function GoogleSignInButton({ onCredential }: { onCredential: (id
         auto_select: false,
         cancel_on_tap_outside: true,
       });
-      window.google.accounts.id.renderButton(containerRef.current, {
-        type: "standard",
-        theme: "filled_black",
-        size: "large",
-        shape: "pill",
-        width: 336,
-        text: "continue_with",
-        locale: "mn",
-      });
+      renderButton();
+
+      resizeObserver = new ResizeObserver(() => renderButton());
+      resizeObserver.observe(containerRef.current);
     }
 
     if (window.google) {
-      render();
-      return;
+      init();
+      return () => resizeObserver?.disconnect();
     }
 
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
-    script.onload = render;
+    script.onload = init;
     document.head.appendChild(script);
 
     return () => {
       cancelled = true;
+      resizeObserver?.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!GOOGLE_CLIENT_ID) return null;
 
-  return <div ref={containerRef} className="flex justify-center" />;
+  return <div ref={containerRef} className="flex justify-center w-full max-w-[336px] mx-auto" />;
 }

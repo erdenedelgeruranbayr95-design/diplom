@@ -38,7 +38,7 @@ export default function PlayerFooter({
   onImmersive: () => void;
 }) {
   return (
-    <footer className="relative z-[3] grid grid-cols-[1fr_auto_1fr] max-nav:grid-cols-[auto_1fr] items-center gap-[18px] p-[12px_22px] min-h-[92px] bg-[rgba(9,12,12,.82)] backdrop-blur-3xl [backdrop-filter:blur(26px)_saturate(1.3)] border-t border-[rgba(255,255,255,.07)]">
+    <footer className="relative z-[3] grid grid-cols-[1fr_auto_1fr] max-nav:grid-cols-1 items-center gap-[18px] max-nav:gap-2.5 p-[12px_22px] max-nav:p-[10px_16px_14px] min-h-[92px] max-nav:min-h-0 bg-[rgba(9,12,12,.82)] backdrop-blur-3xl [backdrop-filter:blur(26px)_saturate(1.3)] border-t border-[rgba(255,255,255,.07)]">
       <PlayerHeader
         track={playback.current}
         npOpen={nowPlayingOpen}
