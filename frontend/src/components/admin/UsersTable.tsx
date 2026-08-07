@@ -129,7 +129,7 @@ export default function UsersTable({
         <Empty icon="users" title="Хэрэглэгч олдсонгүй" hint={q ? "Хайлтад тохирох хэрэглэгч алга" : "Одоогоор бүртгүүлсэн хэрэглэгч алга"} />
       ) : (
         <div className="border border-white/[.08] rounded-2xl max-h-[360px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]">
-          <div className="grid grid-cols-[.8fr_2fr_.8fr_.7fr_.8fr_auto] max-[680px]:grid-cols-[1fr_auto_auto] gap-3 items-center py-3 px-4 border-b border-white/[.08] text-note bg-white/[.02] sticky top-0 z-[1]">
+          <div className="grid grid-cols-[.8fr_2fr_.8fr_.7fr_.8fr_auto] max-[680px]:grid-cols-[1fr_auto_auto] gap-3 items-center py-3 px-4 border-b border-white/[.08] text-note bg-[#0d1413] backdrop-blur-xl sticky top-0 z-[1]">
             <span className="mono">Нэр</span>
             <span className="mono max-[680px]:hidden">Имэйл</span>
             <span className="mono max-[680px]:hidden">Эрх</span>

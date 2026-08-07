@@ -92,7 +92,7 @@ export default function AssignmentsPanel({
       )}
       {!loading && assignments.length > 0 && (
         <div className="border border-white/[.08] rounded-2xl max-h-[320px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]">
-          <div className="grid grid-cols-[1.3fr_1.3fr_.6fr] max-[640px]:grid-cols-[1fr_1fr_.6fr] gap-3 items-center py-3 px-4 border-b border-white/[.08] text-note bg-white/[.02] sticky top-0 z-[1]">
+          <div className="grid grid-cols-[1.3fr_1.3fr_.6fr] max-[640px]:grid-cols-[1fr_1fr_.6fr] gap-3 items-center py-3 px-4 border-b border-white/[.08] text-note bg-[#0d1413] backdrop-blur-xl sticky top-0 z-[1]">
             <span className="mono">Эмч</span>
             <span className="mono">Хэрэглэгч</span>
             <span></span>

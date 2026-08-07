@@ -26,7 +26,7 @@ export default function HistoryTable({
   return (
     <>
       <TableCard>
-        <div className="grid grid-cols-[1fr_1.1fr_.8fr_.6fr_auto] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-white/[.02] sticky top-0 z-[1] max-nav:grid-cols-[1fr_.8fr_auto]">
+        <div className="grid grid-cols-[1fr_1.1fr_.8fr_.6fr_auto] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-[#0d1413] backdrop-blur-xl sticky top-0 z-[1] max-nav:grid-cols-[1fr_.8fr_auto]">
           <span className="mono">Дуу</span>
           <span className="mono">Огноо</span>
           <span className="mono max-nav:hidden">Хугацаа</span>
