@@ -43,11 +43,15 @@ export class JamendoService {
     return id;
   }
 
+  /* Jamendo v3.0 API-ийн track текст хайлт `search` биш **`namesearch`** параметрээр
+     ажилладаг («search» огт танигдахгvй тул vргэлж 0 vр дvн буцаадаг байсан —
+     https://api.jamendo.com/v3.0/tracks/?client_id=...&search=piano нь 0 vр дvнтэй,
+     харин ...&namesearch=piano бодит vр дvн буцаадгийг curl-аар шалгаж баталгаажуулсан). */
   async search(query: string, limit = 12) {
     const url = new URL(`${JAMENDO_BASE}/tracks/`);
     url.searchParams.set('client_id', this.clientId);
     url.searchParams.set('format', 'json');
-    url.searchParams.set('search', query);
+    url.searchParams.set('namesearch', query);
     url.searchParams.set('limit', String(limit));
     url.searchParams.set('include', 'musicinfo');
     url.searchParams.set('audioformat', 'mp32');
@@ -61,18 +65,27 @@ export class JamendoService {
       throw new BadRequestException(`Jamendo API алдаа: ${data.headers.error_message || 'Тодорхойгүй'}`);
     }
 
-    return data.results.map((t) => ({
-      jamendoId: t.id,
-      title: t.name,
-      artist: t.artist_name,
-      album: t.album_name,
-      duration: t.duration,
-      coverUrl: t.image,
-      audioUrl: t.audio,
-      license: mapJamendoLicense(t.license_ccurl),
-      licenseSrc: t.license_ccurl,
-      releaseYear: t.releasedate ? new Date(t.releasedate).getFullYear() : undefined,
-    }));
+    return data.results.map(mapJamendoTrack);
+  }
+
+  /** Тодорхой ID-тэй ГАНЦ track-ийн мета мэдээллийг авна (`search`-тэй ялгаатай нь энд
+   *  текст хайлт биш `id` query параметрээр шууд тохирох мөрийг олдог — importTrack()-ийн
+   *  урьд нь `search(\`id:${id}\`)` гэж дуудаж байсан нь Jamendo-д ямар ч утгагvй string
+   *  болж, vргэлж хоосон vр дvн буцаадаг байсан bug-ийн шалтгаан). */
+  private async fetchTrackById(jamendoId: string) {
+    const url = new URL(`${JAMENDO_BASE}/tracks/`);
+    url.searchParams.set('client_id', this.clientId);
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('id', jamendoId);
+    url.searchParams.set('include', 'musicinfo');
+    url.searchParams.set('audioformat', 'mp32');
+
+    const res = await fetch(url.toString());
+    const data = (await res.json()) as JamendoResponse;
+    if (data.headers.status !== 'success') {
+      throw new BadRequestException(`Jamendo API алдаа: ${data.headers.error_message || 'Тодорхойгүй'}`);
+    }
+    return data.results[0] ? mapJamendoTrack(data.results[0]) : null;
   }
 
   /** Нэг Jamendo track-ийг сонгож, Song болгон импортолно — файлыг backend дундуур
@@ -83,7 +96,7 @@ export class JamendoService {
     const existing = await this.prisma.song.findFirst({ where: { jamendoId } });
     if (existing) return existing;
 
-    const [track] = await this.search(`id:${jamendoId}`, 1);
+    const track = await this.fetchTrackById(jamendoId);
     if (!track) throw new NotFoundException('Jamendo track олдсонгүй');
 
     const song = await this.prisma.song.create({
@@ -109,6 +122,21 @@ export class JamendoService {
 
     return song;
   }
+}
+
+function mapJamendoTrack(t: JamendoTrack) {
+  return {
+    jamendoId: t.id,
+    title: t.name,
+    artist: t.artist_name,
+    album: t.album_name,
+    duration: t.duration,
+    coverUrl: t.image,
+    audioUrl: t.audio,
+    license: mapJamendoLicense(t.license_ccurl),
+    licenseSrc: t.license_ccurl,
+    releaseYear: t.releasedate ? new Date(t.releasedate).getFullYear() : undefined,
+  };
 }
 
 /** Jamendo-ийн `license_ccurl` (жиш. https://creativecommons.org/licenses/by-nc-sa/3.0/)-аас
