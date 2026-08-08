@@ -98,8 +98,16 @@ export default function DevicesView({
   function testPhone() {
     if (!canVibrate) { toast.error('Энэ төхөөрөмж чичиргээ дэмжихгүй — Android утсан дээр туршина уу'); return }
     /* Энгийн шаблон chичиргээ (bass→dund→bass) — HapticDevice.pulse() нэг импульс л
-       өгдөг тул энд шууд navigator.vibrate-г ашиглана (одоо байгаа зан төлөв хэвээр). */
-    try { navigator.vibrate([230, 80, 230]); toast.success('Утас чичирлээ 📳') } catch { toast.error('Чичиргээ ажиллахгүй байна') }
+       өгдөг тул энд шууд navigator.vibrate-г ашиглана (одоо байгаа зан төлөв хэвээр).
+       `navigator.vibrate()` нь `"vibrate" in navigator` (canVibrate) true байсан ч
+       `false` буцааж чимээгүй татгалзаж болно (жиш. системийн Дуу/Чичиргээ тохиргоо
+       хориглосон, эсвэл хэт олон/урт дуудлага throttle хийгдсэн) — өмнө нь энэ
+       тохиолдолд аль ч toast харагдахгvй, товч "юу ч хийхгvй" мэт мэдрэгддэг байв. */
+    try {
+      const ok = navigator.vibrate([230, 80, 230]);
+      if (ok === false) toast.error('Чичиргээ ажиллахгүй байна — системийн тохиргооноос Дуу чимээ/Чичиргээг шалгана уу');
+      else toast.success('Утас чичирлээ 📳');
+    } catch { toast.error('Чичиргээ ажиллахгүй байна') }
   }
 
   function testGamepad() {

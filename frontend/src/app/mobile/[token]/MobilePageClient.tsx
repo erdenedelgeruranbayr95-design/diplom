@@ -28,6 +28,7 @@ export default function MobilePageClient() {
   const [enabled, setEnabled] = useState(false);
   const [strength, setStrength] = useState(1); // VIB_LEVELS index
   const [pulse, setPulse] = useState(false);
+  const [vibrateError, setVibrateError] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const enabledRef = useRef(enabled);
@@ -112,13 +113,26 @@ export default function MobilePageClient() {
   }
 
   function testVibration() {
-    if (!("vibrate" in navigator)) return;
+    if (!("vibrate" in navigator)) {
+      setVibrateError(true);
+      return;
+    }
+    /* iOS Safari-д `"vibrate" in navigator` заримдаа `true` буцаадаг ч бодит
+       дуудлага юу ч хийдэггvй (spec дэмждэггvй, чимээгvй үл ажиллана) — feature
+       detection дангаараа хангалттай биш тул `vibrate()`-ийн буцаах утгыг (Boolean)
+       шалгаж, false vед хэрэглэгчид тодорхой алдаа vзvvлнэ (өмнө нь энд юу ч
+       харагдахгvй, товч "ажиллахгvй байна" мэт мэдрэгддэг байсан root cause). */
     try {
-      navigator.vibrate(200);
+      const ok = navigator.vibrate(200);
+      if (ok === false) {
+        setVibrateError(true);
+        return;
+      }
+      setVibrateError(false);
       setPulse(true);
       setTimeout(() => setPulse(false), 200);
     } catch {
-      /* noop */
+      setVibrateError(true);
     }
   }
 
@@ -233,6 +247,12 @@ export default function MobilePageClient() {
                 {vibrateSupported && <Icon name="vibrate" size={15} />}
                 {vibrateSupported ? "Турших" : "Энэ төхөөрөмж дэмжихгүй"}
               </ActionButton>
+              {vibrateError && (
+                <p className="text-note text-[#ff8a8a]" role="alert">
+                  Чичиргээ ажиллахгүй байна — утасны браузер (жиш. iOS Safari) чичиргээг дэмждэггүй эсвэл системийн
+                  тохиргоонд (Дуу чимээ/Чичиргээ) хориглогдсон байж болзошгүй.
+                </p>
+              )}
             </div>
           </>
         )}
