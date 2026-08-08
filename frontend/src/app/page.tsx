@@ -96,6 +96,16 @@ export default function Page() {
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuth={handleAuth} />
       <AdminPanel open={adminOpen} onClose={() => setAdminOpen(false)} currentUser={user} />
       <Player
+        /* `user` солигдох бvр (жиш. logout → өөр account-аар нэвтрэх) React-д
+           Player-ийг БvРЭН шинээр mount хийлгэнэ. `key`-гvй vед React ижил
+           component instance-ийг л дахин ашигладаг тул useAudioPlayback/
+           useHapticEngine дотоод useState (одоо тоглож буй дуу, audioRef.src,
+           device holbolt) хуучин хэрэглэгчийнхээ утгыг vргэлжлvvлж vлддэг байсан —
+           тэр нь "logout хийгээд өөр account-оор нэвтрэхэд хуучин дуу player дээр
+           хэвээрээ харагдана" гэдэг root cause. key солигдоход бvх дотоод hook
+           cleanup (audio.pause(), listener salgah, device.stop()) автоматаар
+           ажиллана. */
+        key={user?.id ?? "guest"}
         open={playerOpen}
         onClose={() => setPlayerOpen(false)}
         user={user}

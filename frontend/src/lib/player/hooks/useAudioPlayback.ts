@@ -154,8 +154,21 @@ export function useAudioPlayback({ subscribed, onTrackStart, onEnded }: AudioPla
     };
   }, []);
 
-  /* Компонент бүрмөсөн алга болоход listener-үүд үлдэхгүй. */
-  useEffect(() => () => detachRef.current?.(), []);
+  /* Компонент бүрмөсөн алга болоход (жиш. Player-ийн `key` солигдож дахин mount
+     хийгдэхэд, см. app/page.tsx) listener-үүд vлдэхгvй, WebAudio граф ч чөлөөлнө —
+     эс бол AudioContext хуучин хэрэглэгчийнхээ audio холболттойгоор санах ойд
+     vлдэж (browser нь нэг таб дотор AudioContext-ийн тоог хязгаарладаг),
+     дараагийн хэрэглэгчийн `ensureAnalyser()` шинэ ctx vvсгэхэд хуучин нь орхигдоно. */
+  useEffect(
+    () => () => {
+      detachRef.current?.();
+      if (analyserRef.current) {
+        void analyserRef.current.ctx.close().catch(() => {});
+        analyserRef.current = null;
+      }
+    },
+    [],
+  );
 
   const onTrackStartRef = useRef(onTrackStart);
   onTrackStartRef.current = onTrackStart;

@@ -119,6 +119,15 @@ export function useHapticEngine({
   const beatFlashRef = useRef<BeatFlash | null>(null);
   const beatSchedulerRef = useRef(new BeatScheduler());
   const bandLevelsRef = useRef<number[]>([]);
+  /* Level-threshold fallback-ийн ROLLING дундаж — тогтмол абсолют босго (жиш.
+     `lo > 0.45`) нь чимээгvй/зөөлөн хэсэгт (интро, breakdown) hэзээ ч давагдахгvй
+     тул чичиргээ бvхэлдээ "унтардаг" мэт мэдрэгддэг байсан (Haptic Score worker
+     production-д ажиллаагvй vед бvх дуу энэ fallback-аар л явдаг тул энэ нь
+     цорын ганц чичиргээний эх vvсвэр болдог). Сvvлийн ~2 секундийн дундажтай
+     харьцуулж (level > avg * 1.35) тухайн дууны АМЬДРАЛТАЙ мөчид л fire хийснээр
+     чанга/намуун дуу хоёулаа адилхан мэдрэгдэнэ. */
+  const rollingAvgRef = useRef<BandLevels>({ lo: 0, mi: 0, hi: 0 });
+  const lastFireAtRef = useRef(0);
   const hapticScoreRef = useRef<HapticScore | null>(null);
   const [hasHapticScore, setHasHapticScore] = useState(false);
   const deviceRouterRef = useRef<DeviceRouter | null>(null);
@@ -223,6 +232,14 @@ export function useHapticEngine({
         const hi = averageBand(data, midEnd, n);
         levelRef.current = { lo, mi, hi };
 
+        /* Экспоненциал rolling average (~2 сек цонх, RAF ~60fps vед alpha=0.02
+           тохирно) — level-threshold fallback-ийн adaptive босгонд ашиглагдана. */
+        const avg = rollingAvgRef.current;
+        const ALPHA = 0.02;
+        avg.lo += (lo - avg.lo) * ALPHA;
+        avg.mi += (mi - avg.mi) * ALPHA;
+        avg.hi += (hi - avg.hi) * ALPHA;
+
         const level = Math.max(p.bands.bass ? lo : 0, p.bands.mid ? mi : 0, p.bands.high ? hi : 0);
 
         if (pulseRef.current) {
@@ -284,10 +301,17 @@ export function useHapticEngine({
     };
     loop();
 
-    /* Level-threshold fallback (beatTimestamps байхгүй, static demo track) — өмнөх
-       170мс cooldown зан төлөв ХЭВЭЭР (threshold-ийн дараагийн шатах хоорондын зай
-       товчилвол дуу нэг л bass цохилтод олон удаа чичирнэ — өмнөх найдвартай
-       харьцаа энд өөрчлөгдөөгүй). */
+    /* Level-threshold fallback (beatTimestamps/Haptic Score байхгүй үед цорын ганц
+       чичиргээний эх үүсвэр — production дээр worker унтарсан/анализ дуусаагүй
+       үед БҮХ дуу үvнээр л явдаг). Өмнө нь абсолют тогтмол босго (lo>0.45 гм)
+       ашигладаг байсан тул зөөлөн/чимээгvй хэсэгт (интро, breakdown) энерги хэзээ
+       ч давахгvй, чичиргээ бvхэлдээ "унтардаг" мэт мэдрэгддэг байв (root cause:
+       чанга/намуун дуу хоорондын ялгаа абсолют утгад шингэдэггvй). Одоо тухайн
+       дууны СvvЛИЙН ~2 секундийн rolling дундажтай харьцуулж (level дундажаасаа
+       35%+ өндөр үед л fire) — аль ч дуунд, аль ч мөчид ижил мэдрэмжтэй ажиллана.
+       Мөн 900мс-с дээш ямар ч fire болоогvй бол (маш тэгш чимээ, threshold
+       давахгvй) доод хязгаарын "heartbeat" импульс өгч, чичиргээ бvрмөсөн
+       "хугарсан" мэт санагдахаас сэргийлнэ. */
     const vibTimer = setInterval(() => {
       if (!playing || !vibrationOn) return;
       const scheduler = beatSchedulerRef.current;
@@ -299,24 +323,40 @@ export function useHapticEngine({
       const qrConnected = sync.isConnected;
 
       const { lo, mi, hi } = levelRef.current;
+      const avg = rollingAvgRef.current;
+      const now = performance.now();
       let fired = false;
-      if (p.bands.bass && lo > 0.45) {
-        beatFlashRef.current = { band: "bass", level: lo, at: performance.now() };
+
+      if (p.bands.bass && lo > Math.max(0.12, avg.lo * 1.35)) {
+        beatFlashRef.current = { band: "bass", level: lo, at: now };
         if (canVibrate) deviceRouterRef.current!.pulse(strength, Math.round((60 + lo * 80) * strength));
         if (qrConnected) sync.emitBeat({ band: "bass", level: lo });
         fired = true;
-      } else if (p.bands.mid && mi > 0.35) {
-        beatFlashRef.current = { band: "mid", level: mi, at: performance.now() };
+      } else if (p.bands.mid && mi > Math.max(0.1, avg.mi * 1.35)) {
+        beatFlashRef.current = { band: "mid", level: mi, at: now };
         if (canVibrate) vibrate([Math.round(30 * strength), 30, Math.round(30 * strength)]);
         if (qrConnected) sync.emitBeat({ band: "mid", level: mi });
         fired = true;
-      } else if (p.bands.high && hi > 0.3) {
-        beatFlashRef.current = { band: "high", level: hi, at: performance.now() };
+      } else if (p.bands.high && hi > Math.max(0.08, avg.hi * 1.35)) {
+        beatFlashRef.current = { band: "high", level: hi, at: now };
         if (canVibrate) deviceRouterRef.current!.pulse(strength, Math.max(8, Math.round(12 * strength)));
         if (qrConnected) sync.emitBeat({ band: "high", level: hi });
         fired = true;
+      } else if (now - lastFireAtRef.current > 900 && (lo > 0.04 || mi > 0.04 || hi > 0.04)) {
+        // Heartbeat floor: дуу тоглож байгаа ч ямар ч бүс threshold давахгvй удаж
+        // байвал (тэгш аудио) хэрэглэгч чичиргээг "хугарсан" гэж бvv андуур.
+        const band = lo >= mi && lo >= hi ? "bass" : mi >= hi ? "mid" : "high";
+        const level = band === "bass" ? lo : band === "mid" ? mi : hi;
+        beatFlashRef.current = { band, level, at: now };
+        if (canVibrate) deviceRouterRef.current!.pulse(strength, Math.max(10, Math.round(20 * strength)));
+        if (qrConnected) sync.emitBeat({ band, level });
+        fired = true;
       }
-      if (fired && statsRef.current) statsRef.current.vib++;
+
+      if (fired) {
+        lastFireAtRef.current = now;
+        if (statsRef.current) statsRef.current.vib++;
+      }
     }, 170);
 
     return () => {
