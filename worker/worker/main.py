@@ -14,6 +14,7 @@
 import json
 import logging
 import os
+import sys
 import time
 import traceback
 from pathlib import Path
@@ -25,6 +26,13 @@ from dotenv import load_dotenv
 from .analysis import analyze, save_score
 from .transcode import transcode_to_hls
 from .cover import process_cover
+
+# Windows-ийн консол өгөгдмөлөөр cp1252 — лог мессежүүд монголоор бичигдсэн тул
+# кодчлолыг UTF-8 болгохгүй бол `UnicodeEncodeError`-оор worker унана.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 load_dotenv()
 
@@ -38,6 +46,9 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:3000")
 CALLBACK_SECRET = os.getenv("HAPTIC_CALLBACK_SECRET", "")
 UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", "../backend/uploads")).resolve()
 SCORES_DIR = Path(os.getenv("SCORES_DIR", "../backend/uploads/scores")).resolve()
+# Seed хийсэн дуунуудын аудио нь frontend-ийн статик хавтаст байрладаг
+# (`/tracks/song-1.mp3` → frontend/public/tracks/song-1.mp3), backend-ийн uploads-д БИШ.
+TRACKS_DIR = Path(os.getenv("TRACKS_DIR", "../frontend/public/tracks")).resolve()
 MAX_RETRIES = 3
 POLL_TIMEOUT_SEC = 5
 
@@ -57,8 +68,27 @@ def send_callback(song_id: str, status: str, **kwargs) -> None:
 
 
 def resolve_local_path(file_url: str) -> Path:
-    """`/uploads/xxx.mp3` хэлбэрийн URL-ыг локал файлын зам болгож хөрвүүлнэ (legacy)."""
-    name = file_url.split("/uploads/")[-1]
+    """Харьцангуй `fileUrl`-ыг локал файлын зам болгож хөрвүүлнэ.
+
+    Хоёр эх сурвалж байдаг:
+      · `/uploads/xxx.mp3` — хэрэглэгчийн upload хийсэн (backend/uploads)
+      · `/tracks/xxx.mp3`  — seed хийсэн демо дуу (frontend/public/tracks)
+
+    Урьд нь зөвхөн эхнийхийг л мэддэг байсан бөгөөд `split("/uploads/")[-1]` нь
+    таарахгүй үед БҮТЭН замыг ("/tracks/song-1.mp3") буцаадаг байв. Тэр нь `/`-ээр
+    эхэлдэг тул `UPLOADS_DIR / name` үйлдэл язгуур руу үсэрч (pathlib-ийн дүрэм),
+    seed дуунууд хэзээ ч олдохгүй байсан.
+    """
+    if "/uploads/" in file_url:
+        return UPLOADS_DIR / file_url.split("/uploads/")[-1]
+    if "/tracks/" in file_url:
+        return TRACKS_DIR / file_url.split("/tracks/")[-1]
+    # Танихгүй хэлбэр — зөвхөн файлын нэрээр хоёуланд нь хайж үзнэ.
+    name = Path(file_url).name
+    for base in (UPLOADS_DIR, TRACKS_DIR):
+        candidate = base / name
+        if candidate.exists():
+            return candidate
     return UPLOADS_DIR / name
 
 
@@ -102,7 +132,20 @@ def process_job(job: dict) -> None:
             local_path.unlink(missing_ok=True)
 
     # Ковер зураг → WebP олон хэмжээ (заавал биш, coverUrl өгөгдсөн үед л).
-    cover_urls = process_cover(cover_url, song_id) if cover_url else None
+    #
+    # ⚠️ Алдааг ЗААВАЛ энд барина. Ковер боловсруулалт нь S3/MinIO рүү хуулдаг тул
+    # bucket байхгүй, эсвэл сүлжээ тасарсан үед онцгой алдаа шиддэг. Урьд нь тэр нь
+    # `process_job`-оос гарч job-ыг БҮХЭЛД нь унагаадаг байсан — өөрөөр хэлбэл
+    # librosa-гийн шинжилгээ амжилттай болсон ч ЧИЧИРГЭЭНИЙ ӨГӨГДӨЛ хадгалагдахгүй,
+    # дуу PENDING хэвээр үлддэг байв. Ковер бол зөвхөн гоо сайхны сайжруулалт
+    # (эх `coverUrl` хэвээрээ харагдана), харин цохилтын өгөгдөл бол энэ системийн
+    # ҮНДСЭН ЗОРИЛГО — түүнийг зургийн улмаас золиослохгүй.
+    cover_urls = None
+    if cover_url:
+        try:
+            cover_urls = process_cover(cover_url, song_id)
+        except Exception as exc:  # noqa: BLE001
+            log.warning(f"Ковер боловсруулалт алгасав (songId={song_id}): {exc}")
 
     SCORES_DIR.mkdir(parents=True, exist_ok=True)
     out_path = SCORES_DIR / f"{song_id}.json"
