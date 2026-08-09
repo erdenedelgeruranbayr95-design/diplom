@@ -46,9 +46,27 @@ export const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? devWebUrl() ?? "http:/
 
    `/uploads/...` нь backend-ийн үйлчилдэг (Next.js rewrite ч тэр рүү дамжуулдаг),
    бусад харьцангуй зам нь frontend-ийн статик асcет. */
+/* Backend/worker нь заримдаа `localhost`-той БҮТЭН URL буцаадаг.
+   Жишээ нь worker нь ковер зургийг MinIO руу хуулаад
+   `http://localhost:9000/medreh-media/covers/...webp` гэж бичдэг
+   (`S3_PUBLIC_URL`-ийн өгөгдмөл утга).
+
+   Компьютер дээр энэ ажиллана — УТСАН ДЭЭР `localhost` нь УТСЫГ ӨӨРИЙГ нь заана
+   тул зураг хэзээ ч ачаалагдахгүй. Бодитоор тохиолдсон: MinIO-д bucket үүсгэмэгц
+   `coverThumbUrl` бөглөгдөж эхэлсэн бөгөөд `SongRow` түүнийг илүүд үздэг тул
+   өмнө нь харагдаж байсан ковер зургууд утсан дээр алга болсон.
+
+   Иймд localhost руу заасан хостыг dev серверийн бодит IP-гээр СОЛИНО — портыг
+   нь хэвээр үлдээнэ (MinIO 9000, backend 3000 гэх мэт өөр өөр порттой). */
+function rewriteLocalhost(url: string): string {
+  const host = API_URL.match(/^https?:\/\/([^:/]+)/)?.[1];
+  if (!host || host === "localhost" || host === "127.0.0.1") return url;
+  return url.replace(/^(https?:\/\/)(localhost|127\.0\.0\.1)(?=[:/]|$)/, `$1${host}`);
+}
+
 export function absoluteUrl(url: string | null | undefined): string | null {
   if (!url) return null;
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("http://") || url.startsWith("https://")) return rewriteLocalhost(url);
   const origin = url.startsWith("/uploads/") ? API_URL.replace(/\/api$/, "") : WEB_URL;
   return origin + (url.startsWith("/") ? url : `/${url}`);
 }

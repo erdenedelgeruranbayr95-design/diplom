@@ -78,6 +78,40 @@ export interface Playlist {
 
 export type TrackAction = "LIKE" | "SAVE";
 
+/** `GET /me/sensory-profile` — СЕРВЕРТ хадгалагдах калибровк, вэб болон утас
+ *  хооронд дагана. Профайл үүсээгүй бол backend өгөгдмөл утга буцаана. */
+export interface SensoryProfile {
+  vibLevel: number;
+  lightLevel: number;
+  bands: { bass: boolean; mid: boolean; high: boolean };
+  deviceMap: Record<string, string> | null;
+  calibrated: boolean;
+}
+
+/** `GET /history` -ийн мөр. `song` нь зөвхөн хэдэн талбартай хураангуй
+ *  (backend/src/history/history.service.ts дэх `select`). */
+export interface HistoryRow {
+  id: string;
+  songId: string;
+  playedAt: string;
+  durationMs: number | null;
+  bpm: number | null;
+  vibrations: boolean | null;
+  device: string | null;
+  song: {
+    id: string;
+    title: string;
+    artist: string | null;
+    genre: string;
+    fileUrl: string | null;
+  };
+}
+
+export interface HistoryPage {
+  items: HistoryRow[];
+  total: number;
+}
+
 /** `GET /users` (@Roles(ADMIN)) -ийн мөр. Талбарууд backend-ийн хариунаас
  *  бодитоор баталгаажсан. */
 export interface AdminUserRow {
@@ -92,12 +126,16 @@ export interface AdminUserRow {
   subPlan: string | null;
 }
 
+/** `GET /artists` (@Public). ⚠️ `photoUrl` нь бүх дуучинд ХООСОН (шалгасан) —
+ *  UI зургийн оронд тухайн дуучны дууны ковер эсвэл нэрийн эхний үсгийг харуулна. */
 export interface Artist {
   id: string;
   name: string;
-  bio?: string | null;
-  careerInfo?: string | null;
-  songCount?: number;
+  bio: string | null;
+  careerInfo: string | null;
+  photoUrl: string | null;
+  createdAt: string;
+  _count?: { songs: number };
 }
 
 /* `GET /api/songs` (@Public) -ийн ЖИНХЭНЭ хариу. Вэбийн `PlayerTrack` нь энэ хариуг
@@ -113,8 +151,13 @@ export interface Song {
   title: string;
   artist: string | null;
   artistId: string | null;
-  genre: string;
+  /* ⚠️ `null` БАЙЖ БОЛНО. Prisma-д `genre String?` тул backend `null` буцаадаг.
+     Урьд нь энд `string` гэж зарласан байсан — seed хийсэн 21 дуу бүгд төрөлтэй
+     байсан тул алдаа илрээгүй. Jamendo-гоос 30 дуу импортлоход тэдгээрийн төрөл
+     хоосон ирж, `s.genre.toLowerCase()` (хайлт) АПП УНАГААХ болсон. */
+  genre: string | null;
   description: string | null;
+  lyrics: string | null;
   releaseYear: number | null;
   coverUrl: string | null;
   coverThumbUrl: string | null;
@@ -128,7 +171,14 @@ export interface Song {
   bandEnergies: number[] | null;
   waveformPeaks: number[] | null;
   scoreUrl: string | null;
+  /** Хөгжмийн түлхүүр (жиш. "G# minor") — worker-ийн chroma шинжилгээнээс. */
+  musicalKey: string | null;
   analysisStatus: SongAnalysisStatus;
+  /** Шинжилгээ амжилтгүй болсон шалтгаан (`analysisStatus === "FAILED"` үед). */
+  analysisError: string | null;
+  /** `enum SongLicense` — CC_BY · CC_BY_SA · CC_BY_NC · CC0 · ORIGINAL · LICENSED */
+  license: string | null;
+  licenseSrc: string | null;
   featured: boolean;
   published: boolean;
 }

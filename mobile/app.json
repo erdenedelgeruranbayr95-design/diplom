@@ -41,7 +41,9 @@
         {
           "enableBackgroundPlayback": true
         }
-      ]
+      ],
+      "expo-font",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true

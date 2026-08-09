@@ -1,10 +1,13 @@
 import { API_URL } from "@/lib/config";
+import { NetworkError } from "./offline";
 import type {
   AdminUserRow,
   Artist,
+  HistoryPage,
   LibraryState,
   ListeningStats,
   Playlist,
+  SensoryProfile,
   SessionUser,
   Song,
   TrackAction,
@@ -69,7 +72,18 @@ async function apiFetch<T>(path: string, opts: RequestInit = {}, retry = true): 
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
   const sentWithGeneration = tokenGeneration;
 
-  const res = await fetch(BASE_URL + path, { ...opts, headers, credentials: "include" });
+  /* `fetch` нь СЕРВЕР ХҮРТЭЛ хүрч чадаагүй үед (сүлжээгүй, DNS, холболт татгалзсан)
+     `TypeError: Network request failed` шиддэг. Энэ нь серверийн буцаасан 4xx/5xx
+     алдаанаас ҮНДСЭНДЭЭ ӨӨР: тэнд сервер ажиллаж, бодит хариу өгсөн байдаг.
+
+     Хоёуланг нь ялгахгүй бол офлайн кэш нь серверийн жинхэнэ алдааг ч хуучин
+     өгөгдлөөр нууж, хэрэглэгчийг төөрөгдүүлнэ. Иймд энд тодорхой төрөл болгоно. */
+  let res: Response;
+  try {
+    res = await fetch(BASE_URL + path, { ...opts, headers, credentials: "include" });
+  } catch (e) {
+    throw new NetworkError(e);
+  }
 
   if (res.status === 401 && retry && path !== "/auth/refresh") {
     if (tokenGeneration !== sentWithGeneration) return apiFetch<T>(path, opts, false);
@@ -155,6 +169,14 @@ export function fetchArtists(): Promise<Artist[]> {
   return apiFetch<Artist[]>("/artists");
 }
 
+export function fetchArtist(id: string): Promise<Artist> {
+  return apiFetch<Artist>(`/artists/${id}`);
+}
+
+export function fetchArtistSongs(id: string): Promise<Song[]> {
+  return apiFetch<Song[]>(`/artists/${id}/songs`);
+}
+
 export function fetchFeatured(): Promise<Song[]> {
   return apiFetch<Song[]>("/songs/featured");
 }
@@ -165,6 +187,17 @@ export function fetchPopular(): Promise<Song[]> {
 
 export function health(): Promise<{ ok: boolean }> {
   return apiFetch<{ ok: boolean }>("/health");
+}
+
+/* ---- мэдрэхүйн калибровк (серверт хадгалагдана) ---- */
+
+export function fetchSensoryProfile(): Promise<SensoryProfile> {
+  return apiFetch<SensoryProfile>("/me/sensory-profile");
+}
+
+/** PUT — хэсэгчилсэн шинэчлэл дэмжинэ (`UpdateSensoryProfileDto` бүх талбар optional). */
+export function saveSensoryProfile(patch: Partial<SensoryProfile>): Promise<SensoryProfile> {
+  return apiFetch<SensoryProfile>("/me/sensory-profile", { method: "PUT", body: JSON.stringify(patch) });
 }
 
 /* ---- миний сан ---- */
@@ -215,6 +248,15 @@ export function postHistory(
   });
 }
 
+/** Сонссон түүх. Хариу нь `{ items, total }` — массив БИШ (бодитоор шалгасан). */
+export function fetchHistory(page = 1, limit = 30): Promise<HistoryPage> {
+  return apiFetch<HistoryPage>(`/history?page=${page}&limit=${limit}`);
+}
+
+export function deleteHistory(id: string): Promise<void> {
+  return apiFetch<void>(`/history/${id}`, { method: "DELETE" });
+}
+
 export function fetchPlaylists(): Promise<Playlist[]> {
   return apiFetch<Playlist[]>("/playlists");
 }
@@ -223,8 +265,24 @@ export function createPlaylist(name: string): Promise<Playlist> {
   return apiFetch<Playlist>("/playlists", { method: "POST", body: JSON.stringify({ name }) });
 }
 
+export function renamePlaylist(id: string, name: string): Promise<Playlist> {
+  return apiFetch<Playlist>(`/playlists/${id}`, { method: "PATCH", body: JSON.stringify({ name }) });
+}
+
 export function deletePlaylist(id: string): Promise<void> {
   return apiFetch<void>(`/playlists/${id}`, { method: "DELETE" });
+}
+
+export function addPlaylistTrack(playlistId: string, songId: string): Promise<void> {
+  return apiFetch<void>(`/playlists/${playlistId}/tracks`, {
+    method: "POST",
+    body: JSON.stringify({ songId }),
+  });
+}
+
+/** Устгах нь зам дахь параметрээр — `/me/actions`-ээс ЯЛГААТАЙ нь энд body хэрэггүй. */
+export function removePlaylistTrack(playlistId: string, songId: string): Promise<void> {
+  return apiFetch<void>(`/playlists/${playlistId}/tracks/${songId}`, { method: "DELETE" });
 }
 
 /* ---- админ ----
