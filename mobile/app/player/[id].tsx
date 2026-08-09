@@ -1,13 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 
+import AddToPlaylistModal from "@/components/AddToPlaylistModal";
+import BeatPulse, { type BeatPulseHandle } from "@/components/BeatPulse";
+import Cover from "@/components/Cover";
 import { addAction, fetchLibrary, fetchSong, fetchSongs, postHistory, removeAction } from "@/lib/api/client";
 import { absoluteUrl } from "@/lib/config";
+import { usePreferences } from "@/lib/prefs/PreferencesContext";
 import { useHapticEngine } from "@/lib/player/useHapticEngine";
 import { VIB_LEVELS } from "@/lib/player/constants";
+import { afterTrackEnd, neighborIndex, shuffledOrder } from "@/lib/player/queue";
 import type { Song } from "@/types";
 
 function formatTime(seconds: number): string {
@@ -23,10 +28,13 @@ export default function PlayerScreen() {
 
   const [song, setSong] = useState<Song | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [vibrationOn, setVibrationOn] = useState(true);
-  const [vibLevel, setVibLevel] = useState(1);
+  /* Чичиргээний тохиргоо нь тоглуулагчийн дотоод төлөв БИШ — байнга хадгалагдана.
+     Урьд нь дуу солих бүрд "Дунд" рүү тэглэгдэж, хэрэглэгчийн тааруулсан эрчим
+     алга болдог байв. */
+  const { vibrationOn, vibLevel, reducedMotion, repeat, shuffle, shuffleSeed, setPref } = usePreferences();
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [addingToPlaylist, setAddingToPlaylist] = useState(false);
   /* Дараагийн/өмнөх дуунд шилжихийн тулд бүтэн жагсаалт хэрэгтэй — `GET /songs/:id`
      зөвхөн нэг дуу өгдөг тул хөршүүдийг мэдэх арга байхгүй. */
   const [playlist, setPlaylist] = useState<Song[]>([]);
@@ -43,9 +51,19 @@ export default function PlayerScreen() {
     };
   }, []);
 
-  const index = playlist.findIndex((s) => s.id === id);
-  const prevSong = index > 0 ? playlist[index - 1] : null;
-  const nextSong = index >= 0 && index < playlist.length - 1 ? playlist[index + 1] : null;
+  /* Холих асаалттай үед дараалал нь ЖАГСААЛТЫН эрэмбэ биш, үрээс гаргасан
+     тогтвортой холилт болно. Үр нь тохиргоонд хадгалагддаг тул дэлгэц дахин
+     үүсэхэд ижил дараалал сэргэнэ. */
+  const order = useMemo(
+    () => (shuffle ? shuffledOrder(playlist, shuffleSeed) : playlist),
+    [playlist, shuffle, shuffleSeed],
+  );
+
+  const index = order.findIndex((s) => s.id === id);
+  const prevIndex = neighborIndex(index, order.length, -1, repeat);
+  const nextIndex = neighborIndex(index, order.length, 1, repeat);
+  const prevSong = prevIndex === null ? null : order[prevIndex];
+  const nextSong = nextIndex === null ? null : order[nextIndex];
 
   const goTo = useCallback(
     (target: Song | null) => {
@@ -95,6 +113,29 @@ export default function PlayerScreen() {
   const player = useAudioPlayer(audioSource);
   const status = useAudioPlayerStatus(player);
 
+  /* Дуу ӨӨРӨӨ дуусахад юу болох вэ (давтах / дараагийнх руу шилжих).
+
+     `didJustFinish` нь дуу дуусмагц `true` болоод дараагийн статус ирэх хүртэл
+     тэр хэвээрээ үлддэг. Иймд нэг л удаа ажиллуулахын тулд хамгийн сүүлд
+     боловсруулсан дууны ID-г ref-д тэмдэглэнэ — эс бөгөөс "нэгийг давтах"
+     горимд `seekTo(0)` дараалан дуудагдаж дуу тасалдана. */
+  const finishedForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!status.didJustFinish || !id) return;
+    if (finishedForRef.current === id) return;
+    finishedForRef.current = id;
+
+    const target = afterTrackEnd(index, order.length, repeat);
+    if (target === null) return;
+    if (target === "replay") {
+      player.seekTo(0);
+      player.play();
+      finishedForRef.current = null; // дахин дуусахад ажиллах ёстой
+      return;
+    }
+    goTo(order[target] ?? null);
+  }, [status.didJustFinish, id, index, order, repeat, player, goTo]);
+
   /* Дэвсгэрт тоглуулах — SDK 57-д Android дээр `setActiveForLockScreen` дуудахгүй бол
      аудио ойролцоогоор 3 минутын дараа зогсдог (Expo-гийн баримтын шаардлага). */
   useEffect(() => {
@@ -124,12 +165,17 @@ export default function PlayerScreen() {
      шууд өгвөл render бүрд шинэ утга болж, хөдөлгүүрийн interval дахин эхлэх байсан. */
   const getCurrentTime = useCallback(() => player.currentTime ?? 0, [player]);
 
+  /* Визуал пульс. Ref-ээр удирдана — цохилт бүрд `setState` дуудвал секундэд
+     хэдэн удаа бүтэн дэлгэц дахин зурагдаж, хэмнэл алдагдана. */
+  const pulseRef = useRef<BeatPulseHandle>(null);
+
   const engine = useHapticEngine({
     enabled: true,
     playing: status.playing,
     vibrationOn,
     vibLevel,
     getCurrentTime,
+    onBeat: useCallback(() => pulseRef.current?.pulse(), []),
   });
 
   // Шинэ дуу ирэхэд цохилтын хугацааг хөдөлгүүрт оноож, түгжигдсэн дэлгэцийн
@@ -218,9 +264,23 @@ export default function PlayerScreen() {
           <Text className="text-ink text-3xl font-bold" numberOfLines={2}>
             {song.title}
           </Text>
-          <Text className="text-dim text-lead mt-1">{song.artist ?? "Тодорхойгүй"}</Text>
+          {song.artistId ? (
+            <Pressable
+              onPress={() => router.push({ pathname: "/artist/[id]", params: { id: song.artistId! } })}
+              accessibilityRole="link"
+              accessibilityLabel={`${song.artist ?? "Дуучин"} — дуучны хуудас`}
+            >
+              <Text className="text-aqua text-lead mt-1">{song.artist ?? "Тодорхойгүй"} ›</Text>
+            </Pressable>
+          ) : (
+            <Text className="text-dim text-lead mt-1">{song.artist ?? "Тодорхойгүй"}</Text>
+          )}
 
-          <View className="flex-row gap-2 mt-4">
+          {/* ⚠️ `flex-wrap` ЗААВАЛ. Дөрвөн товч 390px өргөнтэй дэлгэцэнд нэг мөрөнд
+              багтахгүй — «Дэлгэрэнгүй» баруун захаараа тасарч, дарах ч боломжгүй
+              болдог байв (браузерын зураглалаар илрүүлсэн). RN-д хэвтээ
+              гүйлгэлт өөрөө үүсдэггүй тул хальсан хэсэг зүгээр л алга болно. */}
+          <View className="flex-row flex-wrap gap-2 mt-4">
             <Pressable
               className={`px-4 py-2 rounded-chip border ${liked ? "bg-rose/15 border-rose" : "bg-surface border-line-2"}`}
               onPress={() => toggleAction("LIKE")}
@@ -243,6 +303,22 @@ export default function PlayerScreen() {
                 {saved ? "◼ Хадгалсан" : "◻ Хадгалах"}
               </Text>
             </Pressable>
+            <Pressable
+              className="px-4 py-2 rounded-chip border bg-surface border-line-2"
+              onPress={() => setAddingToPlaylist(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Жагсаалтад нэмэх"
+            >
+              <Text className="text-dim text-body">≡ Жагсаалт</Text>
+            </Pressable>
+            <Pressable
+              className="px-4 py-2 rounded-chip border bg-surface border-line-2"
+              onPress={() => router.push({ pathname: "/song/[id]", params: { id: song.id } })}
+              accessibilityRole="button"
+              accessibilityLabel="Дууны дэлгэрэнгүй"
+            >
+              <Text className="text-dim text-body">ⓘ Дэлгэрэнгүй</Text>
+            </Pressable>
           </View>
 
           {/* Төлөвийг ИЛ хэлнэ. Чимээгүй унах нь энэ апп-д хамгийн эндүүрэл төрүүлэх
@@ -262,8 +338,19 @@ export default function PlayerScreen() {
             )}
           </View>
 
+          <BeatPulse
+            ref={pulseRef}
+            playing={status.playing}
+            hasBeats={hasHaptics}
+            bpm={song.analyzedBpm ?? song.bpm}
+            reducedMotion={reducedMotion}
+          >
+            {/* Цагираг 128px тул ковер түүнээс бага байх ёстой. */}
+            <Cover url={song.coverUrl} title={song.title} size={104} rounded="lg" />
+          </BeatPulse>
+
           {/* --- явц --- */}
-          <View className="mt-8">
+          <View className="mt-2">
             <View className="h-1 bg-line rounded-bar overflow-hidden">
               <View
                 className="h-full bg-aqua"
@@ -336,9 +423,47 @@ export default function PlayerScreen() {
             </Pressable>
           </View>
 
-          {playlist.length > 0 && index >= 0 && (
+          {/* --- холих · давтах ---
+              Тусдаа мөрөнд байрлуулав: гол удирдлагын товчнууд том, дарахад
+              хялбар байх ёстой бөгөөд тэдгээрийн хооронд жижиг товч шигдвэл
+              буруу дарах эрсдэл нэмэгдэнэ. */}
+          <View className="flex-row items-center justify-center gap-3 mt-4">
+            <Pressable
+              className={`px-4 py-2 rounded-chip border ${shuffle ? "bg-aqua/15 border-aqua" : "bg-surface border-line"}`}
+              onPress={() => {
+                const on = !shuffle;
+                setPref("shuffle", on);
+                // Холихыг АСААХ бүрд шинэ дараалал — эс бөгөөс үргэлж ижил
+                // "санамсаргүй" эрэмбэ гарч, холих утгаа алдана.
+                if (on) setPref("shuffleSeed", Date.now() % 0x7fffffff);
+              }}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: shuffle }}
+              accessibilityLabel="Холих"
+            >
+              <Text className={shuffle ? "text-aqua text-caption" : "text-dim text-caption"}>
+                🔀 Холих
+              </Text>
+            </Pressable>
+
+            <Pressable
+              className={`px-4 py-2 rounded-chip border ${repeat === "off" ? "bg-surface border-line" : "bg-aqua/15 border-aqua"}`}
+              onPress={() => setPref("repeat", repeat === "off" ? "all" : repeat === "all" ? "one" : "off")}
+              accessibilityRole="button"
+              accessibilityLabel={
+                repeat === "off" ? "Давтахгүй" : repeat === "all" ? "Бүгдийг давтана" : "Энэ дууг давтана"
+              }
+            >
+              <Text className={repeat === "off" ? "text-dim text-caption" : "text-aqua text-caption"}>
+                {repeat === "one" ? "🔂 Нэгийг" : repeat === "all" ? "🔁 Бүгдийг" : "🔁 Давтахгүй"}
+              </Text>
+            </Pressable>
+          </View>
+
+          {order.length > 0 && index >= 0 && (
             <Text className="text-faint text-micro font-mono text-center mt-3">
-              {index + 1} / {playlist.length}
+              {index + 1} / {order.length}
+              {shuffle ? " · холисон" : ""}
             </Text>
           )}
 
@@ -346,7 +471,7 @@ export default function PlayerScreen() {
           <View className="mt-10">
             <Pressable
               className={`rounded-chip py-3 items-center border ${vibrationOn ? "bg-aqua/15 border-aqua" : "bg-surface border-line-2"}`}
-              onPress={() => setVibrationOn((v) => !v)}
+              onPress={() => setPref("vibrationOn", !vibrationOn)}
               accessibilityRole="switch"
               accessibilityState={{ checked: vibrationOn }}
               accessibilityLabel="Чичиргээ"
@@ -363,7 +488,7 @@ export default function PlayerScreen() {
                   className={`flex-1 rounded-chip py-3 items-center border ${
                     vibLevel === i ? "bg-aqua/15 border-aqua" : "bg-surface border-line"
                   }`}
-                  onPress={() => setVibLevel(i)}
+                  onPress={() => setPref("vibLevel", i)}
                   accessibilityRole="button"
                   accessibilityLabel={`Чичиргээний хүч: ${lvl.label}`}
                 >
@@ -374,6 +499,12 @@ export default function PlayerScreen() {
           </View>
         </View>
       </View>
+
+      <AddToPlaylistModal
+        visible={addingToPlaylist}
+        songId={id ?? null}
+        onClose={() => setAddingToPlaylist(false)}
+      />
     </SafeAreaView>
   );
 }
