@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AuthProvider, useAuth } from "@/lib/auth/AuthContext";
+import { PreferencesProvider } from "@/lib/prefs/PreferencesContext";
 
 /* Нэвтрэлтийн хамгаалалт — нэвтрээгүй хэрэглэгчийг нэвтрэх дэлгэц рүү, нэвтэрсэн
    хэрэглэгчийг нүүр рүү автоматаар шилжүүлнэ.
@@ -53,9 +54,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <AuthProvider>
-        <AuthGate />
-      </AuthProvider>
+      <PreferencesProvider>
+        <AuthProvider>
+          <AuthGate />
+        </AuthProvider>
+      </PreferencesProvider>
     </SafeAreaProvider>
   );
 }

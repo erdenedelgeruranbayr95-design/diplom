@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import ConfirmModal from "@/components/ConfirmModal";
 import { Empty, ErrorState, Loading } from "@/components/States";
 import { fetchUsers, updateUserStatus } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -23,6 +24,7 @@ export default function AdminScreen() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<AdminUserRow | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -45,36 +47,21 @@ export default function AdminScreen() {
 
   /* Блоклох/сэргээх нь ЗӨВХӨН ROOT-д (backend: @Roles(Role.ROOT)). ADMIN энэ товчийг
      огт харахгүй — дарж 403 авах нь эндүүрэл төрүүлнэ. */
-  const toggleStatus = useCallback(
-    (row: AdminUserRow) => {
-      const next = row.status === "ACTIVE" ? "BANNED" : "ACTIVE";
-      const verb = next === "BANNED" ? "блоклох" : "сэргээх";
-      Alert.alert(
-        `${row.name}-ийг ${verb} уу?`,
-        row.email,
-        [
-          { text: "Болих", style: "cancel" },
-          {
-            text: next === "BANNED" ? "Блоклох" : "Сэргээх",
-            style: next === "BANNED" ? "destructive" : "default",
-            onPress: async () => {
-              setBusyId(row.id);
-              try {
-                await updateUserStatus(row.id, next);
-                setUsers((prev) => prev?.map((u) => (u.id === row.id ? { ...u, status: next } : u)) ?? null);
-              } catch (e) {
-                Alert.alert("Алдаа", e instanceof Error ? e.message : "Өөрчилж чадсангүй");
-              } finally {
-                setBusyId(null);
-              }
-            },
-          },
-        ],
-        { cancelable: true },
-      );
-    },
-    [],
-  );
+  const toggleStatus = useCallback(async () => {
+    const row = confirming;
+    if (!row) return;
+    setConfirming(null);
+    const next = row.status === "ACTIVE" ? "BANNED" : "ACTIVE";
+    setBusyId(row.id);
+    try {
+      await updateUserStatus(row.id, next);
+      setUsers((prev) => prev?.map((u) => (u.id === row.id ? { ...u, status: next } : u)) ?? null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Өөрчилж чадсангүй");
+    } finally {
+      setBusyId(null);
+    }
+  }, [confirming]);
 
   return (
     <SafeAreaView className="flex-1 bg-bg">
@@ -128,7 +115,7 @@ export default function AdminScreen() {
               {isRoot && item.id !== me?.id && (
                 <Pressable
                   className="px-3 py-1.5 rounded-chip border border-line-2"
-                  onPress={() => toggleStatus(item)}
+                  onPress={() => setConfirming(item)}
                   disabled={busyId === item.id}
                   accessibilityRole="button"
                   accessibilityLabel={item.status === "ACTIVE" ? `${item.name}-ийг блоклох` : `${item.name}-ийг сэргээх`}
@@ -145,6 +132,20 @@ export default function AdminScreen() {
             </View>
           </View>
         )}
+      />
+
+      <ConfirmModal
+        visible={!!confirming}
+        title={
+          confirming?.status === "ACTIVE"
+            ? `${confirming?.name}-ийг блоклох уу?`
+            : `${confirming?.name}-ийг сэргээх үү?`
+        }
+        message={confirming?.email}
+        confirmLabel={confirming?.status === "ACTIVE" ? "Блоклох" : "Сэргээх"}
+        destructive={confirming?.status === "ACTIVE"}
+        onCancel={() => setConfirming(null)}
+        onConfirm={toggleStatus}
       />
     </SafeAreaView>
   );
