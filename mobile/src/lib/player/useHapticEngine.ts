@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 import { BeatScheduler } from "@/lib/audio/BeatScheduler";
 import { DeviceRouter } from "@/lib/haptics/DeviceRouter";
-import { VIB_LEVELS } from "@/lib/player/constants";
+import { BEAT_PULSE } from "@/lib/player/constants";
 
 /* Мэдрэхүйн хөдөлгүүрийн RN хувилбар.
 
@@ -35,6 +35,12 @@ export interface HapticEngineOptions {
   /** Чичиргээний хүчний түвшин — `VIB_LEVELS`-ийн индекс (0/1/2). */
   vibLevel: number;
   getCurrentTime: CurrentTimeGetter;
+  /** Цохилт бүрт дуудагдана — визуал пульс үүнээс хөтлөгдөнө.
+   *
+   *  Чичиргээ болон визуал НЭГ эх сурвалжаас (BeatScheduler) хөтлөгдөх нь зориуд:
+   *  сонсголгүй хэрэглэгч цохилтыг зэрэг ХАРЖ, МЭДЭРНЭ. Хоёр тусдаа таймер
+   *  ашиглавал хэдэн арван мс зөрж, мэдрэхүйн хоёр суваг сална. */
+  onBeat?: () => void;
 }
 
 export interface HapticEngine {
@@ -58,6 +64,7 @@ export function useHapticEngine({
   vibrationOn,
   vibLevel,
   getCurrentTime,
+  onBeat,
 }: HapticEngineOptions): HapticEngine {
   const schedulerRef = useRef<BeatScheduler | null>(null);
   if (!schedulerRef.current) schedulerRef.current = new BeatScheduler();
@@ -71,9 +78,15 @@ export function useHapticEngine({
   vibLevelRef.current = vibLevel;
   const getTimeRef = useRef(getCurrentTime);
   getTimeRef.current = getCurrentTime;
+  const onBeatRef = useRef(onBeat);
+  onBeatRef.current = onBeat;
 
+  /* ⚠️ `vibrationOn` нь ЧИЧИРГЭЭГ л удирддаг, визуалыг БИШ. Хэрэглэгч чичиргээг
+     унтраасан ч дэлгэцийн пульс ажиллах ёстой — сонсголгүй хүнд визуал нь бие
+     даасан мэдрэхүйн суваг. Иймд loop нь `playing` дээр л ажиллаж, дотроо
+     чичиргээг нөхцөлтэйгээр өгнө. */
   useEffect(() => {
-    if (!enabled || !playing || !vibrationOn) return;
+    if (!enabled || !playing) return;
 
     const scheduler = schedulerRef.current!;
     const router = routerRef.current!;
@@ -83,12 +96,18 @@ export function useHapticEngine({
       const { fired } = scheduler.pollDetailed(getTimeRef.current());
       if (!fired) return;
 
+      // Визуал нь чичиргээнээс ҮЛ ХАМААРЧ үргэлж ажиллана.
+      onBeatRef.current?.();
+
+      if (!vibrationOn) return;
+
       /* Вэб дээр энд FFT-ээс бас/дунд/өндөр бүсийн аль нь давамгайлж байгааг үзэж
-         хугацааг ялгадаг. FFT байхгүй тул бүх цохилтыг нэг хэлбэрээр өгнө —
-         `bandEnergies` (backend-ийн шинжилгээнд байдаг) ашиглан бүсчлэх нь
-         дараагийн алхам. */
-      const strength = VIB_LEVELS[vibLevelRef.current]?.mult ?? 1;
-      router.pulse(Math.min(1, strength), Math.round(70 * strength));
+         хугацааг ялгадаг. FFT байхгүй тул бүх цохилтыг нэг хэлбэрээр өгнө.
+
+         Параметрийг `BEAT_PULSE`-ээс ШУУД авна (тооцоолохгүй) — тайлбарыг
+         constants.ts-ээс үзнэ үү. */
+      const p = BEAT_PULSE[vibLevelRef.current] ?? BEAT_PULSE[1];
+      router.pulse(p.amplitude, p.durationMs);
     }, POLL_MS);
 
     return () => {
