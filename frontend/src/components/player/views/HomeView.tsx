@@ -10,7 +10,7 @@
      · секц бүрийн разметк → components/player/home/* */
 import { useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBolt, faFeather, faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faBolt, faClockRotateLeft, faCompactDisc, faFeather, faHeart, faTags } from "@fortawesome/free-solid-svg-icons";
 import { SectionTitle } from "@/components/ui/PageHeader";
 import QuickAction from "@/components/player/shared/QuickAction";
 import { useTrackActions } from "@/components/player/PlayerContext";
@@ -25,6 +25,7 @@ import TrackRail from "./home/TrackRail";
 import { useHomeCatalog } from "@/lib/player/hooks/useHomeCatalog";
 import { pickCalm, pickPowerful } from "@/lib/player/feel-groups";
 import { scoreRecommendations } from "@/lib/player/recommendations";
+import { pickByGenre, pickRecentlyAdded, topGenre } from "@/lib/player/catalog-groups";
 import type { PlayerTrack } from "@/types/player";
 import type { ListeningStats, Playlist } from "@/types/track";
 
@@ -81,6 +82,12 @@ export default function HomeView({
   const powerfulTracks = useMemo(() => pickPowerful(allTracks), [allTracks]);
   const calmTracks = useMemo(() => pickCalm(allTracks), [allTracks]);
 
+  /* Нэмэлт 3 секц: сүүлд сонссон (`recentTracks` prop), хамгийн олон дуутай
+     жанрын жагсаалт, каталогт хамгийн сүүлд нэмэгдсэн дуунууд. */
+  const genreLabel = useMemo(() => topGenre(allTracks), [allTracks]);
+  const genreTracks = useMemo(() => (genreLabel ? pickByGenre(allTracks, genreLabel) : []), [allTracks, genreLabel]);
+  const recentlyAddedTracks = useMemo(() => pickRecentlyAdded(allTracks), [allTracks]);
+
   /* Хайлтын горим — дээд талын талбарт үг бичсэн үед НҮҮРИЙН секцүүдийг нуугаад
      зөвхөн үр дүнг харуулна (үр дүн доогуураа хаа нэгтээ алдагдахгүй). Хоосон болгонд
      нүүр хэвийн байдалдаа буцна. Hook-ууд бүгд дээр дуудагдсаны ДАРАА энэ эрт буцаалт
@@ -99,6 +106,41 @@ export default function HomeView({
           доорх «Санал болгох»-д давхардаж гарч байсан. `recentTracks` нь prop
           хэвээр үлдэнэ: `scoreRecommendations` түүнийг оноо тооцоход ашигладаг. */}
       <RecommendationRail recommendations={recommendations} />
+
+      <RailSection
+        title={
+          <>
+            <FontAwesomeIcon icon={faClockRotateLeft} className="text-aqua mr-2" />
+            Сүүлд сонссон дуунууд
+          </>
+        }
+        tracks={recentTracks}
+        ariaLabel="Сүүлд сонссон дуунууд"
+      />
+
+      {genreLabel && (
+        <RailSection
+          title={
+            <>
+              <FontAwesomeIcon icon={faTags} className="text-aqua mr-2" />
+              {genreLabel}
+            </>
+          }
+          tracks={genreTracks}
+          ariaLabel={`${genreLabel} жанрын дуунууд`}
+        />
+      )}
+
+      <RailSection
+        title={
+          <>
+            <FontAwesomeIcon icon={faCompactDisc} className="text-aqua mr-2" />
+            Шинээр нэмэгдсэн дуунууд
+          </>
+        }
+        tracks={recentlyAddedTracks}
+        ariaLabel="Шинээр нэмэгдсэн дуунууд"
+      />
 
       {likedTracks.length > 0 && (
         <div className="mb-9">

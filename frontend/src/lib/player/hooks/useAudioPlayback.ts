@@ -161,6 +161,7 @@ export function useAudioPlayback({ subscribed, onTrackStart, onEnded }: AudioPla
      дараагийн хэрэглэгчийн `ensureAnalyser()` шинэ ctx vvсгэхэд хуучин нь орхигдоно. */
   useEffect(
     () => () => {
+      handlersRef.current.logCurrentToHistory();
       detachRef.current?.();
       if (analyserRef.current) {
         void analyserRef.current.ctx.close().catch(() => {});

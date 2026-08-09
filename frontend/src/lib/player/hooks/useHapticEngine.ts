@@ -96,6 +96,11 @@ function bandAverageAt(data: Uint8Array, index: number, count: number, spectrumS
   return averageBand(data, start, end);
 }
 
+/** Гурван бүсийн (lo/mi/hi) хамгийн давамгайлж буйг тодорхойлно. */
+function dominantBand(lo: number, mi: number, hi: number): "bass" | "mid" | "high" {
+  return lo >= mi && lo >= hi ? "bass" : mi >= hi ? "mid" : "high";
+}
+
 export function useHapticEngine({
   enabled,
   playing,
@@ -199,7 +204,7 @@ export function useHapticEngine({
             const bStrength = VIB_LEVELS[bp.vib].mult;
             const bSync = deviceSyncRef.current;
             const { lo: blo, mi: bmi, hi: bhi } = levelRef.current;
-            const band = blo >= bmi && blo >= bhi ? "bass" : bmi >= bhi ? "mid" : "high";
+            const band = dominantBand(blo, bmi, bhi);
             const level = band === "bass" ? blo : band === "mid" ? bmi : bhi;
             beatFlashRef.current = { band, level, at: performance.now() };
             if (canVibrate) {
@@ -345,7 +350,7 @@ export function useHapticEngine({
       } else if (now - lastFireAtRef.current > 900 && (lo > 0.04 || mi > 0.04 || hi > 0.04)) {
         // Heartbeat floor: дуу тоглож байгаа ч ямар ч бүс threshold давахгvй удаж
         // байвал (тэгш аудио) хэрэглэгч чичиргээг "хугарсан" гэж бvv андуур.
-        const band = lo >= mi && lo >= hi ? "bass" : mi >= hi ? "mid" : "high";
+        const band = dominantBand(lo, mi, hi);
         const level = band === "bass" ? lo : band === "mid" ? mi : hi;
         beatFlashRef.current = { band, level, at: now };
         if (canVibrate) deviceRouterRef.current!.pulse(strength, Math.max(10, Math.round(20 * strength)));
@@ -381,7 +386,10 @@ export function useHapticEngine({
     beatFlashRef,
     bandLevelsRef,
     hasHapticScore,
-    setBeatTimestamps: (timestamps) => beatSchedulerRef.current.setTrack(timestamps),
+    setBeatTimestamps: (timestamps) => {
+      beatSchedulerRef.current.setTrack(timestamps);
+      rollingAvgRef.current = { lo: 0, mi: 0, hi: 0 };
+    },
     setHapticScore: (score) => {
       hapticScoreRef.current = score;
       bandLevelsRef.current = score ? new Array(score.bandEdgesHz.length - 1).fill(0) : [];
