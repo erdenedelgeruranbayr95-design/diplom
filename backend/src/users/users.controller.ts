@@ -48,12 +48,24 @@ export class UsersController {
     return this.users.changePassword(user.userId, dto);
   }
 
-  /* Self-service PRO захиалга/цуцлалт — өөрийн эрх, ADMIN эрх шаардахгүй. */
+  /* ⚠️ ТӨЛБӨРГҮЙ PRO ОЛГОЛТ — ЗӨВХӨН ADMIN.
+
+     Урьд нь энэ нь self-service байсан: нэвтэрсэн ХЭН Ч дуудаад PRO эрх авч
+     чаддаг байв. Тэр үед бүх төлбөр демо байсан тул хохирол байгаагүй ч, одоо
+     Stripe-аар БОДИТ мөнгө авдаг болсон — хамгаалалтгүй үлдээвэл энэ endpoint нь
+     төлбөрийн системийг БҮХЭЛД НЬ тойрох зам болно (DevTools-оос ганц fetch).
+
+     Хэрэглэгчийн жинхэнэ зам нь `POST /payments/checkout` → Stripe → webhook.
+     Энэ маршрут нь зөвхөн админы гар олголт/тестэд үлдэнэ. */
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Patch('me/subscription')
   subscribe(@CurrentUser() user: AuthUser, @Body() dto: SubscribeDto) {
     return this.users.subscribe(user.userId, dto.plan || 'МЭДРЭХ PRO');
   }
 
+  /* Цуцлалт нь ХЭВЭЭР self-service — хэрэглэгч өөрийн захиалгаа цуцлах эрхтэй
+     байх ёстой (мөн энэ нь Stripe дээрх recurring-ыг ч зогсооно). */
   @Delete('me/subscription')
   cancelSubscription(@CurrentUser() user: AuthUser) {
     return this.users.cancelSubscription(user.userId);

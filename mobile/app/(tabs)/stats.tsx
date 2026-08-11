@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Empty, ErrorState, Loading } from "@/components/States";
 import { fetchStats } from "@/lib/api/client";
+import { TAB_SAFE_PB } from "@/lib/layout";
 import type { ListeningStats } from "@/types";
 
 function formatMinutes(seconds: number): string {
@@ -84,7 +85,7 @@ export default function StatsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-bg">
       <ScrollView
-        contentContainerClassName="px-5 pt-4 pb-10"
+        contentContainerClassName={`px-5 pt-4 ${TAB_SAFE_PB}`}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38e8ce" />}
       >
         <Text className="text-ink text-3xl font-bold">Статистик</Text>

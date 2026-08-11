@@ -35,13 +35,25 @@ export class SongsService {
     });
   }
 
+  /* ЖАГСААЛТААС `beatTimestamps`-ыг ХАСНА.
+     Хэмжсэн: 51 дууны хариу 244 KB байсны 171 KB (70%) нь энэ талбар. Дуу бүрд
+     дунджаар 370 тоо — нийт ~19,000 бодит тоо. Нүүр хуудас түүнийг ОГТ
+     ашигладаггүй: чичиргээ өгдөг тоглуулагч болон дэлгэрэнгүй дэлгэц дууг
+     тусад нь (`GET /songs/:id`) татдаг бөгөөд тэр нь бүх талбараа хэвээр өгнө.
+     Гар утсанд энэ хэмжээний JSON задлах нь нүүр хуудсыг мэдэгдэхүйц удаашруулж
+     байсан. */
+  private stripBeats<T extends { beatTimestamps?: unknown }>(songs: T[]): Omit<T, 'beatTimestamps'>[] {
+    return songs.map(({ beatTimestamps: _omit, ...rest }) => rest);
+  }
+
   /* Нийтэд (тоглуулагч, хайлт) зөвхөн published + upload баталгаажсан дуу л харагдана. */
-  list() {
-    return this.prisma.song.findMany({
+  async list() {
+    const songs = await this.prisma.song.findMany({
       where: { published: true, uploadConfirmed: true },
       orderBy: { createdAt: 'desc' },
       include: { artistRef: true },
     });
+    return this.stripBeats(songs);
   }
 
   /* Curator/Admin/Root-д зориулсан каталог — ноорог (published=false) хамт бүгдийг
@@ -51,23 +63,25 @@ export class SongsService {
   }
 
   /* Нүүр хуудасны "Онцлох" — админ гараар тэмдэглэсэн featured дуунууд. */
-  featured() {
-    return this.prisma.song.findMany({
+  async featured() {
+    const songs = await this.prisma.song.findMany({
       where: { featured: true, published: true, uploadConfirmed: true },
       orderBy: { createdAt: 'desc' },
       include: { artistRef: true },
     });
+    return this.stripBeats(songs);
   }
 
   /* "Сүүлийн үеийн" — createdAt-аар эрэмбэлсэн хамгийн шинэ дуунууд (list()-ийн default
      дараалал ижил тул зөвхөн хязгаарлагдсан тоог буцаана). */
-  recent(limit = 12) {
-    return this.prisma.song.findMany({
+  async recent(limit = 12) {
+    const songs = await this.prisma.song.findMany({
       where: { published: true, uploadConfirmed: true },
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: { artistRef: true },
     });
+    return this.stripBeats(songs);
   }
 
   /* "Хамгийн алдартай" — ListenHistory бичлэгийн тоогоор эрэмбэлнэ (бодит тоглуулалтын
@@ -86,7 +100,9 @@ export class SongsService {
       include: { artistRef: true },
     });
     const order = new Map(ids.map((id, i) => [id, i]));
-    return songs.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+    /* `grouped` хоосон үед дээр нь `recent()` буцаадаг бөгөөд тэр нь ХАСАГДСАН
+       хэлбэртэй. Энд хасахгүй бол нэг эндпойнт хоёр өөр бүтэц буцаана. */
+    return this.stripBeats(songs.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)));
   }
 
   async findOne(id: string) {
@@ -101,11 +117,14 @@ export class SongsService {
   async moreByArtist(songId: string, limit = 8) {
     const song = await this.prisma.song.findUnique({ where: { id: songId } });
     if (!song?.artistId) return [];
-    return this.prisma.song.findMany({
+    /* Энэ ч бас ЖАГСААЛТ — 8 дуу × ~370 тоо. Дэлгэрэнгүй дэлгэц эндээс зөвхөн
+       нэр/хавтас уншиж, дарахад `GET /songs/:id`-аар бүтнээр нь татдаг. */
+    const songs = await this.prisma.song.findMany({
       where: { artistId: song.artistId, id: { not: songId }, published: true, uploadConfirmed: true },
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
+    return this.stripBeats(songs);
   }
 
   /* Клиент тал (browser, OfflineAudioContext) тооцоолсон анализын үр дүнг хадгална —

@@ -22,6 +22,14 @@ BAND_EDGES_HZ = [20, 60, 150, 400, 1000, 2500, 6000, 12000, 20000]
 N_BANDS = len(BAND_EDGES_HZ) - 1  # 8
 
 
+# Цохилтын эрчим/өнгийг нормчлох хувиуд ба хамгийн сул цохилтын доод хязгаар.
+# ⚠️ Эдгээр нь mobile-ийн `src/lib/audio/haptic-score.ts`-тэй ЯГ ИЖИЛ байх ёстой —
+# хоёр тал ижил Score-оос ижил үр дүн гаргаж байж л зан төлөв нийцнэ.
+P_LOW = 0.1
+P_HIGH = 0.9
+MIN_INTENSITY = 0.35
+
+
 @dataclass
 class AnalysisResult:
     bpm: float
@@ -30,6 +38,17 @@ class AnalysisResult:
     # Секундээр (жагсаалт) — frontend-ийн BeatScheduler (lib/audio/beat-scheduler.ts)
     # шууд ашиглана, timestamp-driven (25мс interval) beat→чичиргээ замд шаардлагатай.
     beat_times: list
+    # Цохилт бүрийн эрчим (0..1) ба өнгө (0=гүн бас, 1=хурц таваг). `beat_times`-тай
+    # ижил урттай.
+    #
+    # ⚠️ ЯАГААД ЭДГЭЭРИЙГ ТУСАД НЬ ГАРГАДАГ ВЭ
+    # Бүтэн Haptic Score нь ~2.6 MB бөгөөд ЛОКАЛ дискэнд бичигддэг. Backend үүлэн
+    # дээр (Render) ажиллаж, worker өөр машин дээр байвал тэр файл руу хэзээ ч
+    # хүрэхгүй — үр дүнд нь бүх цохилт ижил дугтуйгаар мэдрэгдэнэ. Эдгээр хоёр
+    # массив нь ердөө ~3 KB тул callback-аар дамжиж, өгөгдлийн санд шууд
+    # хадгалагдана — файл, S3, дундын диск шаардахгүй.
+    beat_intensity: list
+    beat_brightness: list
 
 
 def analyze(file_path: str) -> AnalysisResult:
@@ -46,12 +65,84 @@ def analyze(file_path: str) -> AnalysisResult:
     haptic_score = _build_haptic_score(y, sr, beat_times, onset_times)
 
     bpm_value = float(tempo) if np.isscalar(tempo) else float(tempo[0])
+    rounded_beats = [round(float(t), 3) for t in beat_times]
+    intensity, brightness = build_beat_dynamics(haptic_score, rounded_beats)
+
     return AnalysisResult(
         bpm=round(bpm_value, 1),
         musical_key=musical_key,
         haptic_score=haptic_score,
-        beat_times=[round(float(t), 3) for t in beat_times],
+        beat_times=rounded_beats,
+        beat_intensity=intensity,
+        beat_brightness=brightness,
     )
+
+
+def _centroid(bands: list) -> float:
+    """Спектрийн төвийн цэг 0..1 — бүсийн индексээр жигнэсэн дундаж.
+
+    Бага бол энерги доод бүсэд (бас), их бол дээд бүсэд (таваг).
+    """
+    total = sum(bands)
+    if total <= 0:
+        return 0.0
+    weighted = sum(b * i for i, b in enumerate(bands))
+    return weighted / total / (len(bands) - 1)
+
+
+def _percentile(sorted_vals: list, p: float) -> float:
+    if not sorted_vals:
+        return 0.0
+    idx = int(p * (len(sorted_vals) - 1))
+    return sorted_vals[min(len(sorted_vals) - 1, max(0, idx))]
+
+
+def _normalizer(values: list):
+    """`[p10, p90]` мужийг `[0, 1]` руу сунгах функц.
+
+    ⚠️ ЯАГААД ТУХАЙН ДУУНЫ ДОТООД ХЭМЖЭЭСЭЭР НОРМЧЛОХ ВЭ
+    `rms` нь `min(1, rms*4)`-ээр тайрагддаг тул орчин үеийн чанга mastering-тэй
+    дуунууд дээд хязгаартаа наалддаг. Үнэмлэхүй утгаар авбал бүх цохилт 1.0 болж
+    динамик бүрэн алга болно. Дуу бүрийн ӨӨРИЙНХ нь тархалтыг сунгаснаар тайван
+    дуу ч, чанга дуу ч моторын бүтэн хүрээг ашиглана.
+    """
+    sorted_vals = sorted(values)
+    lo = _percentile(sorted_vals, P_LOW)
+    hi = _percentile(sorted_vals, P_HIGH)
+    span = hi - lo
+    if span < 1e-6:
+        return lambda _v: 0.5
+    return lambda v: min(1.0, max(0.0, (v - lo) / span))
+
+
+def build_beat_dynamics(score: dict, beat_times: list) -> tuple:
+    """Score болон цохилтын хугацаанаас цохилт бүрийн эрчим/өнгийг гаргана.
+
+    Логик нь mobile-ийн `buildBeatDynamics`-тэй ижил: цохилтын хугацаанд харгалзах
+    фрэймээс `rms` (эрчим) ба спектрийн төв (өнгө)-ийг авч, дуу тус бүрийн
+    тархалтаар нормчилно.
+    """
+    frames = score.get("frames") or []
+    if not frames or not beat_times:
+        return [], []
+
+    sample_rate = score.get("sampleRate") or SAMPLE_RATE_FPS
+    last = len(frames) - 1
+
+    raw_rms = []
+    raw_cent = []
+    for t in beat_times:
+        idx = max(0, min(last, int(t * sample_rate)))
+        frame = frames[idx]
+        raw_rms.append(float(frame.get("rms") or 0.0))
+        raw_cent.append(_centroid(frame.get("b") or []))
+
+    norm_rms = _normalizer(raw_rms)
+    norm_cent = _normalizer(raw_cent)
+
+    intensity = [round(MIN_INTENSITY + (1 - MIN_INTENSITY) * norm_rms(v), 4) for v in raw_rms]
+    brightness = [round(norm_cent(v), 4) for v in raw_cent]
+    return intensity, brightness
 
 
 def _detect_key(y: np.ndarray, sr: int) -> str:

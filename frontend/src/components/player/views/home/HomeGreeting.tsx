@@ -11,32 +11,25 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import QuickAction from "@/components/player/shared/QuickAction";
 import { useTrackActions } from "@/components/player/PlayerContext";
-import { firstNameOf, greetingForHour } from "@/lib/player/greeting";
 
-/** Нүүрийн толгой — мэндчилгээ + дүрд тохирсон шуурхай товчлолууд. */
+/** Нүүрийн толгой — дүрд тохирсон шуурхай товчлолууд.
+ *
+ *  Урьд нь энд «Өглөөний мэнд, [нэр]» гэсэн мэндчилгээ, «Өнөөдөр юу сонсох вэ?»
+ *  гэсэн дэд гарчиг байсныг хассан (гар утасны хувилбартай нэгдсэн). */
 export default function HomeGreeting({
-  userName,
   isAdmin,
   isTherapist,
   isParent,
 }: {
-  userName?: string;
   isAdmin: boolean;
   isTherapist: boolean;
   isParent: boolean;
 }) {
   const { setView } = useTrackActions();
-  const firstName = firstNameOf(userName);
 
   return (
     <div className="mb-8">
-      <h1 className="font-display font-bold text-[30px] max-nav:text-[24px] tracking-[-.03em] leading-tight text-ink">
-        {greetingForHour()}
-        {firstName ? `, ${firstName}` : ""}
-      </h1>
-      <p className="mt-1.5 text-dim text-lead">Өнөөдөр юу сонсох вэ?</p>
-
-      <div className="flex gap-2.5 flex-wrap mt-5">
+      <div className="flex gap-2.5 flex-wrap">
         <QuickAction icon={<FontAwesomeIcon icon={faHeadphones} />} label="Жагсаалтууд" onClick={() => setView("playlists")} />
         <QuickAction icon={<FontAwesomeIcon icon={faClockRotateLeft} />} label="Сонссон түүх" onClick={() => setView("history")} />
         <QuickAction icon={<FontAwesomeIcon icon={faChartLine} />} label="Миний ахиц" onClick={() => setView("progress")} />

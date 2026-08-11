@@ -3,6 +3,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollVie
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import PasswordInput from "@/components/PasswordInput";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function RegisterScreen() {
@@ -62,26 +63,22 @@ export default function RegisterScreen() {
             editable={!busy}
             accessibilityLabel="Имэйл"
           />
-          <TextInput
-            className="bg-surface border border-line-field rounded-sm text-ink text-copy px-4 py-3.5 mb-3"
+          <PasswordInput
             placeholder="Нууц үг (6-аас дээш тэмдэгт)"
-            placeholderTextColor="#768583"
-            secureTextEntry
+            accessibilityLabel="Нууц үг"
             value={password}
             onChangeText={setPassword}
             editable={!busy}
-            accessibilityLabel="Нууц үг"
+            containerClassName="mb-3"
           />
-          <TextInput
-            className={`bg-surface border rounded-sm text-ink text-copy px-4 py-3.5 ${mismatch ? "border-danger" : "border-line-field"}`}
+          <PasswordInput
             placeholder="Нууц үг давтах"
-            placeholderTextColor="#768583"
-            secureTextEntry
+            accessibilityLabel="Нууц үг давтах"
             value={password2}
             onChangeText={setPassword2}
             editable={!busy}
+            invalid={mismatch}
             onSubmitEditing={onSubmit}
-            accessibilityLabel="Нууц үг давтах"
           />
 
           {mismatch && <Text className="text-danger text-note mt-2">Нууц үг таарахгүй байна.</Text>}

@@ -21,6 +21,60 @@ export class PaymentsService {
      `@@unique` constraint нэмсэн (см. schema.prisma) — race үүсвэл хоёр дахь
      transaction unique violation (P2002)-оор бүтэлгүйтнэ, бид үүнийг барьж
      "duplicate" гэсэн хэвийн хариу болгон буцаана (webhook sender рүү 500 биш). */
+  /* Админы «💎 PRO» таб — БОДИТ төлбөрийн түүх.
+
+     Урьд нь энэ таб нь `admin-payment-requests.ts` гэсэн localStorage дээрх ДЕМО
+     давхаргыг уншдаг байсан бөгөөд SubscribeModal-ийн QR нээгдэх мөчид бичигддэг
+     байв. Stripe руу шилжсэнээр тэр бичигч алга болсон тул хүснэгт үүрд хоосон
+     үлдэх байсан — одоо DB-гийн `Payment` мөрүүдийг шууд уншина.
+
+     «Сарын орлого» ч мөн адил: урьд нь cross-user нийлбэр тооцох сервер тал
+     байхгүй байсан тул «—» гэж харуулдаг байв. Одоо бодитоор тооцогдоно. */
+  async adminList(limit = 100) {
+    const since = new Date();
+    since.setDate(1);
+    since.setHours(0, 0, 0, 0);
+
+    const [payments, monthly] = await Promise.all([
+      this.prisma.payment.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        include: { user: { select: { name: true, email: true } } },
+      }),
+      /* Орлогыг ЗӨВХӨН `amountMinor`-оос бодно (тоон, валют тодорхой). Текст
+         `amount`-ыг задлан нэмэх нь форматаас хамаарсан худал дүн өгнө. */
+      this.prisma.payment.groupBy({
+        by: ['currency'],
+        where: { status: 'SUCCESS', createdAt: { gte: since }, amountMinor: { not: null } },
+        _sum: { amountMinor: true },
+        _count: { _all: true },
+      }),
+    ]);
+
+    return {
+      payments: payments.map((p) => ({
+        id: p.id,
+        userName: p.user.name,
+        userEmail: p.user.email,
+        amount: p.amount,
+        amountMinor: p.amountMinor,
+        currency: p.currency,
+        method: p.method,
+        plan: p.plan,
+        status: p.status,
+        providerRef: p.providerRef,
+        createdAt: p.createdAt,
+      })),
+      /* Валют бүрээр тусад нь — өөр валютын дүнг нэмэх нь утгагүй. Ихэвчлэн
+         ганц (MNT) мөр байна. */
+      monthly: monthly.map((row) => ({
+        currency: row.currency,
+        totalMinor: row._sum.amountMinor ?? 0,
+        count: row._count._all,
+      })),
+    };
+  }
+
   async handleWebhook(dto: PaymentWebhookDto) {
     const user = await this.prisma.user.findUnique({ where: { id: dto.userId } });
     if (!user) throw new NotFoundException('Хэрэглэгч олдсонгүй');
@@ -70,3 +124,4 @@ export class PaymentsService {
     }
   }
 }
+

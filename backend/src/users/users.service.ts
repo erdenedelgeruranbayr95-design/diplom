@@ -10,6 +10,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { encryptField, decryptField } from '../common/crypto/field-encryption';
+import { StripeSubscriptionsService } from '../payments/stripe-subscriptions.service';
 
 const BCRYPT_ROUNDS = 10;
 const DEFAULT_PLAN = 'МЭДРЭХ PRO';
@@ -21,6 +22,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
+    private stripeSubs: StripeSubscriptionsService,
   ) {}
 
   /* `hearingProfile` DB-д ТОДООР хадгалагдахгүй (эмнэлгийн шинж чанартай эмзэг
@@ -202,7 +204,20 @@ export class UsersService {
     return this.toSubDto(user);
   }
 
+  /* ⚠️ DB-г өөрчлөхөөс ӨМНӨ Stripe дээрх recurring захиалгыг зогсооно. Үүнгүй бол
+     хэрэглэгч апп дээр "цуцаллаа" гэж харах ч Stripe САР БҮР мөнгө авсаар байна.
+
+     Stripe дээр `cancel_at_period_end` тавина (төлсөн саруудаа эцэс хүртэл
+     ашиглана), гэвч DB-д ШУУД идэвхгүй болгоно — хэрэглэгч товч дарахад үр дүнг
+     нь тэр дороо харах ёстой. Stripe-ийн `customer.subscription.deleted` webhook
+     мөчлөгийн эцэст ирж, хоёр тал эцсийн байдлаар таарна.
+
+     Stripe дуудлага бүтэлгүйтсэн ч (сүлжээ, түлхүүр дутуу, гараар устгасан)
+     DB талын цуцлалт ҮРГЭЛЖИЛНЭ — хэрэглэгчийг "цуцлаж чадахгүй" болгож
+     хоригловол илүү муу. */
   async cancelSubscription(userId: string) {
+    await this.stripeSubs.cancelAtStripe(userId);
+
     const [user] = await this.prisma.$transaction([
       this.prisma.user.update({ where: { id: userId }, data: { subActive: false } }),
       this.prisma.subscription.updateMany({ where: { userId }, data: { status: 'CANCELED' } }),

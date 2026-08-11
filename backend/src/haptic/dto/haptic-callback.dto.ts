@@ -29,6 +29,23 @@ export class HapticCallbackDto {
   @IsNumber({}, { each: true })
   beatTimestamps?: number[];
 
+  /* Цохилт бүрийн эрчим (0..1) ба өнгө (0 = гүн бас, 1 = хурц таваг).
+     `beatTimestamps`-тай ижил урттай.
+
+     ⚠️ Эдгээр нь бүтэн Score файлыг (2.6 MB) орлохгүй — түүнээс ГАРГАЖ АВСАН
+     хураангуй (~3 KB). Worker нь Score-оо өөрийн дискэнд бичдэг тул үүлэн дээрх
+     backend түүнийг уншиж чаддаггүй; харин эдгээр массив callback-аар ирж DB-д
+     хадгалагдана. */
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  beatIntensity?: number[];
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  beatBrightness?: number[];
+
   @IsOptional()
   @IsString()
   error?: string;

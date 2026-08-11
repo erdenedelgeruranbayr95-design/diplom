@@ -27,6 +27,12 @@ interface AuthContextValue {
   updateUser: (patch: Partial<SessionUser>) => void;
   setSub: (sub: UserSub | null) => void;
   cancelSub: () => Promise<void>;
+  /** Session-ыг backend-ээс дахин уншина.
+   *
+   *  Stripe Checkout-аас буцаж ирэхэд ХЭРЭГТЭЙ: PRO эрхийг webhook олгодог тул
+   *  хөтөч дээрх хуучин `user.sub` нь хоцрогдсон байна. Гараар `setSub` хийвэл
+   *  "төлөгдсөн" гэж ХУДЛАА харуулах эрсдэлтэй — сервер л үнэнийг мэднэ. */
+  refreshSession: () => Promise<SessionUser | null>;
 }
 
 const AuthCtx = createContext<AuthContextValue | null>(null);
@@ -87,6 +93,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function setSub(sub: UserSub | null) {
     setUser((prev) => (prev ? { ...prev, sub } : prev));
   }
+  async function refreshSession() {
+    try {
+      const u = await api.refresh();
+      setUser(u);
+      return u;
+    } catch {
+      /* Сесс дууссан бол `refresh()` алдаа шиднэ — энэ нь төлбөрийн урсгалын
+         алдаа биш тул чимээгүй өнгөрөөж, дуудагч тал өөрөө шийднэ. */
+      return null;
+    }
+  }
   async function cancelSub() {
     /* DB руу бодитоор бичнэ (DELETE /users/me/subscription) — эс бол refresh хийхэд
        backend-ийн хуучин (идэвхтэй) subActive дахин ирж, орон нутгийн цуцлалт алга болно. */
@@ -98,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthCtx.Provider
-      value={{ user, role, isRoot, isAdmin, isCurator, isTherapist, isParent, subscribed, ready, login, register, loginWithGoogle, logout, updateUser, setSub, cancelSub }}
+      value={{ user, role, isRoot, isAdmin, isCurator, isTherapist, isParent, subscribed, ready, login, register, loginWithGoogle, logout, updateUser, setSub, cancelSub, refreshSession }}
     >
       {children}
     </AuthCtx.Provider>

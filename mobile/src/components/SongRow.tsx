@@ -35,11 +35,11 @@ export default function SongRow({ song }: { song: Song }) {
           {[song.artist ?? "Тодорхойгүй", song.genre].filter(Boolean).join(" · ")}
         </Text>
       </View>
-      {ready ? (
-        <Text className="text-aqua text-micro font-mono ml-3">HAPTIC</Text>
-      ) : (
-        <Text className="text-faint text-micro font-mono ml-3">{song.analysisStatus}</Text>
-      )}
+      {/* READY үед шошго харуулахгүй — дийлэнх дуу шинжлэгдсэн тул тэр нь зүгээр
+          нэг давтагдах чимээ шуугиан болно. Харин шинжлэгдээгүй дууг ЗААВАЛ
+          тэмдэглэнэ: тэр нь чимээгүй тоглох тул хэрэглэгч урьдчилж мэдэх ёстой,
+          эс бөгөөс апп эвдэрсэн гэж бодно. */}
+      {!ready && <Text className="text-faint text-micro font-mono ml-3">{song.analysisStatus}</Text>}
     </Pressable>
   );
 }

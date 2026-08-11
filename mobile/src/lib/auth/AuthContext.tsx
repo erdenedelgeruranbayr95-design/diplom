@@ -28,7 +28,14 @@ interface AuthContextValue {
   ready: boolean;
   login: (email: string, password: string) => Promise<SessionUser>;
   register: (name: string, email: string, password: string, password2: string) => Promise<SessionUser>;
-  logout: () => Promise<void>;
+  /** Шууд ажиллана — серверийн хариуг хүлээхгүй тул `Promise` буцаахгүй. */
+  logout: () => void;
+  /** Сессийг серверээс дахин уншина.
+   *
+   *  Stripe Checkout нь СИСТЕМИЙН ХӨТЧӨӨР нээгддэг тул апп руу буцаж ирэхэд
+   *  дотоод `user.sub` нь хоцрогдсон байна. PRO эрхийг webhook олгодог тул
+   *  гараар "идэвхтэй" гэж тавих нь ХУДЛАА харуулах эрсдэлтэй — сервер л мэднэ. */
+  refreshSession: () => Promise<SessionUser | null>;
 }
 
 const AuthCtx = createContext<AuthContextValue | null>(null);
@@ -66,9 +73,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return u;
   }, []);
 
-  const logout = useCallback(async () => {
-    await api.logout();
+  /* Төлөвийг ШУУД цэвэрлэнэ — сүлжээнээс ХАМААРАХГҮЙ.
+     `api.logout()` нь серверт цуцлах хүсэлтээ дэвсгэрт явуулна (тайлбарыг
+     `client.ts`-ээс үзнэ үү). Хэрэглэгч «Гарах» дарсан бол сүлжээ ажиллаж
+     байгаа эсэхээс үл хамааран гарч чадах ёстой. */
+  const logout = useCallback(() => {
     setUser(null);
+    void api.logout();
+  }, []);
+
+  const refreshSession = useCallback(async () => {
+    try {
+      const u = await api.refresh();
+      setUser(u);
+      return u;
+    } catch {
+      /* Сесс дууссан бол `refresh()` алдаа шиднэ. Энэ нь төлбөрийн урсгалын
+         алдаа биш тул энд барьж, дуудагч тал өөрөө шийднэ. */
+      return null;
+    }
   }, []);
 
   const value = useMemo<AuthContextValue>(() => {
@@ -88,8 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      refreshSession,
     };
-  }, [user, ready, login, register, logout]);
+  }, [user, ready, login, register, logout, refreshSession]);
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }

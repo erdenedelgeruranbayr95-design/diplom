@@ -8,6 +8,7 @@ import AddToPlaylistModal from "@/components/AddToPlaylistModal";
 import BeatPulse, { type BeatPulseHandle } from "@/components/BeatPulse";
 import Cover from "@/components/Cover";
 import { addAction, fetchLibrary, fetchSong, fetchSongs, postHistory, removeAction } from "@/lib/api/client";
+import { beatDynamicsFromSong, loadBeatDynamics } from "@/lib/audio/haptic-score";
 import { absoluteUrl } from "@/lib/config";
 import { usePreferences } from "@/lib/prefs/PreferencesContext";
 import { useHapticEngine } from "@/lib/player/useHapticEngine";
@@ -188,6 +189,38 @@ export default function PlayerScreen() {
       artist: song.artist ?? "МЭДРЭХ",
     });
   }, [song]);
+
+  /* Цохилт бүрийн эрчим ба өнгө.
+     Үүнгүй ч чичиргээ ажиллана (бүх цохилт ижил дугтуйтай), тиймээс энэ нь
+     ЗӨВХӨН сайжруулалт: цохилт бүр хөгжмийн бодит динамикийг дагана.
+
+     ⚠️ ХОЁР ЭХ СУРВАЛЖ, ДАРААЛАЛТАЙ
+     1. `song.beatIntensity/beatBrightness` — сервер урьдчилан бодоод DB-д
+        хадгалсан (~3 KB). ХУРДАН, сүлжээний нэмэлт дуудлагагүй.
+     2. `scoreUrl` дээрх 2.6 MB Score — хуучин зам, зөвхөн 1-р эх сурвалж
+        хоосон үед. Worker нь Score-оо ӨӨРИЙН дискэнд бичдэг тул үүлэн дээрх
+        backend түүнийг ихэвчлэн үйлчилж чаддаггүй (404) — иймд энэ нь одоо
+        зөвхөн локал орчны нөөц зам. */
+  useEffect(() => {
+    let alive = true;
+    engine.setBeatDynamics(null); // өмнөх дууныхыг заавал арилгана
+    const beats = song?.beatTimestamps;
+    if (!beats?.length) return;
+
+    const stored = beatDynamicsFromSong(song?.beatIntensity, song?.beatBrightness, beats.length);
+    if (stored) {
+      engine.setBeatDynamics(stored);
+      return;
+    }
+
+    if (!song?.scoreUrl) return;
+    loadBeatDynamics(song.scoreUrl, beats).then((dyn) => {
+      if (alive) engine.setBeatDynamics(dyn);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [song?.id]);
 
   /* --- сонсголын түүх бичих ---
 

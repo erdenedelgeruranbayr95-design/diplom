@@ -15,6 +15,7 @@ import {
   fetchPlaylists,
   fetchSongs,
 } from "@/lib/api/client";
+import { TAB_SAFE_PB } from "@/lib/layout";
 import type { HistoryRow, LibraryState, Playlist, Song } from "@/types";
 
 type Tab = "liked" | "saved" | "playlists" | "history";
@@ -150,7 +151,7 @@ export default function LibraryScreen() {
         <FlatList
           data={history ?? []}
           keyExtractor={(h) => h.id}
-          contentContainerClassName="px-5 pt-4 pb-8"
+          contentContainerClassName={`px-5 pt-4 ${TAB_SAFE_PB}`}
           ItemSeparatorComponent={() => <View className="h-2" />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38e8ce" />}
           ListEmptyComponent={
@@ -188,7 +189,7 @@ export default function LibraryScreen() {
         <FlatList
           data={playlists ?? []}
           keyExtractor={(p) => p.id}
-          contentContainerClassName="px-5 pt-4 pb-8"
+          contentContainerClassName={`px-5 pt-4 ${TAB_SAFE_PB}`}
           ItemSeparatorComponent={() => <View className="h-2" />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38e8ce" />}
           ListEmptyComponent={
@@ -226,7 +227,7 @@ export default function LibraryScreen() {
         <FlatList
           data={visible}
           keyExtractor={(s) => s.id}
-          contentContainerClassName="px-5 pt-4 pb-8"
+          contentContainerClassName={`px-5 pt-4 ${TAB_SAFE_PB}`}
           ItemSeparatorComponent={() => <View className="h-2" />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38e8ce" />}
           ListEmptyComponent={

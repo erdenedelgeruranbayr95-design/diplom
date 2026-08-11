@@ -159,6 +159,11 @@ def process_job(job: dict) -> None:
         bpm=result.bpm,
         musicalKey=result.musical_key,
         beatTimestamps=result.beat_times,
+        # ⚠️ Score файл нь ЛОКАЛ дискэнд үлддэг тул үүлэн дээрх backend түүнийг
+        # уншиж чаддаггүй. Цохилт бүрийн эрчим/өнгийг (~3 KB) энд дамжуулснаар
+        # өгөгдлийн санд хадгалагдаж, ямар ч орчинд ажиллана.
+        beatIntensity=result.beat_intensity,
+        beatBrightness=result.beat_brightness,
         hlsUrl=hls_url,
         coverThumbUrl=cover_urls.get("thumb") if cover_urls else None,
         coverMediumUrl=cover_urls.get("medium") if cover_urls else None,

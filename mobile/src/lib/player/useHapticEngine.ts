@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 
 import { BeatScheduler } from "@/lib/audio/BeatScheduler";
+import type { BeatDynamics } from "@/lib/audio/haptic-score";
+import { beatPattern } from "@/lib/haptics/beat-pattern";
 import { DeviceRouter } from "@/lib/haptics/DeviceRouter";
-import { BEAT_PULSE } from "@/lib/player/constants";
+import { BEAT_LEVELS, DEFAULT_BRIGHTNESS } from "@/lib/player/constants";
 
 /* Мэдрэхүйн хөдөлгүүрийн RN хувилбар.
 
@@ -46,6 +48,9 @@ export interface HapticEngineOptions {
 export interface HapticEngine {
   /** Шинэ дуу эхлэхэд цохилтын хугацаануудыг оноох. */
   setBeatTimestamps: (timestamps: number[] | null | undefined) => void;
+  /** Haptic Score-оос гаргасан цохилт бүрийн эрчим/өнгө. `null` бол бүх цохилт
+   *  ижил, өгөгдмөл дугтуйгаар өгөгдөнө (чичиргээ АЖИЛЛАСААР байна). */
+  setBeatDynamics: (dynamics: BeatDynamics | null) => void;
   /** Seek хийсний дараа cursor-ийг тохируулах. */
   resetCursor: () => void;
   /** Энэ дуу цохилтын өгөгдөлтэй эсэх — UI "чичиргээгүй" анхааруулга харуулахад. */
@@ -81,6 +86,11 @@ export function useHapticEngine({
   const onBeatRef = useRef(onBeat);
   onBeatRef.current = onBeat;
 
+  /* Score-ээс гарсан цохилтын параметр. Дуу тоглож БАЙХАД ирж болно (2.6 MB
+     татаж задлахад хугацаа шаардана) тул ref — interval дахин эхлэхгүй, зүгээр
+     л дараагийн цохилтоос эхлэн илүү нарийн болно. */
+  const dynamicsRef = useRef<BeatDynamics | null>(null);
+
   /* ⚠️ `vibrationOn` нь ЧИЧИРГЭЭГ л удирддаг, визуалыг БИШ. Хэрэглэгч чичиргээг
      унтраасан ч дэлгэцийн пульс ажиллах ёстой — сонсголгүй хүнд визуал нь бие
      даасан мэдрэхүйн суваг. Иймд loop нь `playing` дээр л ажиллаж, дотроо
@@ -93,7 +103,7 @@ export function useHapticEngine({
 
     const timer = setInterval(() => {
       if (!scheduler.hasTimestamps) return;
-      const { fired } = scheduler.pollDetailed(getTimeRef.current());
+      const { fired, index } = scheduler.pollDetailed(getTimeRef.current());
       if (!fired) return;
 
       // Визуал нь чичиргээнээс ҮЛ ХАМААРЧ үргэлж ажиллана.
@@ -101,13 +111,21 @@ export function useHapticEngine({
 
       if (!vibrationOn) return;
 
-      /* Вэб дээр энд FFT-ээс бас/дунд/өндөр бүсийн аль нь давамгайлж байгааг үзэж
-         хугацааг ялгадаг. FFT байхгүй тул бүх цохилтыг нэг хэлбэрээр өгнө.
+      /* Цохилт бүр ӨӨР байх ёстой — хөгжим бол метроном биш.
 
-         Параметрийг `BEAT_PULSE`-ээс ШУУД авна (тооцоолохгүй) — тайлбарыг
-         constants.ts-ээс үзнэ үү. */
-      const p = BEAT_PULSE[vibLevelRef.current] ?? BEAT_PULSE[1];
-      router.pulse(p.amplitude, p.durationMs);
+         Score байвал тухайн цохилтын БОДИТ эрчим (rms) ба өнгө (спектрийн төв)
+         -ийг ашиглана: чанга найрал хүчтэй, тайван шүлэг зөөлөн; бөмбөр гүн
+         бөгөөд урт, таваг богино бөгөөд хурц мэдрэгдэнэ.
+
+         Score байхгүй бол (шинжилгээ дутуу, эсвэл хараахан татагдаж амжаагүй)
+         бүх цохилт өгөгдмөл дугтуйгаар — хуучин байдлаас илүү хэвээр. */
+      const dyn = dynamicsRef.current;
+      const i = index ?? -1;
+      const intensity = dyn && i >= 0 && i < dyn.intensity.length ? dyn.intensity[i] : 1;
+      const brightness = dyn && i >= 0 && i < dyn.brightness.length ? dyn.brightness[i] : DEFAULT_BRIGHTNESS;
+      const level = BEAT_LEVELS[vibLevelRef.current] ?? BEAT_LEVELS[1];
+
+      router.pulsePattern(beatPattern(intensity, brightness, level));
     }, POLL_MS);
 
     return () => {
@@ -118,6 +136,9 @@ export function useHapticEngine({
 
   return {
     setBeatTimestamps: (timestamps) => schedulerRef.current!.setTrack(timestamps),
+    setBeatDynamics: (dynamics) => {
+      dynamicsRef.current = dynamics;
+    },
     resetCursor: () => schedulerRef.current!.reset(),
     hasTimestamps: () => schedulerRef.current!.hasTimestamps,
     deviceRouter: routerRef.current!,

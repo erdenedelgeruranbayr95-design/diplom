@@ -18,7 +18,7 @@ import Gallery from "@/components/landing/Gallery";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import CallToActionSection from "@/components/landing/CallToActionSection";
 import FooterSection from "@/components/landing/FooterSection";
-import type { UserSub } from "@/types/auth";
+import CheckoutReturn from "@/components/modals/CheckoutReturn";
 
 export default function Page() {
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function Page() {
   }, []);
 
   /* auth төлөв AuthContext-оос (session нэг эх сурвалж, backend JWT дээр суурилна) */
-  const { user, isRoot, isAdmin, isCurator, isTherapist, isParent, subscribed, logout: authLogout, setSub, cancelSub } = useAuth();
+  const { user, isRoot, isAdmin, isCurator, isTherapist, isParent, subscribed, logout: authLogout, cancelSub } = useAuth();
 
   const [authOpen, setAuthOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
@@ -65,7 +65,6 @@ export default function Page() {
     if (user) setPlayerOpen(true);
     else setAuthOpen(true);
   };
-  const handleSubscribed = (sub: UserSub) => setSub(sub);
   const handleCancelSub = () => cancelSub();
 
   return (
@@ -118,7 +117,9 @@ export default function Page() {
         onLogout={logout}
         onCancelSub={handleCancelSub}
       />
-      <SubscribeModal open={subOpen} onClose={() => setSubOpen(false)} user={user} onSubscribed={handleSubscribed} />
+      <SubscribeModal open={subOpen} onClose={() => setSubOpen(false)} user={user} />
+      {/* Stripe Checkout-аас `?status=success|cancel`-тэй буцаж ирэхийг барина. */}
+      <CheckoutReturn />
       <RootPanel open={rootOpen} onClose={() => setRootOpen(false)} />
       <CuratorPanel open={curatorOpen} onClose={() => setCuratorOpen(false)} />
     </>

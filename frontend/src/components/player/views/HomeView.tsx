@@ -36,7 +36,6 @@ export interface HomeViewProps {
   query: string;
   /** `query`-д тохирсон дуунууд (Player.tsx-ийн `filterTracks`). */
   filteredTracks: PlayerTrack[];
-  userName?: string;
   recentTracks: PlayerTrack[];
   likedTracks: PlayerTrack[];
   stats: ListeningStats | null | undefined;
@@ -50,7 +49,6 @@ export default function HomeView({
   allTracks,
   query,
   filteredTracks,
-  userName,
   recentTracks,
   likedTracks,
   stats,
@@ -98,7 +96,7 @@ export default function HomeView({
 
   return (
     <>
-      <HomeGreeting userName={userName} isAdmin={isAdmin} isTherapist={isTherapist} isParent={isParent} />
+      <HomeGreeting isAdmin={isAdmin} isTherapist={isTherapist} isParent={isParent} />
 
       <ArtistRail artists={catalog.artists} loading={catalog.artistsLoading} />
 
@@ -154,7 +152,7 @@ export default function HomeView({
 
       <ListeningSummary stats={stats} />
 
-      <PlaylistGrid playlists={playlists} />
+      <PlaylistGrid playlists={playlists} tracks={allTracks} />
 
       <CatalogSections catalog={catalog} />
 

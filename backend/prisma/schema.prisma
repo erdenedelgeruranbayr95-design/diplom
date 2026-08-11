@@ -107,6 +107,12 @@ model User {
   subSince  DateTime?
   subRenews DateTime?
 
+  // Stripe-ийн Customer ID (`cus_...`). Хэрэглэгч дахин захиалахад ИЖИЛ customer-ыг
+  // дахин ашиглана — эс бөгөөс Stripe Dashboard дээр нэг хүн олон customer болж
+  // хуваагдаж, төлбөрийн түүх нь тарж, картын мэдээлэл дахин асуугдана.
+  // Webhook нь хэрэглэгчийг эндээс хайдаг тул @unique (нэг customer = нэг хэрэглэгч).
+  stripeCustomerId String? @unique
+
   subscription  Subscription?
   refreshTokens RefreshToken[]
   notifications NotificationRead[]
@@ -241,7 +247,14 @@ model Payment {
   id          String        @id @default(cuid())
   userId      String
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Харагдах текст (жиш. "9 900,00 ₮"). UI-д шууд хэвлэхэд зориулагдсан.
   amount      String
+  // Тухайн валютын ХАМГИЙН ЖИЖИГ нэгжээр (minor unit): 9,900₮ → 990000.
+  //
+  // ⚠️ ЯАГААД ТУСДАА ТАЛБАР ВЭ: `amount` нь текст тул нийлбэр тооцох боломжгүй
+  // (форматаас хамаарна, валют холилдоно). Орлогын тайланг ЗӨВХӨН эндээс бодно.
+  // Хуучин мөрүүдэд NULL — тэдгээр нь демо/гар бичлэгүүд, тайланд ороогүй.
+  amountMinor Int?
   currency    String        @default("MNT")
   method      String
   status      PaymentStatus @default(SUCCESS)
@@ -384,6 +397,21 @@ model Song {
   // яг ижил mp3 upload хийвэл), unique constraint энэ тохиолдолд update-ийг эвдэнэ.
   fileHash       String?
   scoreUrl       String?
+
+  // Цохилт бүрийн эрчим (0..1) ба өнгө (0 = гүн бас, 1 = хурц таваг).
+  // `beatTimestamps`-тай ижил урттай, индекс нь харгалзана.
+  //
+  // ⚠️ ЯАГААД `scoreUrl` ХАНГАЛТГҮЙ ВЭ
+  // Бүтэн Haptic Score нь ~2.6 MB бөгөөд worker түүнийг ӨӨРИЙН дискэнд бичдэг.
+  // Backend үүлэн дээр (Render), worker өөр машин дээр ажиллавал тэр файл руу
+  // хэзээ ч хүрэхгүй — `scoreUrl` нь 404 буцааж, бүх цохилт ижил дугтуйгаар
+  // мэдрэгддэг байв. Эдгээр хоёр массив нь ердөө ~3 KB тул DB-д шууд багтана.
+  //
+  // Хоосон байвал клиент тал өгөгдмөл дугтуй ашиглана — чичиргээ АЖИЛЛАСААР байна,
+  // зөвхөн цохилт хоорондын ялгаа алдагдана.
+  beatIntensity  Float[]
+  beatBrightness Float[]
+
   analysisStatus SongAnalysisStatus @default(PENDING)
   analysisError  String?
   musicalKey     String?

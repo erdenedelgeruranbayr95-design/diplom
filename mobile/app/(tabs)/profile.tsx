@@ -1,14 +1,16 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import ConfirmModal from "@/components/ConfirmModal";
+import SubscriptionCard from "@/components/SubscriptionCard";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { beatPattern } from "@/lib/haptics/beat-pattern";
 import { PhoneDevice } from "@/lib/haptics/PhoneDevice";
-import { VIB_LEVELS } from "@/lib/player/constants";
+import { TAB_SAFE_PB } from "@/lib/layout";
+import { BEAT_LEVELS, DEFAULT_BRIGHTNESS, VIB_LEVELS } from "@/lib/player/constants";
 import { usePreferences } from "@/lib/prefs/PreferencesContext";
-import { API_URL } from "@/lib/config";
 
 const ROLE_LABEL: Record<string, string> = {
   ROOT: "Систем эзэмшигч",
@@ -39,7 +41,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout, subscribed } = useAuth();
+  const { user, logout } = useAuth();
   const { vibrationOn, vibLevel, reducedMotion, setPref } = usePreferences();
 
   // Төхөөрөмжийн чадварыг НЭГ л удаа асууна — native дуудлага тул render бүрд биш.
@@ -47,9 +49,29 @@ export default function ProfileScreen() {
 
   const [loggingOut, setLoggingOut] = useState(false);
 
+  /* Цонхыг хааж, ДАРАА нь гарна.
+
+     `logout()` нь `user`-ыг null болгомогц `AuthGate` бүх `(tabs)` модыг unmount
+     хийж, нэвтрэх дэлгэц рүү шилжинэ. Хэрэв `Modal` тэр агшинд хаагдах
+     анимацаа дуусгаагүй байвал Android дээр native цонх дэлгэц дээр үлдэж,
+     бүх даралтыг залгидаг — апп хөшсөн мэт харагдана. Иймд `animationType="fade"`
+     -ийн үргэлжлэх хугацааг хүлээж, дараа нь л шилжинэ. */
+  const confirmLogout = useCallback(() => {
+    setLoggingOut(false);
+    setTimeout(() => {
+      logout();
+      /* `AuthGate` өөрөө «/» руу буцаадаг ч энд ИЛ бичсэн нь найдвартай:
+         навигацийн дараалал өөрчлөгдсөн ч гарах нь ажиллана. `replace` тул
+         буцах товчоор профайл руу эргэж орох боломжгүй. */
+      router.replace("/");
+    }, 250);
+  }, [logout, router]);
+
   return (
     <SafeAreaView className="flex-1 bg-bg">
-      <ScrollView contentContainerClassName="px-5 pt-4 pb-10">
+      {/* `TAB_SAFE_PB` — доод таб мөр агуулгыг давхарладаг. Үүнгүй бол хамгийн
+          сүүлийн элемент («Гарах» товч) харагдах ч дарагдахгүй байсан. */}
+      <ScrollView contentContainerClassName={`px-5 pt-4 ${TAB_SAFE_PB}`}>
         <Text className="text-ink text-3xl font-bold">Профайл</Text>
 
         {user && (
@@ -62,13 +84,12 @@ export default function ProfileScreen() {
                 label="Сонсголын байдал"
                 value={user.hearingProfile ? (HEARING_LABEL[user.hearingProfile] ?? user.hearingProfile) : "Заагаагүй"}
               />
-              <View className="flex-row justify-between items-center py-3">
-                <Text className="text-dim text-body">Захиалга</Text>
-                <Text className={subscribed ? "text-aqua text-body" : "text-faint text-body"}>
-                  {subscribed ? (user.sub?.plan ?? "Идэвхтэй") : "Идэвхгүй"}
-                </Text>
-              </View>
             </View>
+
+            {/* Захиалгын мөрийг БҮТЭН карт болгов — урьд нь энэ нь зөвхөн
+                "Идэвхтэй/Идэвхгүй" гэж ХАРУУЛДАГ байсан бөгөөд гар утаснаас PRO
+                авах ямар ч зам байгаагүй (вэб дээр л боломжтой). */}
+            <SubscriptionCard />
 
             {/* ---- мэдрэхүйн тохиргоо ----
                 Эдгээр нь төхөөрөмж дээр ХАДГАЛАГДАНА. Мэдрэхүйн тохиргоо бол
@@ -101,8 +122,13 @@ export default function ProfileScreen() {
                       }`}
                       onPress={() => {
                         setPref("vibLevel", i);
-                        // Шууд мэдрүүлнэ — сонголтоо тухайн агшинд шалгах боломж.
-                        device.pulse(lvl.mult > 1 ? 1 : lvl.mult, 200);
+                        /* Шууд мэдрүүлнэ — сонголтоо тухайн агшинд шалгах боломж.
+                           Дуу тоглох үеийнхтэй ЯГ ИЖИЛ дугтуйг ашиглана: урьд нь
+                           энд 200мс тэгш өнцөгт импульс өгдөг байсан тул урьдчилан
+                           үзсэн мэдрэмж бодит цохилттой таарахгүй байв. */
+                        device.pulsePattern(
+                          beatPattern(1, DEFAULT_BRIGHTNESS, BEAT_LEVELS[i] ?? BEAT_LEVELS[1]),
+                        );
                       }}
                       accessibilityRole="button"
                       accessibilityState={{ selected: vibLevel === i }}
@@ -164,31 +190,10 @@ export default function ProfileScreen() {
               <Text className="text-dim text-body ml-3">›</Text>
             </Pressable>
 
-            <Text className="text-ink text-heading font-semibold mt-8 mb-2">Төхөөрөмж</Text>
-            <View className="bg-surface border border-line rounded-lg px-4">
-              <Row
-                label="Чичиргээний эрчим"
-                value={
-                  device.backend === "amplitude"
-                    ? "256 түвшин (амплитуд)"
-                    : device.backend === "waveform"
-                      ? "Зөвхөн хугацаагаар"
-                      : device.backend === "preset"
-                        ? "3 бэлэн түвшин"
-                        : "Байхгүй"
-                }
-              />
-              <View className="flex-row justify-between items-center py-3">
-                <Text className="text-dim text-body">Сервер</Text>
-                <Text className="text-faint text-caption font-mono ml-3 flex-1 text-right" numberOfLines={1}>
-                  {API_URL}
-                </Text>
-              </View>
-            </View>
-
-            {device.backend !== "amplitude" && (
-              <Text className="text-warm text-caption mt-3 leading-4">{device.reason}</Text>
-            )}
+            {/* «Төхөөрөмж» хэсгийг ЗОРИУД хассан. Тэнд байсан чичиргээний
+                чадвар болон серверийн хаяг нь оношилгооны мэдээлэл бөгөөд одоо
+                Тусламж дэлгэцэд илүү тодорхой тайлбартайгаа байгаа. Хэрэглэгчийн
+                профайлд техникийн дэлгэрэнгүй давхардуулах шаардлагагүй. */}
 
             <Pressable
               className="mt-8 rounded-full py-4 items-center border border-danger"
@@ -209,10 +214,7 @@ export default function ProfileScreen() {
         confirmLabel="Гарах"
         destructive
         onCancel={() => setLoggingOut(false)}
-        onConfirm={() => {
-          setLoggingOut(false);
-          logout();
-        }}
+        onConfirm={confirmLogout}
       />
     </SafeAreaView>
   );

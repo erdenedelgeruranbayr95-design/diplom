@@ -12,6 +12,7 @@ import { Empty } from "@/components/ui/States";
 import { SectionTitle } from "@/components/ui/PageHeader";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import Icon from "@/components/ui/Icon";
+import PlaylistCover from "@/components/player/shared/PlaylistCover";
 import PlaylistDetail from "./playlists/PlaylistDetail";
 import { useTrackActions } from "../PlayerContext";
 import { usePlaylistLibrary } from "@/lib/player/hooks/usePlaylistLibrary";
@@ -103,7 +104,7 @@ export default function PlaylistsView({ email, tracks, onBack }: { email: string
           <SectionTitle title="Миний жагсаалтууд" description={`${playlists.length} жагсаалт`} />
           <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-4">
             {playlists.map((playlist) => {
-              const cover = resolveTracks(playlist.tracks, trackIndex)[0]?.cover;
+              const covers = resolveTracks(playlist.tracks, trackIndex).map((t) => t.cover);
               return (
                 <div
                   className="group relative bg-white/[.03] border border-white/[.06] rounded-xl overflow-hidden transition-[border-color,box-shadow,transform] duration-[280ms] ease-[cubic-bezier(.16,.8,.24,1)] hover:border-white/[.14] hover:shadow-lg hover:-translate-y-1"
@@ -113,15 +114,10 @@ export default function PlaylistsView({ email, tracks, onBack }: { email: string
                     className="block w-full text-left bg-none border-none cursor-pointer p-3.5 focus-visible:outline-none focus-visible:shadow-glow-aqua"
                     onClick={() => setOpenId(playlist.id)}
                   >
-                    <span className="grid place-items-center aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 [&>img]:w-full [&>img]:h-full [&>img]:object-cover shadow-[0_8px_22px_rgba(0,0,0,.35)]">
-                      {cover ? (
-                        <img src={cover} alt="" loading="lazy" decoding="async" />
-                      ) : (
-                        <span className="text-dim" aria-hidden="true">
-                          <Icon name="music" size={36} strokeWidth={1.4} />
-                        </span>
-                      )}
-                    </span>
+                    <PlaylistCover
+                      covers={covers}
+                      className="aspect-square rounded-lg mb-3 shadow-[0_8px_22px_rgba(0,0,0,.35)]"
+                    />
                     <b className="block text-copy font-semibold text-ink whitespace-nowrap overflow-hidden text-ellipsis">{playlist.name}</b>
                     <i className="block not-italic text-xs text-dim mt-0.5">{playlist.tracks.length} дуу</i>
                   </button>

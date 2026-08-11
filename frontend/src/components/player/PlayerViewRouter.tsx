@@ -138,7 +138,6 @@ export default function PlayerViewRouter({ view, catalog, collections, selection
         allTracks={catalog.allTracks}
         query={catalog.query}
         filteredTracks={catalog.filteredTracks}
-        userName={session.user?.name}
         recentTracks={collections.recent}
         likedTracks={collections.liked}
         stats={collections.stats}

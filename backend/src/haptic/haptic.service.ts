@@ -58,6 +58,12 @@ export class HapticService {
           analysisStatus: SongAnalysisStatus.READY,
           analyzedBpm: existing.analyzedBpm,
           musicalKey: existing.musicalKey,
+          /* Цохилтын өгөгдлийг ч хамт хуулна — эс бөгөөс дахин ашигласан дуу
+             чичиргээтэй ч ЯЛГААГҮЙ цохилттой болно. */
+          beatTimestamps: existing.beatTimestamps ?? undefined,
+          beatCount: existing.beatCount,
+          beatIntensity: existing.beatIntensity,
+          beatBrightness: existing.beatBrightness,
           analyzedAt: new Date(),
         },
       });
@@ -114,6 +120,13 @@ export class HapticService {
            анализтай зөрчилдөхгүй — сүүлд задарсан нь л ялна). */
         beatTimestamps: dto.beatTimestamps,
         beatCount: dto.beatTimestamps?.length,
+        /* Цохилт бүрийн эрчим/өнгө — `scoreUrl` дээрх 2.6 MB файлаас гаргасан
+           хураангуй. Worker нь Score-оо ӨӨРИЙН дискэнд бичдэг тул үүлэн дээрх
+           энэ сервер түүнийг уншиж чаддаггүй; иймд клиент талд хэрэгтэй хэсгийг
+           нь DB-д шууд хадгална. Ирээгүй бол хоосон массив — клиент өгөгдмөл
+           дугтуй ашиглана, чичиргээ ажилласаар байна. */
+        beatIntensity: dto.beatIntensity ?? [],
+        beatBrightness: dto.beatBrightness ?? [],
         analyzedAt: new Date(),
         analysisError: null,
         hlsUrl: dto.hlsUrl,

@@ -139,9 +139,37 @@ export function refresh(): Promise<SessionUser> {
   return inFlight;
 }
 
-export async function logout(): Promise<void> {
-  await apiFetch<void>("/auth/logout", { method: "POST" }).catch(() => {});
+/** Серверт гарах хүсэлт хэдий хугацаанд хариу ирэхийг хүлээх вэ. */
+const LOGOUT_TIMEOUT_MS = 5000;
+
+/** Гарах. Сесс нь ТӨХӨӨРӨМЖ ДЭЭР ШУУД цэвэрлэгдэнэ — серверийн хариуг хүлээхгүй.
+ *
+ *  ЯАГААД ЭНЭ ДАРААЛАЛ ЧУХАЛ ВЭ: өмнө нь `await apiFetch("/auth/logout")` хийж,
+ *  ЗӨВХӨН түүний дараа токенээ устгадаг байв. React Native-ийн `fetch` нь
+ *  ӨГӨГДМӨЛ ТАЙМАУТГҮЙ — сүлжээ сул эсвэл сервер хүрэхгүй байвал хүсэлт
+ *  минутаар өлгөөтэй үлдэж, тэр хугацаанд «Гарах» дарсан хэрэглэгч профайл
+ *  дээрээ хэвээр үлдэнэ, өөрөөр хэлбэл товч огт ажиллахгүй мэт харагдана.
+ *  Localhost дээр (вэб туршилт) хариу шуурхай ирдэг тул энэ алдаа ЗӨВХӨН
+ *  гар утсан дээр илэрдэг.
+ *
+ *  Гарах гэдэг юуны өмнө ЛОКАЛ үйлдэл: токен устгах. Серверт refresh token
+ *  цуцлуулах нь чухал ч, түүнийг ХҮЛЭЭХ шаардлагагүй.
+ *
+ *  ⚠️ Үлдэх эрсдэл: хүсэлт бүтэлгүйтвэл серверийн refresh token цуцлагдахгүй
+ *  бөгөөд платформын cookie санд үлдэнэ — тухайн төхөөрөмж дээр аппыг дахин
+ *  нээхэд сесс сэргэж болзошгүй. Таймаут нь үүнийг бүрэн шийдэхгүй; бүрэн
+ *  шийдэл нь cookie-г локалаас устгах (одоогийн хамааралд ийм API байхгүй). */
+export function logout(): Promise<void> {
+  /* Эхлээд локал токен — энэ мөрийн дараа апп нэвтрээгүй төлөвт орно. */
   applyAccessToken(null);
+
+  /* `/auth/logout` нь @Public бөгөөд зөвхөн refresh cookie-гоор ажилладаг тул
+     Authorization толгой хэрэггүй — токенээ өмнө нь устгасан нь асуудалгүй. */
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), LOGOUT_TIMEOUT_MS);
+  return apiFetch<void>("/auth/logout", { method: "POST", signal: abort.signal })
+    .catch(() => {})
+    .finally(() => clearTimeout(timer));
 }
 
 export function me(): Promise<SessionUser> {
@@ -187,6 +215,33 @@ export function fetchPopular(): Promise<Song[]> {
 
 export function health(): Promise<{ ok: boolean }> {
   return apiFetch<{ ok: boolean }>("/health");
+}
+
+/* ---- PRO захиалга (Stripe) ----
+
+   Гар утсан дээр Stripe-ийн Checkout хуудсыг СИСТЕМИЙН ХӨТЧӨӨР нээж, `medreh://`
+   deep link-ээр буцаж ирнэ (см. `app/(tabs)/profile.tsx`).
+
+   ⚠️ ЯАГААД `@stripe/stripe-react-native` БИШ ВЭ
+   Тэр нь шинэ NATIVE модуль тул APK-г дахин build хийхийг шаарддаг. Энэ төсөлд
+   тийм алхам аль хэдийн нэг удаа өвдөлт үүсгэсэн (см. `PhoneDevice.ts` —
+   "Cannot read property 'EventEmitter' of undefined", апп огт нээгдэхгүй болсон).
+   Хөтчөөр нээх зам нь шинэ native хамааралгүй, вэбтэй ЯГ ИЖИЛ backend endpoint
+   ашиглана. */
+
+export function fetchPaymentsConfig(): Promise<{ provider: string; enabled: boolean }> {
+  return apiFetch<{ provider: string; enabled: boolean }>("/payments/config");
+}
+
+export function startCheckout(returnUrl: string): Promise<{ url: string; sessionId: string }> {
+  return apiFetch<{ url: string; sessionId: string }>("/payments/checkout", {
+    method: "POST",
+    body: JSON.stringify({ returnUrl }),
+  });
+}
+
+export function cancelSubscription(): Promise<unknown> {
+  return apiFetch<unknown>("/users/me/subscription", { method: "DELETE" });
 }
 
 /* ---- мэдрэхүйн калибровк (серверт хадгалагдана) ---- */

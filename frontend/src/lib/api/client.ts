@@ -190,9 +190,55 @@ export function createUser(payload: CreateUserPayload) {
 }
 
 /* PRO эрхийг DB-д бодитоор бичнэ (users.controller.ts: PATCH/DELETE /users/me/subscription) —
-   refresh/дахин нэвтрэх/өөр tab дээр ч хадгалагдана, зөвхөн React state-д биш. */
+   refresh/дахин нэвтрэх/өөр tab дээр ч хадгалагдана, зөвхөн React state-д биш.
+
+   ⚠️ Энэ нь ТӨЛБӨРГҮЙ идэвхжүүлэлт бөгөөд backend дээр ЗӨВХӨН ADMIN эрхэд
+   нээлттэй. Хэрэглэгчийн урсгалд ХЭРЭГЛЭХГҮЙ — захиалга нь `startCheckout()`-оор
+   Stripe руу явж, PRO эрхийг зөвхөн Stripe-ийн webhook олгоно. */
 export function subscribeMe(plan?: string) {
   return apiFetch<UserSub | null>("/users/me/subscription", { method: "PATCH", body: JSON.stringify({ plan }) });
+}
+
+export type AdminPaymentStatus = "SUCCESS" | "PENDING" | "FAILED";
+
+export interface AdminPayment {
+  id: string;
+  userName: string;
+  userEmail: string;
+  /** Харагдах текст (жиш. "9 900,00 ₮"). */
+  amount: string;
+  /** Валютын жижиг нэгжээр — нийлбэр тооцоход. Хуучин мөрүүдэд `null`. */
+  amountMinor: number | null;
+  currency: string;
+  method: string;
+  plan: string | null;
+  status: AdminPaymentStatus;
+  providerRef: string | null;
+  createdAt: string;
+}
+
+/** Админы төлбөрийн түүх ба сарын орлого (`GET /payments`, зөвхөн ADMIN/ROOT). */
+export function fetchAdminPayments() {
+  return apiFetch<{
+    payments: AdminPayment[];
+    monthly: { currency: string; totalMinor: number; count: number }[];
+  }>("/payments");
+}
+
+/** Төлбөрийн систем идэвхтэй эсэх — түлхүүр тохируулаагүй орчинд товч харуулахгүй. */
+export function fetchPaymentsConfig() {
+  return apiFetch<{ provider: string; enabled: boolean }>("/payments/config");
+}
+
+/** Stripe Checkout Session үүсгэж, шилжих хаягийг авна.
+ *
+ *  `returnUrl` нь backend дээр allowlist-ээр шалгагдана (open-redirect хамгаалалт),
+ *  тиймээс энд ЗӨВХӨН өөрсдийн origin-ыг илгээнэ. */
+export function startCheckout(returnUrl: string) {
+  return apiFetch<{ url: string; sessionId: string }>("/payments/checkout", {
+    method: "POST",
+    body: JSON.stringify({ returnUrl }),
+  });
 }
 
 export function cancelSubscriptionMe() {

@@ -1,4 +1,5 @@
 import { PhoneDevice } from "./PhoneDevice";
+import { patternDurationMs, patternPeak, type HapticPattern } from "./beat-pattern";
 import type { HapticDevice } from "./HapticDevice";
 
 /* Вэбийн `DeviceRouter`-ийн RN хувилбар — холбогдсон бүх төхөөрөмжид `pulse`/`setBand`
@@ -33,6 +34,15 @@ export class DeviceRouter {
 
   pulse(strength: number, durationMs?: number): void {
     for (const d of this.connected) d.pulse(strength, durationMs);
+  }
+
+  /** Дугтуйтай импульс. Дэмждэггүй төхөөрөмжид оргил хүч + нийт хугацаагаар
+   *  хураангуйлж дамжуулна — чичиргээ огт алдагдахгүй, зөвхөн хэлбэр нь энгийн болно. */
+  pulsePattern(pattern: HapticPattern): void {
+    for (const d of this.connected) {
+      if (d.pulsePattern) d.pulsePattern(pattern);
+      else d.pulse(patternPeak(pattern), patternDurationMs(pattern));
+    }
   }
 
   setBand(zone: number, level: number): void {

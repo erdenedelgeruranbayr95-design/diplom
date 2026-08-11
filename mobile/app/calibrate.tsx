@@ -5,8 +5,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ErrorState, Loading } from "@/components/States";
 import { fetchSensoryProfile, saveSensoryProfile } from "@/lib/api/client";
+import { beatPattern } from "@/lib/haptics/beat-pattern";
 import { PhoneDevice } from "@/lib/haptics/PhoneDevice";
-import { VIB_LEVELS } from "@/lib/player/constants";
+import { BEAT_LEVELS, DEFAULT_BRIGHTNESS, VIB_LEVELS } from "@/lib/player/constants";
 import { usePreferences } from "@/lib/prefs/PreferencesContext";
 import type { SensoryProfile } from "@/types";
 
@@ -159,7 +160,8 @@ export default function CalibrateScreen() {
                   }`}
                   onPress={() => {
                     update({ vibLevel: i });
-                    device.pulse(Math.min(1, lvl.mult), 200);
+                    // Профайл дэлгэцтэй ижил — урьдчилан үзэх нь бодит цохилттой таарна.
+                    device.pulsePattern(beatPattern(1, DEFAULT_BRIGHTNESS, BEAT_LEVELS[i] ?? BEAT_LEVELS[1]));
                   }}
                   accessibilityRole="button"
                   accessibilityState={{ selected: profile.vibLevel === i }}

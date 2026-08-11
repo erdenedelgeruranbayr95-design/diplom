@@ -4,9 +4,11 @@ import { Role, UserStatus } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { StripeSubscriptionsService } from '../payments/stripe-subscriptions.service';
 
 describe('UsersService', () => {
   let service: UsersService;
+  let stripeSubs: { cancelAtStripe: jest.Mock };
   let prisma: {
     user: { findUnique: jest.Mock; findMany: jest.Mock; create: jest.Mock; update: jest.Mock; delete: jest.Mock };
     refreshToken: { findMany: jest.Mock; updateMany: jest.Mock };
@@ -51,7 +53,15 @@ describe('UsersService', () => {
       $transaction: jest.fn((ops) => Promise.all(ops)),
     };
     const config = { get: () => 'test-hearing-profile-key' } as unknown as ConfigService;
-    service = new UsersService(prisma as unknown as PrismaService, config);
+    /* Цуцлалт нь Stripe дээрх recurring захиалгыг ч зогсоодог болсон. Энэ тестэд
+       Stripe огт хамаагүй тул `false` (= Stripe захиалга байхгүй) гэж хариулна —
+       DB талын зан төлөв өөрчлөгдөхгүй. */
+    stripeSubs = { cancelAtStripe: jest.fn().mockResolvedValue(false) };
+    service = new UsersService(
+      prisma as unknown as PrismaService,
+      config,
+      stripeSubs as unknown as StripeSubscriptionsService,
+    );
   });
 
   describe('create', () => {

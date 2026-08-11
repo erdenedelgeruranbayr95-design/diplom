@@ -6,6 +6,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { Empty, ErrorState, Loading } from "@/components/States";
 import { fetchUsers, updateUserStatus } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { TAB_SAFE_PB } from "@/lib/layout";
 import type { AdminUserRow } from "@/types";
 
 const ROLE_COLOR: Record<string, string> = {
@@ -76,7 +77,7 @@ export default function AdminScreen() {
       <FlatList
         data={users ?? []}
         keyExtractor={(item) => item.id}
-        contentContainerClassName="px-5 pb-8"
+        contentContainerClassName={`px-5 ${TAB_SAFE_PB}`}
         ItemSeparatorComponent={() => <View className="h-2" />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38e8ce" />}
         ListEmptyComponent={

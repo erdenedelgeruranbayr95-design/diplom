@@ -3,6 +3,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, Tex
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import PasswordInput from "@/components/PasswordInput";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { API_URL } from "@/lib/config";
 
@@ -50,11 +51,9 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               editable={!busy}
             />
-            <TextInput
-              className="bg-surface border border-line-field rounded-sm text-ink text-copy px-4 py-3.5"
+            <PasswordInput
               placeholder="Нууц үг"
-              placeholderTextColor="#768583"
-              secureTextEntry
+              accessibilityLabel="Нууц үг"
               value={password}
               onChangeText={setPassword}
               editable={!busy}

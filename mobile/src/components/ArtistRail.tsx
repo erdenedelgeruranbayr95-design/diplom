@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { FlatList, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 
 import Cover from "./Cover";
@@ -18,10 +18,20 @@ export default function ArtistRail({ artists, songs }: { artists: Artist[]; song
   return (
     <View className="mt-8">
       <Text className="text-ink text-heading font-semibold mb-3">Алдартай дуучид</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-4 pr-5">
-        {artists.map((a) => (
+      {/* ⚠️ `ScrollView` БИШ, `FlatList`. ScrollView нь 37 дуучны зургийг БҮГДИЙГ
+          нь зэрэг ачаалж байв — хэмжсэн: нүүр хуудас 55 зураг, 854 KB татаж,
+          мэдэгдэхүйц удаашруулж байсан. FlatList зөвхөн харагдаж буй 4-5-ыг зурна. */}
+      <FlatList
+        data={artists}
+        keyExtractor={(a) => a.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerClassName="gap-4 pr-5"
+        initialNumToRender={4}
+        windowSize={3}
+        removeClippedSubviews
+        renderItem={({ item: a }) => (
           <Pressable
-            key={a.id}
             className="w-24 items-center"
             onPress={() => router.push({ pathname: "/artist/[id]", params: { id: a.id } })}
             accessibilityRole="button"
@@ -36,8 +46,8 @@ export default function ArtistRail({ artists, songs }: { artists: Artist[]; song
             </Text>
             <Text className="text-faint text-micro font-mono">{a._count?.songs ?? 0} дуу</Text>
           </Pressable>
-        ))}
-      </ScrollView>
+        )}
+      />
     </View>
   );
 }

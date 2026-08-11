@@ -171,6 +171,15 @@ export interface Song {
   bandEnergies: number[] | null;
   waveformPeaks: number[] | null;
   scoreUrl: string | null;
+  /** Цохилт бүрийн эрчим (0..1) — `beatTimestamps`-тай ижил урттай.
+   *
+   *  Урьд нь эдгээрийг `scoreUrl` дээрх 2.6 MB файлыг татаж, утсан дээр бодож
+   *  гаргадаг байсан. Гэвч worker нь Score-оо ӨӨРИЙН дискэнд бичдэг тул үүлэн
+   *  дээрх backend түүнийг үйлчилж чаддаггүй (404) — үр дүнд нь бүх цохилт ижил
+   *  мэдрэгддэг байв. Одоо сервер урьдчилан бодож DB-д хадгална. */
+  beatIntensity: number[] | null;
+  /** Цохилт бүрийн өнгө (0 = гүн бас, 1 = хурц таваг). */
+  beatBrightness: number[] | null;
   /** Хөгжмийн түлхүүр (жиш. "G# minor") — worker-ийн chroma шинжилгээнээс. */
   musicalKey: string | null;
   analysisStatus: SongAnalysisStatus;

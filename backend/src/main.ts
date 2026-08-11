@@ -18,7 +18,12 @@ if (process.env.SENTRY_DSN) {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
+  /* `rawBody: true` — Stripe-ийн webhook гарын үсэг (HMAC) нь ТҮҮХИЙ байтууд дээр
+     тооцогддог. Nest нь body-г JSON болгон задалсны дараа буцааж stringify хийвэл
+     түлхүүрийн дараалал/зай өөрчлөгдөж гарын үсэг таарахаа болино. Энэ тохиргоо
+     нь задалсан `req.body`-гоос ГАДНА `req.rawBody` Buffer-ыг ч үлдээнэ, тул
+     бусад бүх endpoint өөрчлөгдөхгүй (см. payments.controller.ts). */
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true, rawBody: true });
   app.useLogger(app.get(Logger));
   const config = app.get(ConfigService);
 

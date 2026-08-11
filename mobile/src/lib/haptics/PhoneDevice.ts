@@ -1,4 +1,5 @@
 import { HapticWaveform } from "../../../modules/haptic-waveform";
+import type { HapticPattern } from "./beat-pattern";
 import type { HapticDevice } from "./HapticDevice";
 
 /* ⚠️ `expo-haptics`-ыг ДЭЭД ТҮВШИНД import ХИЙХГҮЙ.
@@ -133,18 +134,47 @@ export class PhoneDevice implements HapticDevice {
     const h = getHaptics();
     if (!h) return; // чичиргээний ямар ч суваг байхгүй
 
-    /* ⚠️ Босгыг `BEAT_PULSE`-ийн ЯГ утгуудад тааруулсан: 0.35 · 0.7 · 1.0.
-       Урьд нь `>= 0.7` дээр Heavy болдог байсан тул Дунд (0.7) ба Хүчтэй (1.0)
-       хоёул Heavy болж, дуу тоглуулахад ХОЁР ТҮВШИН ЯГ ИЖИЛ мэдрэгддэг байв.
-       Энэ нь зөвхөн preset суваг дээр (iPhone дээрх Expo Go, эсвэл native модульгүй
-       орчин) илэрдэг тул Android дээр анзаарагдахгүй өнгөрөх эрсдэлтэй байсан.
+    /* Босго: 0.35 → Light · 0.7 → Medium · 1.0 → Heavy. Нүүр дэлгэцийн туршилтын
+       товчнууд (0.2 · 0.55 · 1.0) болон калибровкийн бүсүүд (1 · 0.65 · 0.35)
+       гурван өөр түвшинд тусна.
 
-       Одоо: 0.35 → Light · 0.7 → Medium · 1.0 → Heavy. Нүүр дэлгэцийн туршилтын
-       товчнууд (0.2 · 0.55 · 1.0) ч мөн гурван өөр түвшинд тусна. */
+       ⚠️ Цохилтын чичиргээ энэ замаар ЯВАХГҮЙ — тэр нь `pulsePattern`-аар
+       дугтуйн заасан түвшнээр шууд очно. Оргилоос таамаглах нь тэнд ажилладаггүй
+       (Дунд 0.95, Хүчтэй 1.0 — хэт ойрхон). */
     const style =
       clamped >= 0.85
         ? h.ImpactFeedbackStyle.Heavy
         : clamped >= 0.5
+          ? h.ImpactFeedbackStyle.Medium
+          : h.ImpactFeedbackStyle.Light;
+    h.impactAsync(style).catch(() => {});
+  }
+
+  /** Дугтуйтай импульс — цохилтын хурц эхлэл ба аажим унтралт.
+   *
+   *  Энэ бол `amplitude` сувгийн ГОЛ давуу тал: `VibrationEffect.createWaveform`
+   *  нь алхам бүрд өөр амплитуд өгч чаддаг тул бөмбөрийн цохилтын хэлбэрийг
+   *  ойролцоолж болно. `expo-haptics` сувагт ийм зүйл БОЛОМЖГҮЙ — тэнд зөвхөн
+   *  оргил хүчээр нь нэг бэлэн импульс өгнө. */
+  pulsePattern(pattern: HapticPattern): void {
+    if (HapticWaveform) {
+      try {
+        HapticWaveform.vibrateWaveform(pattern.timings, pattern.amplitudes);
+        return;
+      } catch {
+        // Доорх preset руу уначина.
+      }
+    }
+
+    /* ⚠️ `patternPeak`-ээр БУС, дугтуйн өөрийнх нь заасан түвшнээр. Оргилоос
+       таамаглавал Дунд (0.95) ба Хүчтэй (1.0) хоёул Heavy болж, preset сувагт
+       гурван түвшин ХОЁР болж хураагддаг байв. */
+    const h = getHaptics();
+    if (!h) return;
+    const style =
+      pattern.presetStyle === "heavy"
+        ? h.ImpactFeedbackStyle.Heavy
+        : pattern.presetStyle === "medium"
           ? h.ImpactFeedbackStyle.Medium
           : h.ImpactFeedbackStyle.Light;
     h.impactAsync(style).catch(() => {});
