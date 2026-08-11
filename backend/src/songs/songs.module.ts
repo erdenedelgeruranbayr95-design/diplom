@@ -6,9 +6,10 @@ import { FmaService } from './fma.service';
 import { CatalogSeedService } from './catalog-seed.service';
 import { HapticModule } from '../haptic/haptic.module';
 import { StorageModule } from '../storage/storage.module';
+import { ArtistsModule } from '../artists/artists.module';
 
 @Module({
-  imports: [HapticModule, StorageModule],
+  imports: [HapticModule, StorageModule, ArtistsModule],
   controllers: [SongsController],
   providers: [SongsService, JamendoService, FmaService, CatalogSeedService],
 })

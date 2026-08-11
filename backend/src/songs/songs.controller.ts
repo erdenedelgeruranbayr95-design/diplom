@@ -9,6 +9,7 @@ import { JamendoSearchDto, JamendoImportDto, JamendoBatchImportDto } from './dto
 import { JamendoService } from './jamendo.service';
 import { FmaSearchDto, FmaImportDto } from './dto/fma-search.dto';
 import { FmaService } from './fma.service';
+import { ArtistsService } from '../artists/artists.service';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -29,6 +30,8 @@ export class SongsController {
     private storage: StorageService,
     private jamendo: JamendoService,
     private fma: FmaService,
+    /* Дуу нэмэгчийн уран бүтээлчийн профайлыг олж, дууг автоматаар холбоход. */
+    private artists: ArtistsService,
   ) {}
 
   /* ---------- Presigned S3 upload (MinIO) ---------- */
@@ -58,10 +61,16 @@ export class SongsController {
     const fileUrl = dto.storageKey ? this.storage.publicUrlFor(dto.storageKey) : dto.sourceUrl!;
 
     const isCatalogStaff = CATALOG_ROLES.includes(user.role) || user.role === Role.ROOT;
+
+    /* Нэмэгч нь уран бүтээлчийн профайлтай бол дуу нь АВТОМАТААР түүнд
+       холбогдоно — өөрийгөө өөр дуучин гэж бичих боломжгүй.
+       Каталогийн ажилтан бусдын нэрээр дуу нэмдэг тул тэдэнд хамаарахгүй. */
+    const mine = isCatalogStaff ? null : await this.artists.findMine(user.userId);
+
     const song = await this.songs.create({
       title: dto.title,
-      artist: dto.artist,
-      artistId: dto.artistId,
+      artist: mine?.name ?? dto.artist,
+      artistId: mine?.id ?? dto.artistId,
       genre: dto.genre,
       description: dto.description,
       releaseYear: dto.releaseYear,

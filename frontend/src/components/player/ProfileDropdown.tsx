@@ -3,7 +3,9 @@
 /* TopBar-ийн профайл dropdown — премиум dropdown каркас (DropdownPanel) руу шинэчлэв.
    go(v)/onLogout/toggle логик бүхэлдээ хэвээр, ямар ч цэсний зорилтот заалт (setView) хасагдаагүй,
    нэмэгдээгүй — зөвхөн визуал давхарга шинэчлэгдсэн (icon-той мөрүүд, groups, илүү зай). */
+import { useEffect, useState } from "react";
 import { PREVIEW_SEC } from "@/lib/player/constants";
+import { fetchMyArtist } from "@/lib/api/client";
 import type { SessionUser } from "@/types/auth";
 import type { ViewName } from "@/types/player";
 import DropdownPanel from "@/components/ui/DropdownPanel";
@@ -56,6 +58,21 @@ export default function ProfileDropdown({
   onLogout: () => void;
   onToggle: () => void;
 }) {
+  /* Уран бүтээлч эсэхийг цэс НЭЭГДЭХ үед л шалгана.
+     TopBar → Player гэж prop дамжуулбал хэд хэдэн файл хөндөгдөнө; энэ нь цэс
+     хаалттай байхад ямар ч хүсэлт үүсгэхгүй, нээхэд ганц хөнгөн дуудлага явна. */
+  const [isArtist, setIsArtist] = useState(false);
+  useEffect(() => {
+    if (!open || isAdmin) return;
+    let alive = true;
+    fetchMyArtist()
+      .then((a) => alive && setIsArtist(!!a))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [open, isAdmin]);
+
   const initial = (user?.name || "?").trim().charAt(0).toUpperCase();
 
   function go(v: ViewName) {
@@ -119,7 +136,13 @@ export default function ProfileDropdown({
 
           <MenuItem icon="user" label="Профайл засах" onClick={() => go("profile")} />
           <MenuItem icon="playlist" label="Миний жагсаалт" onClick={() => go("playlists")} />
-          {subscribed && !isAdmin && <MenuItem icon="upload" label="Дуу нэмэх" onClick={() => go("upload")} />}
+          {/* Уран бүтээлч болох нь ҮНЭГҮЙ — контент нийлүүлдэг хүнээс төлбөр
+              авах нь эсрэг үр дүнтэй. PRO нь сонсогчдод зориулагдсан. */}
+          {!isAdmin && <MenuItem icon="mic" label="Уран бүтээлч" onClick={() => go("artistProfile")} />}
+          {/* Дуу нэмэх: PRO захиалагч ЭСВЭЛ уран бүтээлчийн профайлтай хүн. */}
+          {(subscribed || isArtist) && !isAdmin && (
+            <MenuItem icon="upload" label="Дуу нэмэх" onClick={() => go("upload")} />
+          )}
           <MenuItem icon="device" label="Төхөөрөмж холбох" onClick={() => go("devices")} />
           <MenuItem icon="chart" label="Миний статистик" onClick={() => go("stats")} />
           <MenuItem icon="clock" label="Сонссон түүх" onClick={() => go("history")} />

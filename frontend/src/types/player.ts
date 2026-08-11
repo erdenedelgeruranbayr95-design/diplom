@@ -41,7 +41,9 @@ export type ViewName =
   | "therapist"
   | "progress"
   | "parent"
-  | "upload";
+  | "upload"
+  /** Уран бүтээлчийн профайл — өөрөө үүсгэж, засна. */
+  | "artistProfile";
 
 /** Мэдрэх горимын визуалайзерын тохиргоо. */
 export interface VizPrefs {

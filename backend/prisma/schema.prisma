@@ -113,6 +113,11 @@ model User {
   // Webhook нь хэрэглэгчийг эндээс хайдаг тул @unique (нэг customer = нэг хэрэглэгч).
   stripeCustomerId String? @unique
 
+  // Уран бүтээлчийн профайл — хэрэглэгч өөрөө үүсгэнэ. Байвал энэ хүн уран
+  // бүтээлч; нэмсэн дуу нь автоматаар энэ профайлд холбогдоно. Дуу нь ноорог
+  // хэвээр үүсч, куратор/админ нийтэлнэ (одоо байгаа урсгал).
+  artistProfile Artist? @relation("ArtistOwner")
+
   subscription  Subscription?
   refreshTokens RefreshToken[]
   notifications NotificationRead[]
@@ -339,6 +344,17 @@ model Artist {
   createdAt  DateTime @default(now())
 
   songs Song[]
+
+  // Профайлыг эзэмшигч хэрэглэгч. NULL бол эзэнгүй — Jamendo/FMA импортоор
+  // автоматаар үүссэн дуучид ийм байна.
+  //
+  // ⚠️ ЯАГААД `Role`-д ARTIST НЭМЭЭГҮЙ ВЭ
+  // Дүр бол ЭРХ, уран бүтээлч бол ХЭН БОЛОХ — өөр ойлголтууд. Нэг хүн эмч бас
+  // уран бүтээлч байж болно. Мөн `Role` enum-д утга нэмбэл гар утасны аппын
+  // дүрийн нэрийн хүснэгт, админ панел бүгд шинэчлэгдэх шаардлагатай болно.
+  // Энэ холбоос нь тэдгээрийг огт хөндөхгүй.
+  owner   User?   @relation("ArtistOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  ownerId String? @unique
 }
 
 model Song {

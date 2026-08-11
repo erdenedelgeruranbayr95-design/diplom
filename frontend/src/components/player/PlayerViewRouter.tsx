@@ -27,6 +27,7 @@ import ProgressView from "./views/ProgressView";
 import StatsView from "./views/StatsView";
 import TherapistView from "./views/TherapistView";
 import UploadSongView from "./views/UploadSongView";
+import ArtistProfileView from "./views/ArtistProfileView";
 import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
 import type { DeviceRouter } from "@/lib/haptics/DeviceRouter";
 import type { SessionUser } from "@/types/auth";
@@ -195,7 +196,11 @@ export default function PlayerViewRouter({ view, catalog, collections, selection
 
   if (view === "therapist" && session.isTherapist) return <TherapistView onGoHome={goHome} />;
   if (view === "parent" && session.isParent) return <ParentView onGoHome={goHome} />;
-  if (view === "upload" && session.subscribed && !session.isAdmin) return <UploadSongView onBack={goHome} />;
+  /* Дуу нэмэх: PRO захиалагч ЭСВЭЛ уран бүтээлч. Хоёр дахь нөхцөлийг энд шалгах
+     боломжгүй (профайл нь серверт байна) тул дэлгэц өөрөө эрхгүй тохиолдлыг
+     тайлбарлана — backend ямар ч байсан `Role.USER`-т зөвшөөрдөг. */
+  if (view === "upload" && !session.isAdmin) return <UploadSongView onBack={goHome} />;
+  if (view === "artistProfile" && !session.isAdmin) return <ArtistProfileView onBack={goHome} />;
   if (view === "progress") return <ProgressView onBack={goHome} />;
   if (view === "profile") return <ProfileView onBack={goHome} prefs={settings.prefs} onUpdatePrefs={settings.onUpdatePrefs} />;
 

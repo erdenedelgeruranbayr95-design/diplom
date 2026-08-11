@@ -199,6 +199,34 @@ export function subscribeMe(plan?: string) {
   return apiFetch<UserSub | null>("/users/me/subscription", { method: "PATCH", body: JSON.stringify({ plan }) });
 }
 
+/* ---- Уран бүтээлчийн профайл ----
+
+   Хэрэглэгч өөрөө үүсгэнэ; профайлтай бол «уран бүтээлч» гэсэн үг. Тусдаа дүр
+   (`Role`) нэмээгүй — дүр бол ЭРХ, уран бүтээлч бол ХЭН БОЛОХ. Мөн `Role` enum
+   өөрчлөх нь гар утасны аппыг хөндөх байсан. */
+
+export interface MyArtistPayload {
+  name: string;
+  bio?: string;
+  careerInfo?: string;
+  photoUrl?: string;
+}
+
+/** Дуудагчийн уран бүтээлчийн профайл. `null` = уран бүтээлч биш. */
+export function fetchMyArtist() {
+  return apiFetch<Artist | null>("/artists/me");
+}
+
+/** Профайл үүсгэх эсвэл засах. Нэр давхцвал 409 буцна. */
+export function saveMyArtist(payload: MyArtistPayload) {
+  return apiFetch<Artist>("/artists/me", { method: "PUT", body: JSON.stringify(payload) });
+}
+
+/** Өөрийн дуунууд — ноорог хамт (хүлээгдэж буйг харуулахын тулд). */
+export function fetchMyArtistSongs() {
+  return apiFetch<Song[]>("/artists/me/songs");
+}
+
 export type AdminPaymentStatus = "SUCCESS" | "PENDING" | "FAILED";
 
 export interface AdminPayment {
