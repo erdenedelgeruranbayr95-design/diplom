@@ -5,6 +5,7 @@ import type { BeatDynamics } from "@/lib/audio/haptic-score";
 import { beatPattern } from "@/lib/haptics/beat-pattern";
 import { DeviceRouter } from "@/lib/haptics/DeviceRouter";
 import { BEAT_LEVELS, DEFAULT_BRIGHTNESS } from "@/lib/player/constants";
+import { accentFor, type HapticTrack } from "@/lib/player/haptic-track";
 
 /* Мэдрэхүйн хөдөлгүүрийн RN хувилбар.
 
@@ -46,8 +47,14 @@ export interface HapticEngineOptions {
 }
 
 export interface HapticEngine {
-  /** Шинэ дуу эхлэхэд цохилтын хугацаануудыг оноох. */
+  /** Шинэ дуу эхлэхэд цохилтын хугацаануудыг оноох (зөвхөн цохилттой нөөц зам). */
   setBeatTimestamps: (timestamps: number[] | null | undefined) => void;
+  /** Цохилт + онсет нэгтгэсэн бүтэн зам — ҮНДСЭН зам.
+   *
+   *  Зөвхөн цохилтоор чичрүүлэхэд метроном шиг мэдрэгддэг. Онсет нь цохилтоос
+   *  3–6 дахин олон бөгөөд хөгжмийн бодит бүтцийг дагадаг тул аялгуу, хэмнэлийн
+   *  нарийн ширийн нь мэдрэгдэнэ. */
+  setHapticTrack: (track: HapticTrack) => void;
   /** Haptic Score-оос гаргасан цохилт бүрийн эрчим/өнгө. `null` бол бүх цохилт
    *  ижил, өгөгдмөл дугтуйгаар өгөгдөнө (чичиргээ АЖИЛЛАСААР байна). */
   setBeatDynamics: (dynamics: BeatDynamics | null) => void;
@@ -91,6 +98,10 @@ export function useHapticEngine({
      л дараагийн цохилтоос эхлэн илүү нарийн болно. */
   const dynamicsRef = useRef<BeatDynamics | null>(null);
 
+  /* Үйл тус бүр цохилт мөн эсэх (`true` = цохилт, `false` = онсет). Индекс нь
+     scheduler-ийн timestamp массивтай харгалзана. */
+  const kindsRef = useRef<boolean[] | null>(null);
+
   /* ⚠️ `vibrationOn` нь ЧИЧИРГЭЭГ л удирддаг, визуалыг БИШ. Хэрэглэгч чичиргээг
      унтраасан ч дэлгэцийн пульс ажиллах ёстой — сонсголгүй хүнд визуал нь бие
      даасан мэдрэхүйн суваг. Иймд loop нь `playing` дээр л ажиллаж, дотроо
@@ -125,7 +136,13 @@ export function useHapticEngine({
       const brightness = dyn && i >= 0 && i < dyn.brightness.length ? dyn.brightness[i] : DEFAULT_BRIGHTNESS;
       const level = BEAT_LEVELS[vibLevelRef.current] ?? BEAT_LEVELS[1];
 
-      router.pulsePattern(beatPattern(intensity, brightness, level));
+      /* Цохилт бол хэмнэлийн ТУЛГУУР, онсет бол ЧИМЭГЛЭЛ. Хоёрыг ижил хүчээр
+         өгвөл ялгаа алга болж, дахин жигд шуугиан болно. `kinds` байхгүй
+         (зөвхөн цохилттой хуучин зам) бол бүгд тулгуур гэж үзнэ. */
+      const kinds = kindsRef.current;
+      const accent = kinds && i >= 0 && i < kinds.length ? accentFor(kinds[i]) : 1;
+
+      router.pulsePattern(beatPattern(intensity, brightness, level, accent));
     }, POLL_MS);
 
     return () => {
@@ -135,7 +152,18 @@ export function useHapticEngine({
   }, [enabled, playing, vibrationOn]);
 
   return {
-    setBeatTimestamps: (timestamps) => schedulerRef.current!.setTrack(timestamps),
+    setBeatTimestamps: (timestamps) => {
+      schedulerRef.current!.setTrack(timestamps);
+      kindsRef.current = null; // зөвхөн цохилттой зам — бүгд тулгуур
+    },
+    setHapticTrack: (track) => {
+      /* Цохилт + онсетыг НЭГ эрэмбэлэгдсэн массив болгож scheduler-т өгнө —
+         ингэснээр `BeatScheduler` өөрчлөгдөхгүй, түүний cursor/seek логик
+         хэвээр ажиллана. Индексээр нь эрчим, өнгө, зэрэглэлийг хайна. */
+      schedulerRef.current!.setTrack(track.times);
+      dynamicsRef.current = { intensity: track.intensity, brightness: track.brightness };
+      kindsRef.current = track.isBeat;
+    },
     setBeatDynamics: (dynamics) => {
       dynamicsRef.current = dynamics;
     },

@@ -64,6 +64,9 @@ export class HapticService {
           beatCount: existing.beatCount,
           beatIntensity: existing.beatIntensity,
           beatBrightness: existing.beatBrightness,
+          onsetTimestamps: existing.onsetTimestamps,
+          onsetIntensity: existing.onsetIntensity,
+          onsetBrightness: existing.onsetBrightness,
           analyzedAt: new Date(),
         },
       });
@@ -127,6 +130,10 @@ export class HapticService {
            дугтуй ашиглана, чичиргээ ажилласаар байна. */
         beatIntensity: dto.beatIntensity ?? [],
         beatBrightness: dto.beatBrightness ?? [],
+        /* Онсет — хөгжмийн нарийн бүтэц. Шүүгдээгүй ирнэ, клиент тал шүүнэ. */
+        onsetTimestamps: dto.onsetTimestamps ?? [],
+        onsetIntensity: dto.onsetIntensity ?? [],
+        onsetBrightness: dto.onsetBrightness ?? [],
         analyzedAt: new Date(),
         analysisError: null,
         hlsUrl: dto.hlsUrl,

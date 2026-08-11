@@ -180,6 +180,12 @@ export interface Song {
   beatIntensity: number[] | null;
   /** Цохилт бүрийн өнгө (0 = гүн бас, 1 = хурц таваг). */
   beatBrightness: number[] | null;
+  /** Онсет — аливаа шинэ авиа эхлэх мөч (нот, гитарын цохилт, дуучны үг).
+   *  Цохилтоос 3–6 дахин олон; ШҮҮГДЭЭГҮЙ ирнэ, клиент тал зайн шаардлагаар
+   *  шүүнэ (см. `lib/player/haptic-track.ts`). */
+  onsetTimestamps: number[] | null;
+  onsetIntensity: number[] | null;
+  onsetBrightness: number[] | null;
   /** Хөгжмийн түлхүүр (жиш. "G# minor") — worker-ийн chroma шинжилгээнээс. */
   musicalKey: string | null;
   analysisStatus: SongAnalysisStatus;

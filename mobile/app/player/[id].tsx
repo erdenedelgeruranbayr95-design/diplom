@@ -9,10 +9,11 @@ import BeatPulse, { type BeatPulseHandle } from "@/components/BeatPulse";
 import Cover from "@/components/Cover";
 import { addAction, fetchLibrary, fetchSong, fetchSongs, postHistory, removeAction } from "@/lib/api/client";
 import { beatDynamicsFromSong, loadBeatDynamics } from "@/lib/audio/haptic-score";
+import { buildHapticTrack } from "@/lib/player/haptic-track";
 import { absoluteUrl } from "@/lib/config";
 import { usePreferences } from "@/lib/prefs/PreferencesContext";
 import { useHapticEngine } from "@/lib/player/useHapticEngine";
-import { VIB_LEVELS } from "@/lib/player/constants";
+import { DEFAULT_BRIGHTNESS, VIB_LEVELS } from "@/lib/player/constants";
 import { afterTrackEnd, neighborIndex, shuffledOrder } from "@/lib/player/queue";
 import type { Song } from "@/types";
 
@@ -183,35 +184,45 @@ export default function PlayerScreen() {
   // удирдлагыг асаана (дэвсгэрт тоглуулахын урьдчилсан нөхцөл).
   useEffect(() => {
     if (!song) return;
-    engine.setBeatTimestamps(song.beatTimestamps);
     player.setActiveForLockScreen?.(true, {
       title: song.title,
       artist: song.artist ?? "МЭДРЭХ",
     });
   }, [song]);
 
-  /* Цохилт бүрийн эрчим ба өнгө.
-     Үүнгүй ч чичиргээ ажиллана (бүх цохилт ижил дугтуйтай), тиймээс энэ нь
-     ЗӨВХӨН сайжруулалт: цохилт бүр хөгжмийн бодит динамикийг дагана.
+  /* Мэдрэхүйн зам — цохилт + онсет.
+     Зөвхөн цохилтоор чичрүүлэхэд метроном шиг мэдрэгддэг (секундэд 1.6–2.5 удаа,
+     бүгд ижил зайтай). Онсет нь цохилтоос 3–6 дахин олон бөгөөд хөгжмийн бодит
+     бүтцийг дагадаг тул аялгуу, гитарын цохилт, дуучны үг мэдрэгдэнэ.
 
-     ⚠️ ХОЁР ЭХ СУРВАЛЖ, ДАРААЛАЛТАЙ
-     1. `song.beatIntensity/beatBrightness` — сервер урьдчилан бодоод DB-д
-        хадгалсан (~3 KB). ХУРДАН, сүлжээний нэмэлт дуудлагагүй.
-     2. `scoreUrl` дээрх 2.6 MB Score — хуучин зам, зөвхөн 1-р эх сурвалж
-        хоосон үед. Worker нь Score-оо ӨӨРИЙН дискэнд бичдэг тул үүлэн дээрх
-        backend түүнийг ихэвчлэн үйлчилж чаддаггүй (404) — иймд энэ нь одоо
-        зөвхөн локал орчны нөөц зам. */
+     ⚠️ ГУРВАН ЭХ СУРВАЛЖ, ДАРААЛАЛТАЙ
+     1. Цохилт + онсет нэгтгэсэн зам — ХАМГИЙН БҮРЭН. Онсетыг энд зайн
+        шаардлагаар шүүнэ (см. `buildHapticTrack`).
+     2. Зөвхөн цохилтын эрчим/өнгө — онсетгүй хуучин өгөгдөл.
+     3. `scoreUrl` дээрх 2.6 MB Score — зөвхөн локал орчны нөөц зам (үүлэн
+        дээрх backend түүнийг үйлчилж чаддаггүй, 404). */
   useEffect(() => {
     let alive = true;
     engine.setBeatDynamics(null); // өмнөх дууныхыг заавал арилгана
     const beats = song?.beatTimestamps;
     if (!beats?.length) return;
 
-    const stored = beatDynamicsFromSong(song?.beatIntensity, song?.beatBrightness, beats.length);
-    if (stored) {
-      engine.setBeatDynamics(stored);
-      return;
+    const track = buildHapticTrack(
+      { times: beats, intensity: song?.beatIntensity, brightness: song?.beatBrightness },
+      { times: song?.onsetTimestamps, intensity: song?.onsetIntensity, brightness: song?.onsetBrightness },
+      DEFAULT_BRIGHTNESS,
+    );
+    if (track) {
+      engine.setHapticTrack(track);
+      /* Онсет огт үлдээгүй бол (шүүлтэд бүгд унасан, эсвэл хуучин өгөгдөл)
+         зам нь зөвхөн цохилтоос бүрдэнэ — өмнөх зан төлөвтэй ижил. */
+      if (track.onsetCount > 0) return;
+    } else {
+      engine.setBeatTimestamps(beats);
     }
+
+    const stored = beatDynamicsFromSong(song?.beatIntensity, song?.beatBrightness, beats.length);
+    if (stored || track) return; // өгөгдөл аль хэдийн оноогдсон
 
     if (!song?.scoreUrl) return;
     loadBeatDynamics(song.scoreUrl, beats).then((dyn) => {

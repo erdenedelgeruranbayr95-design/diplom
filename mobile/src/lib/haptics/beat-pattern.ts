@@ -81,13 +81,24 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
  *  @param intensity  0..1 — тухайн цохилтын хүч (дууны бодит эрчмээс).
  *  @param brightness 0..1 — 0 гүн бас, 1 өндөр давтамж. Дугтуйн ХЭЛБЭРийг заана.
  *  @param level      хэрэглэгчийн сонгосон түвшний оргил/урт.
+ *  @param accent     0..1 — үйлийн зэрэглэл. Цохилт = 1 (тулгуур), онсет < 1
+ *                    (чимэглэл). Өгөгдмөл 1 тул хуучин дуудлагууд өөрчлөгдөхгүй.
  */
-export function beatPattern(intensity: number, brightness: number, level: LevelShape): HapticPattern {
+export function beatPattern(
+  intensity: number,
+  brightness: number,
+  level: LevelShape,
+  accent = 1,
+): HapticPattern {
   const b = clamp01(brightness);
-  const peak = clamp01(intensity) * clamp01(level.peak);
+  const a = clamp01(accent);
+  const peak = clamp01(intensity) * clamp01(level.peak) * a;
 
   const steps = Math.round(lerp(DEEP.steps, SHARP.steps, b));
-  const totalMs = lerp(DEEP.totalMs, SHARP.totalMs, b) * Math.max(0.1, level.body);
+  /* `accent` нь оргилыг сулруулахаас гадна дугтуйг БОГИНОСГОНО — эс бөгөөс
+     хөнгөн онсет нь цохилттой ижил урт үргэлжилж, хэмнэлийн тулгуурыг булаана.
+     `accent = 1` үед үржигч нь яг 1 тул цохилтын зан төлөв ӨӨРЧЛӨГДӨХГҮЙ. */
+  const totalMs = lerp(DEEP.totalMs, SHARP.totalMs, b) * Math.max(0.1, level.body) * (0.55 + 0.45 * a);
   const decay = lerp(DEEP.decay, SHARP.decay, b);
   const stepMs = Math.max(MIN_STEP_MS, Math.round(totalMs / steps));
 

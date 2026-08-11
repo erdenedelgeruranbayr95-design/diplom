@@ -46,6 +46,23 @@ export class HapticCallbackDto {
   @IsNumber({}, { each: true })
   beatBrightness?: number[];
 
+  /* Онсет — цохилтоос 3-6 дахин олон, хөгжмийн нарийн бүтцийг дагана.
+     ШҮҮГДЭЭГҮЙ ирнэ (зай нь 35мс хүртэл богино байж болно); клиент тал шүүнэ. */
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  onsetTimestamps?: number[];
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  onsetIntensity?: number[];
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  onsetBrightness?: number[];
+
   @IsOptional()
   @IsString()
   error?: string;

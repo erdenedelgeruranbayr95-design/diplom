@@ -47,10 +47,32 @@ export class SongsService {
      Нүүр хуудас эдгээрийг ОГТ ашигладаггүй: чичиргээ өгдөг тоглуулагч дууг
      тусад нь (`GET /songs/:id`) татдаг бөгөөд тэр нь бүх талбараа хэвээр өгнө.
      Гар утсанд энэ хэмжээний JSON задлах нь нүүр хуудсыг мэдэгдэхүйц удаашруулна. */
-  private stripBeats<T extends { beatTimestamps?: unknown; beatIntensity?: unknown; beatBrightness?: unknown }>(
+  private stripBeats<
+    T extends {
+      beatTimestamps?: unknown;
+      beatIntensity?: unknown;
+      beatBrightness?: unknown;
+      onsetTimestamps?: unknown;
+      onsetIntensity?: unknown;
+      onsetBrightness?: unknown;
+    },
+  >(
     songs: T[],
-  ): Omit<T, 'beatTimestamps' | 'beatIntensity' | 'beatBrightness'>[] {
-    return songs.map(({ beatTimestamps: _t, beatIntensity: _i, beatBrightness: _b, ...rest }) => rest);
+  ): Omit<
+    T,
+    'beatTimestamps' | 'beatIntensity' | 'beatBrightness' | 'onsetTimestamps' | 'onsetIntensity' | 'onsetBrightness'
+  >[] {
+    return songs.map(
+      ({
+        beatTimestamps: _t,
+        beatIntensity: _i,
+        beatBrightness: _b,
+        onsetTimestamps: _ot,
+        onsetIntensity: _oi,
+        onsetBrightness: _ob,
+        ...rest
+      }) => rest,
+    );
   }
 
   /* Нийтэд (тоглуулагч, хайлт) зөвхөн published + upload баталгаажсан дуу л харагдана. */

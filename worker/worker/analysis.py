@@ -49,6 +49,21 @@ class AnalysisResult:
     # хадгалагдана — файл, S3, дундын диск шаардахгүй.
     beat_intensity: list
     beat_brightness: list
+    # Онсет — аливаа шинэ авиа эхлэх мөч (бөмбөр, гитарын цохилт, дуучны үг).
+    #
+    # ⚠️ ЯАГААД ЦОХИЛТООС ГАДНА ОНСЕТ ХЭРЭГТЭЙ ВЭ
+    # Зөвхөн цохилтоор чичрүүлэхэд метроном шиг мэдрэгддэг — секундэд ердөө 1.6-2.5
+    # удаа, бүгд ижил зайтай. Онсет нь 3-6 дахин олон (секундэд 4.5-12) бөгөөд
+    # хөгжмийн БОДИТ бүтцийг дагадаг тул аялгуу, хэмнэлийн нарийн ширийн нь
+    # мэдрэгдэж эхэлдэг.
+    #
+    # ⚠️ ЭНД ШҮҮГДЭЭГҮЙ бүх онсетыг өгнө. Хоорондын зай 35мс хүртэл богино байж
+    # болох тул шууд тоглуулбал арьс тэдгээрийг нэг тасралтгүй чичиргээ гэж
+    # мэдэрнэ (хүрэлцэхүйн ялгах хязгаар ~50мс). Шүүлтийг клиент тал хийнэ —
+    # ингэснээр мэдрэмжийг тааруулахад дуунуудыг дахин шинжлэх шаардлагагүй.
+    onset_times: list
+    onset_intensity: list
+    onset_brightness: list
 
 
 def analyze(file_path: str) -> AnalysisResult:
@@ -68,6 +83,9 @@ def analyze(file_path: str) -> AnalysisResult:
     rounded_beats = [round(float(t), 3) for t in beat_times]
     intensity, brightness = build_beat_dynamics(haptic_score, rounded_beats)
 
+    rounded_onsets = [round(float(t), 3) for t in onset_times]
+    onset_i, onset_b = build_beat_dynamics(haptic_score, rounded_onsets)
+
     return AnalysisResult(
         bpm=round(bpm_value, 1),
         musical_key=musical_key,
@@ -75,6 +93,9 @@ def analyze(file_path: str) -> AnalysisResult:
         beat_times=rounded_beats,
         beat_intensity=intensity,
         beat_brightness=brightness,
+        onset_times=rounded_onsets,
+        onset_intensity=onset_i,
+        onset_brightness=onset_b,
     )
 
 

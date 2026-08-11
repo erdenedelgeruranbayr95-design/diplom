@@ -164,6 +164,11 @@ def process_job(job: dict) -> None:
         # өгөгдлийн санд хадгалагдаж, ямар ч орчинд ажиллана.
         beatIntensity=result.beat_intensity,
         beatBrightness=result.beat_brightness,
+        # Онсет — цохилтоос 3-6 дахин олон, хөгжмийн нарийн бүтцийг дагана.
+        # Шүүлтгүйгээр илгээж, клиент тал зайн шаардлагаар нь шүүнэ.
+        onsetTimestamps=result.onset_times,
+        onsetIntensity=result.onset_intensity,
+        onsetBrightness=result.onset_brightness,
         hlsUrl=hls_url,
         coverThumbUrl=cover_urls.get("thumb") if cover_urls else None,
         coverMediumUrl=cover_urls.get("medium") if cover_urls else None,
