@@ -35,15 +35,22 @@ export class SongsService {
     });
   }
 
-  /* ЖАГСААЛТААС `beatTimestamps`-ыг ХАСНА.
-     Хэмжсэн: 51 дууны хариу 244 KB байсны 171 KB (70%) нь энэ талбар. Дуу бүрд
-     дунджаар 370 тоо — нийт ~19,000 бодит тоо. Нүүр хуудас түүнийг ОГТ
-     ашигладаггүй: чичиргээ өгдөг тоглуулагч болон дэлгэрэнгүй дэлгэц дууг
+  /* ЖАГСААЛТААС цохилтын өгөгдлийг ХАСНА.
+
+     Гурван талбар: `beatTimestamps` (цохилтын хугацаа), `beatIntensity` (эрчим),
+     `beatBrightness` (өнгө). Гурвуулаа дуу бүрд хэдэн зуун бодит тоо агуулна.
+
+     Хэмжсэн:
+       · `beatTimestamps` — 51 дууны хариу 244 KB байсны 171 KB (70%)
+       · `beatIntensity` + `beatBrightness` — 30 дууны хариунд 97 KB (69%)
+
+     Нүүр хуудас эдгээрийг ОГТ ашигладаггүй: чичиргээ өгдөг тоглуулагч дууг
      тусад нь (`GET /songs/:id`) татдаг бөгөөд тэр нь бүх талбараа хэвээр өгнө.
-     Гар утсанд энэ хэмжээний JSON задлах нь нүүр хуудсыг мэдэгдэхүйц удаашруулж
-     байсан. */
-  private stripBeats<T extends { beatTimestamps?: unknown }>(songs: T[]): Omit<T, 'beatTimestamps'>[] {
-    return songs.map(({ beatTimestamps: _omit, ...rest }) => rest);
+     Гар утсанд энэ хэмжээний JSON задлах нь нүүр хуудсыг мэдэгдэхүйц удаашруулна. */
+  private stripBeats<T extends { beatTimestamps?: unknown; beatIntensity?: unknown; beatBrightness?: unknown }>(
+    songs: T[],
+  ): Omit<T, 'beatTimestamps' | 'beatIntensity' | 'beatBrightness'>[] {
+    return songs.map(({ beatTimestamps: _t, beatIntensity: _i, beatBrightness: _b, ...rest }) => rest);
   }
 
   /* Нийтэд (тоглуулагч, хайлт) зөвхөн published + upload баталгаажсан дуу л харагдана. */
