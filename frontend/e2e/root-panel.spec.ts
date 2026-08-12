@@ -15,20 +15,17 @@ test.describe("ROOT самбар", () => {
     await welcomeMessage(page, "Систем эзэмшигч").waitFor({ state: "visible", timeout: 10_000 });
     await dismissAutoCalibrationIfOpen(page);
 
-    // ROOT нэвтрэхэд Player (Admin view) автоматаар нээгддэг бөгөөд энэ нь Dock-ийн ROOT
-    // товчийг дэлгэц дээр давхарладаг (z-index-ээр дээгүүр) — эхлээд Player-ийг хаана.
-    // "Хаах" нэртэй 2 товч байдаг (AuthModal-ийн үлдэгдэл DOM + Player-ийн TopBar) тул
-    // Player-ийн <header> дотроос тодорхой сонгоно (TopBar.tsx:91,219-226).
-    await page.locator("header").getByRole("button", { name: "Хаах" }).click();
-
-    const rootButton = page.getByRole("button", { name: "ROOT" });
+    // ROOT нэвтрэхэд Player (Admin view) автоматаар нээгддэг. ROOT товч нь ОДОО
+    // Landing-ийн Dock дээр биш, Player-ийн хажуугийн цэсний «Удирдлага» хэсэгт
+    // байгаа тул Player-ийг хаахгүй, тэндээс нь шууд дарна (Sidebar.tsx).
+    const rootButton = page.getByRole("navigation", { name: "Удирдлагын самбар" }).getByRole("button", { name: "ROOT" });
     await expect(rootButton).toBeVisible({ timeout: 10_000 });
     await rootButton.click();
 
     await expect(page.getByText("Систем эзэмшигчийн самбар")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("ROOT бус хэрэглэгчид ROOT dock товч огт харагдахгүй", async ({ page }) => {
+  test("ROOT бус хэрэглэгчид ROOT товч огт харагдахгүй", async ({ page }) => {
     const email = `e2e-notroot-${Date.now()}@example.com`;
     await waitForLanding(page);
     // Нэр дотор "ROOT" гэдэг текст ОРУУЛАХГҮЙ — Playwright-ийн getByRole name нь

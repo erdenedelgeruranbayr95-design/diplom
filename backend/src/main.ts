@@ -36,8 +36,17 @@ async function bootstrap() {
     }),
   );
   app.use(cookieParser());
+  /* ⚠️ `CORS_ORIGIN` нь ТАСЛАЛААР тусгаарлагдсан ОЛОН хаяг байж болно (жиш.
+     production домэйн + локал `http://localhost:3001`). `origin`-д таслалтай
+     ГАНЦ мөр дамжуулбал cors пакет түүнийг бүтэн текстээр харьцуулдаг тул аль ч
+     хаяг таарахаа больж, хоёулаа хаагдана — тиймээс массив болгож задлана.
+     `payments/return-url.ts` нь мөн ижил жагсаалтыг уншдаг (нэг эх сурвалж). */
+  const origins = (config.get<string>('CORS_ORIGIN') ?? 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: config.get<string>('CORS_ORIGIN') ?? 'http://localhost:5173',
+    origin: origins.length === 1 ? origins[0] : origins,
     credentials: true,
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));

@@ -56,24 +56,37 @@ export default function Player({
   user,
   subscribed,
   onSubscribe,
+  isRoot,
   isAdmin,
+  isCurator,
   isTherapist,
   isParent,
+  onRoot,
   onAdmin,
+  onCurator,
   onLogout,
   onCancelSub,
+  panelOpen,
 }: {
   open: boolean;
   onClose: () => void;
   user: SessionUser | null;
   subscribed: boolean;
   onSubscribe: () => void;
+  /* ROOT/Куратор самбарын товчнууд Landing-ийн Dock-оос хажуугийн цэс рүү нүүсэн
+     тул эдгээр эрхийн тугууд одоо Player-ээр дамжина. */
+  isRoot: boolean;
   isAdmin: boolean;
+  isCurator: boolean;
   isTherapist: boolean;
   isParent: boolean;
+  onRoot: () => void;
   onAdmin: () => void;
+  onCurator: () => void;
   onLogout: () => void;
   onCancelSub: () => void;
+  /** ROOT/Админ/Куратор самбарын аль нэг нь Player-ийн ДЭЭР нээлттэй эсэх. */
+  panelOpen: boolean;
 }) {
   /* ---------- навигаци ба сонголтууд ---------- */
   const [view, setView] = useState<ViewName>("home");
@@ -260,7 +273,10 @@ export default function Player({
     [tone],
   );
 
-  /* Escape-ийн шатлал — хамгийн дээд давхаргаас доош нэг л удаа хаана. */
+  /* Escape-ийн шатлал — хамгийн дээд давхаргаас доош нэг л удаа хаана.
+     ROOT/Админ/Куратор самбар нээлттэй үед БҮРЭН унтраана: тэдгээр самбар Player-ийн
+     ДЭЭР (z-9200/10000) байрлаж, өөрсдийн Escape-тэй тул хоёулаа сонсвол нэг товшилт
+     2 давхаргыг зэрэг хаана (самбар + Player). */
   useEscapeStack(
     [
       { active: immersive, onEscape: immersiveExit.handleClose },
@@ -269,7 +285,7 @@ export default function Player({
       { active: view !== "home", onEscape: goHome },
       { active: true, onEscape: onClose },
     ],
-    { enabled: open },
+    { enabled: open && !panelOpen },
   );
 
   /* ---------- дууны үйлдлүүдийн нийтлэг контекст ---------- */
@@ -337,7 +353,18 @@ export default function Player({
 
         {/* их бие */}
         <div className="relative z-[2] flex flex-1 min-h-0 w-full max-nav:flex-col">
-          <Sidebar view={view} likedTracks={likedTracks} savedTracks={savedTracks} recentTracks={recentTracks} />
+          <Sidebar
+            view={view}
+            likedTracks={likedTracks}
+            savedTracks={savedTracks}
+            recentTracks={recentTracks}
+            isRoot={isRoot}
+            isAdmin={isAdmin}
+            isCurator={isCurator}
+            onRoot={onRoot}
+            onAdmin={onAdmin}
+            onCurator={onCurator}
+          />
 
           <div className="flex min-w-0 flex-1 max-nav:flex-col">
             <PageContainer scrollKey={view + ":" + (detailTrack?.id ?? "")}>

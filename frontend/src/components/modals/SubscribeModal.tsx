@@ -56,7 +56,15 @@ export default function SubscribeModal({
     setBusy(false);
     fetchPaymentsConfig()
       .then((cfg) => setEnabled(cfg.enabled))
-      .catch(() => setEnabled(false));
+      /* ⚠️ Хүсэлт өөрөө УНАСАН (сүлжээ тасарсан, backend унтарсан, session хугацаа
+         дууссан) тохиолдлыг "төлбөр тохируулагдаагүй" гэж ХЭЛЖ БОЛОХГҮЙ — тэр нь
+         тохируулга хийчихсэн админыг сервер рүү дэмий хөөж, жинхэнэ шалтгааныг
+         (сүлжээ/сесс) нуудаг. Товчийг нээлттэй үлдээж, бодит алдааг «Картаар
+         төлөх» дарахад Stripe/backend-ээс ирсэн мессежээр харуулна. */
+      .catch(() => {
+        setEnabled(null);
+        setError("Төлбөрийн тохиргоог уншиж чадсангүй. Сүлжээгээ шалгаад дахин оролдоно уу.");
+      });
   }, [open]);
 
   const pay = useCallback(async () => {

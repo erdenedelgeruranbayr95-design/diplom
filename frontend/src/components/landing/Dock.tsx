@@ -1,29 +1,20 @@
 import type { SessionUser } from "@/types/auth";
 import Icon from "@/components/ui/Icon";
 
+/* Зөвхөн зочны/маркетингийн навигаци. ROOT · Админ · Куратор самбарын товчнууд
+   энд БАЙХГҮЙ — тэдгээр нь Тоглуулагчийн хажуугийн цэс рүү (layout/Sidebar.tsx
+   «Удирдлага» хэсэг) шилжсэн. Landing нь бүх зочинд харагддаг нүүр тул ажилтны
+   самбаруудыг тэндээс нуух нь UI-г цэвэр байлгахаас гадна аль хэрэглэгч ямар
+   эрхтэйг гаднаас шууд харуулахгүй. */
 export default function Dock({
   user,
-  isRoot,
-  isAdmin,
-  isCurator,
   onLogin,
   onLogout,
-  onRoot,
-  onAdmin,
-  onCurator,
   onPlayer,
 }: {
   user: SessionUser | null;
-  /** Систем эзэмшигч — Root Panel-ийн товч зөвхөн түүнд харагдана. */
-  isRoot: boolean;
-  isAdmin: boolean;
-  /** Куратор/модератор — Curator Panel-ийн товч зөвхөн түүнд харагдана (ADMIN/ROOT ч мөн). */
-  isCurator: boolean;
   onLogin: () => void;
   onLogout: () => void;
-  onRoot: () => void;
-  onAdmin: () => void;
-  onCurator: () => void;
   onPlayer: () => void;
 }) {
   const navLinkCls =
@@ -50,38 +41,6 @@ export default function Dock({
           <button className={navLinkCls + " max-nav:px-2.5 text-aqua inline-flex items-center gap-2"} onClick={onPlayer} aria-label="Тоглуулагч">
             <Icon name="music" size={14} />
             <span className="max-nav:hidden">Тоглуулагч</span>
-          </button>
-        )}
-        {/* ROOT — систем эзэмшигчийн самбар (ADMIN-аас дээр зэрэглэлтэй) */}
-        {isRoot && (
-          <button
-            className="keep text-body py-2.5 px-[15px] max-nav:px-2.5 rounded-full transition-[color,background,box-shadow] duration-250 focus-visible:shadow-glow-aqua text-rose border border-rose/40 hover:bg-rose hover:text-[#1A0A0F] inline-flex items-center gap-2"
-            onClick={onRoot}
-            aria-label="ROOT"
-          >
-            <Icon name="shield" size={14} />
-            <span className="max-nav:hidden">ROOT</span>
-          </button>
-        )}
-        {isAdmin && (
-          <button
-            className="keep text-body py-2.5 px-[15px] max-nav:px-2.5 rounded-full transition-[color,background,box-shadow] duration-250 focus-visible:shadow-glow-aqua text-warm border border-[rgba(217,165,76,.4)] hover:bg-warm hover:text-[#140D02] inline-flex items-center gap-2"
-            onClick={onAdmin}
-            aria-label="Админ"
-          >
-            <Icon name="grid" size={14} />
-            <span className="max-nav:hidden">Админ</span>
-          </button>
-        )}
-        {/* CURATOR/MODERATOR — контент лиценз/нийтлэл удирдах самбар (ADMIN/ROOT-д ч харагдана) */}
-        {isCurator && (
-          <button
-            className="keep text-body py-2.5 px-[15px] max-nav:px-2 rounded-full transition-[color,background,box-shadow] duration-250 focus-visible:shadow-glow-aqua text-purple border border-purple/40 hover:bg-purple hover:text-[#0E0A1C] inline-flex items-center gap-2"
-            onClick={onCurator}
-            aria-label="Куратор"
-          >
-            <Icon name="disc" size={14} />
-            <span className="max-nav:hidden">Куратор</span>
           </button>
         )}
         {user ? (
