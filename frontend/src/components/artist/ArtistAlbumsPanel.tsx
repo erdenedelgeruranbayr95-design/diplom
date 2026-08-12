@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/Icon";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import { Empty, ErrorState } from "@/components/ui/States";
+import ImagePicker from "@/components/ui/ImagePicker";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { FIELD_CAPTION_CLS, FIELD_INPUT_CLS, FIELD_LABEL_CLS } from "@/components/ui/form-styles";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -59,6 +60,8 @@ export default function ArtistAlbumsPanel({
   const [saving, setSaving] = useState(false);
 
   const [creating, setCreating] = useState(false);
+  /* Шинэ цомгийн ковер — үүсгэх мөчид л байршуулна (сонгох бүрд биш). */
+  const [newCover, setNewCover] = useState<File | null>(null);
   /* Ковер сонгож буй цомог — `openId`-ээс ТУСДАА: зураг солихын тулд цомгийг
      нээх шаардлагагүй, мөн нээлттэй цомгийн ажлын дарааллыг хөндөхгүй. */
   const [coverTargetId, setCoverTargetId] = useState<string | null>(null);
@@ -106,9 +109,11 @@ export default function ArtistAlbumsPanel({
       const album = await createAlbum({
         title,
         year: yearRaw ? Number(yearRaw) : undefined,
+        coverKey: newCover ? await uploadCoverImage(newCover) : undefined,
       });
       setAlbums((prev) => [{ ...album, songs: [] }, ...prev]);
       form.reset();
+      setNewCover(null);
       toast.success(`«${album.title}» цомог үүслээ`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Үүсгэхэд алдаа гарлаа");
@@ -232,19 +237,29 @@ export default function ArtistAlbumsPanel({
 
   return (
     <div className="flex flex-col gap-5">
-      <form className="flex gap-3 items-end max-[560px]:flex-col max-[560px]:items-stretch" onSubmit={submitNew}>
-        <label className={FIELD_LABEL_CLS + " flex-1"}>
-          <span className={FIELD_CAPTION_CLS}>Шинэ цомгийн нэр</span>
-          <input className={FIELD_INPUT_CLS} name="title" placeholder="Жишээ: Анхны алхам" maxLength={120} />
-        </label>
-        <label className={FIELD_LABEL_CLS + " w-[130px] max-[560px]:w-full"}>
-          <span className={FIELD_CAPTION_CLS}>Он</span>
-          <input className={FIELD_INPUT_CLS} name="year" type="number" min={1900} max={2100} placeholder="2026" />
-        </label>
-        <ActionButton variant="primary" type="submit" disabled={creating} className="flex-none">
-          <Icon name="plus" size={14} />
-          {creating ? "Үүсгэж байна…" : "Цомог үүсгэх"}
-        </ActionButton>
+      <form className="flex flex-col gap-3.5" onSubmit={submitNew}>
+        <div className="flex gap-3 items-end max-[560px]:flex-col max-[560px]:items-stretch">
+          <label className={FIELD_LABEL_CLS + " flex-1"}>
+            <span className={FIELD_CAPTION_CLS}>Шинэ цомгийн нэр</span>
+            <input className={FIELD_INPUT_CLS} name="title" placeholder="Жишээ: Анхны алхам" maxLength={120} />
+          </label>
+          <label className={FIELD_LABEL_CLS + " w-[130px] max-[560px]:w-full"}>
+            <span className={FIELD_CAPTION_CLS}>Он</span>
+            <input className={FIELD_INPUT_CLS} name="year" type="number" min={1900} max={2100} placeholder="2026" />
+          </label>
+          <ActionButton variant="primary" type="submit" disabled={creating} className="flex-none">
+            <Icon name="plus" size={14} />
+            {creating ? "Үүсгэж байна…" : "Цомог үүсгэх"}
+          </ActionButton>
+        </div>
+        <ImagePicker
+          caption="Ковер зураг (заавал биш)"
+          hint="Дараа нь жагсаалт дахь зургийг дарж ч сольж болно"
+          file={newCover}
+          onPick={setNewCover}
+          size={64}
+          disabled={creating}
+        />
       </form>
 
       {albums.length === 0 ? (

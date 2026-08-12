@@ -1,11 +1,15 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpsertMyArtistDto } from './dto/upsert-my-artist.dto';
 
 @Injectable()
 export class ArtistsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storage: StorageService,
+  ) {}
 
   /* ---- Хэрэглэгчийн ӨӨРИЙН уран бүтээлчийн профайл ---- */
 
@@ -23,6 +27,12 @@ export class ArtistsService {
    *  P2002 шиднэ — түүнийг ойлгомжтой мессеж болгож хөрвүүлнэ, эс бөгөөс
    *  хэрэглэгч «Internal server error» харна. */
   async upsertMine(userId: string, dto: UpsertMyArtistDto) {
+    const { photoKey, photoUrl, ...rest } = dto;
+    /* `photoKey` нь Prisma-гийн талбар БИШ — задалж авахгүй бол `data: dto`
+       үл мэдэгдэх багана гэж унана. Key ирвэл нийтийн URL болгоно; ирээгүй бол
+       хэрэглэгчийн бичсэн URL (эсвэл хоосон мөр = зургаа хассан) хэвээр. */
+    const data = { ...rest, photoUrl: photoKey ? this.storage.publicUrlFor(photoKey) : photoUrl };
+
     const existing = await this.prisma.artist.findUnique({ where: { ownerId: userId } });
 
     /* Нэр давхцаж байгаа эсэхийг УРЬДЧИЛАН шалгана — P2002-г барих нь ажилладаг
@@ -33,9 +43,9 @@ export class ArtistsService {
     }
 
     if (existing) {
-      return this.prisma.artist.update({ where: { id: existing.id }, data: dto });
+      return this.prisma.artist.update({ where: { id: existing.id }, data });
     }
-    return this.prisma.artist.create({ data: { ...dto, ownerId: userId } });
+    return this.prisma.artist.create({ data: { ...data, ownerId: userId } });
   }
 
   /* ---- Админы баталгаажуулалт ---- */

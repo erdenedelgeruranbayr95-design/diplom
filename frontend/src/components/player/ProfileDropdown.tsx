@@ -141,7 +141,7 @@ export default function ProfileDropdown({
           {!isAdmin && <MenuItem icon="mic" label="Уран бүтээлч" onClick={() => go("artistProfile")} />}
           {/* Дуу нэмэх: PRO захиалагч ЭСВЭЛ уран бүтээлчийн профайлтай хүн. */}
           {(subscribed || isArtist) && !isAdmin && (
-            <MenuItem icon="upload" label="Дуу нэмэх" onClick={() => go("upload")} />
+            <MenuItem icon="upload" label="Дуу, цомог нэмэх" onClick={() => go("upload")} />
           )}
           <MenuItem icon="device" label="Төхөөрөмж холбох" onClick={() => go("devices")} />
           <MenuItem icon="chart" label="Миний статистик" onClick={() => go("stats")} />

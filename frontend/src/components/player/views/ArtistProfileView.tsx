@@ -22,7 +22,9 @@ import { Empty, ErrorState } from "@/components/ui/States";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { FIELD_CAPTION_CLS, FIELD_INPUT_CLS, FIELD_LABEL_CLS } from "@/components/ui/form-styles";
 import ArtistAlbumsPanel from "@/components/artist/ArtistAlbumsPanel";
+import ImagePicker from "@/components/ui/ImagePicker";
 import { fetchMyArtist, fetchMyArtistSongs, saveMyArtist } from "@/lib/api/client";
+import { uploadCoverImage } from "@/lib/songs/upload";
 import { useToast } from "@/components/providers/ToastProvider";
 import type { Artist, Song } from "@/types/song";
 
@@ -33,6 +35,12 @@ export default function ArtistProfileView({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  /* Хөрөг зураг — ФАЙЛААР сонгоно (холбоос бичихгүй). Сонгосон файл нь
+     хадгалах мөчид л S3 руу очно; `photoCleared` нь «байгаа зургаа хассан»
+     (шинийг сонгоогүй) тохиолдлыг ялгана — эс бөгөөс хассан нь мэдэгдэхгүй. */
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoCleared, setPhotoCleared] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -58,13 +66,19 @@ export default function ArtistProfileView({ onBack }: { onBack: () => void }) {
     }
     setBusy(true);
     try {
+      const photoKey = photo ? await uploadCoverImage(photo) : undefined;
       const saved = await saveMyArtist({
         name,
         bio: ((f.get("bio") as string) || "").trim() || undefined,
         careerInfo: ((f.get("careerInfo") as string) || "").trim() || undefined,
-        photoUrl: ((f.get("photoUrl") as string) || "").trim() || undefined,
+        photoKey,
+        /* Зөвхөн ХАССАН үед хоосон утга явуулна. Огт хөндөөгүй бол талбарыг
+           илгээхгүй — backend үлдээсэн зургийг нь хэвээр хадгална. */
+        photoUrl: !photo && photoCleared ? "" : undefined,
       });
       setArtist(saved);
+      setPhoto(null);
+      setPhotoCleared(false);
       toast.success(artist ? "Профайл шинэчлэгдлээ" : `«${saved.name}» профайл үүслээ`);
     } catch (err) {
       /* Нэр давхцвал backend 409 буцаана — мессежийг нь шууд харуулна, учир нь
@@ -173,20 +187,19 @@ export default function ArtistProfileView({ onBack }: { onBack: () => void }) {
               />
             </div>
 
-            <div>
-              <label className={FIELD_LABEL_CLS} htmlFor="ap-photo">
-                Зургийн холбоос
-              </label>
-              <input
-                id="ap-photo"
-                name="photoUrl"
-                type="url"
-                className={FIELD_INPUT_CLS}
-                defaultValue={artist?.photoUrl ?? ""}
-                placeholder="https://…"
-                maxLength={500}
-              />
-            </div>
+            <ImagePicker
+              caption="Өөрийн зураг"
+              hint="Компьютер/утаснаасаа зургаа сонгоно — холбоос бичих шаардлагагүй"
+              file={photo}
+              onPick={(picked) => {
+                setPhoto(picked);
+                setPhotoCleared(picked === null);
+              }}
+              currentUrl={photoCleared ? null : artist?.photoUrl}
+              round
+              size={96}
+              disabled={busy}
+            />
 
             <ActionButton variant="primary" type="submit" disabled={busy} className="self-start">
               {busy ? "Хадгалж байна…" : artist ? "Хадгалах" : "Профайл үүсгэх"}
