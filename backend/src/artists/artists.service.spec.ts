@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ArtistsService } from './artists.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 describe('ArtistsService', () => {
   let service: ArtistsService;
@@ -8,13 +9,15 @@ describe('ArtistsService', () => {
     artist: { create: jest.Mock; findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock; delete: jest.Mock };
     song: { findMany: jest.Mock };
   };
+  let storage: { publicUrlFor: jest.Mock };
 
   beforeEach(() => {
     prisma = {
       artist: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn(), delete: jest.fn() },
       song: { findMany: jest.fn() },
     };
-    service = new ArtistsService(prisma as unknown as PrismaService);
+    storage = { publicUrlFor: jest.fn((key: string) => `https://cdn.test/${key}`) };
+    service = new ArtistsService(prisma as unknown as PrismaService, storage as unknown as StorageService);
   });
 
   it('create() нь каталогийн дуучныг ШУУД баталгаажсанаар үүсгэнэ', () => {
@@ -26,6 +29,26 @@ describe('ArtistsService', () => {
     expect(arg.data.name).toBe('Батаа');
     expect(arg.data.approved).toBe(true);
     expect(arg.data.approvedAt).toBeInstanceOf(Date);
+  });
+
+  describe('upsertMine — хөрөг зураг', () => {
+    /* Уран бүтээлч зургаа ФАЙЛААР сонгодог: клиент presigned PUT хийгээд зөвхөн
+       key илгээнэ. Key нь Prisma-гийн багана БИШ тул задлагдаж, URL болох ёстой. */
+    it('photoKey нь нийтийн URL болж, түүхий key нь DB рүү орохгүй', async () => {
+      prisma.artist.findUnique.mockResolvedValue(null);
+      await service.upsertMine('u1', { name: 'Батаа', photoKey: 'covers/abc.jpg' });
+      const [[arg]] = prisma.artist.create.mock.calls;
+      expect(arg.data.photoUrl).toBe('https://cdn.test/covers/abc.jpg');
+      expect(arg.data.photoKey).toBeUndefined();
+      expect(arg.data.ownerId).toBe('u1');
+    });
+
+    it('зураг хөндөөгүй бол photoUrl илгээгдэхгүй — байгаа зураг хэвээр', async () => {
+      prisma.artist.findUnique.mockResolvedValueOnce({ id: 'a1' }).mockResolvedValueOnce(null);
+      await service.upsertMine('u1', { name: 'Батаа' });
+      const [[arg]] = prisma.artist.update.mock.calls;
+      expect(arg.data.photoUrl).toBeUndefined();
+    });
   });
 
   it('pending() нь эзэнтэй ба эзэнгүй-баталгаажаагүй хоёуланг татна', () => {

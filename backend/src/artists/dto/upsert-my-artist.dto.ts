@@ -25,4 +25,12 @@ export class UpsertMyArtistDto {
   @IsString()
   @MaxLength(500)
   photoUrl?: string;
+
+  /* Presigned upload-аар байршуулсан ХӨРӨГ зургийн key (`kind: 'cover'`).
+     Уран бүтээлч холбоос бичихгүй, өөрийн зургаа шууд сонгодог тул энэ нь
+     үндсэн зам. Өгөгдвөл `photoUrl`-ийг ДАРНА — нийтийн URL-ыг backend угсарна. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  photoKey?: string;
 }

@@ -228,7 +228,10 @@ export interface MyArtistPayload {
   name: string;
   bio?: string;
   careerInfo?: string;
+  /** Гадаад зургийн шууд холбоос. Хоосон мөр = зургийг хасах. */
   photoUrl?: string;
+  /** Presigned upload-аар орсон хөрөг зургийн key — нийтийн URL-ыг backend угсарна. */
+  photoKey?: string;
 }
 
 /** Дуудагчийн уран бүтээлчийн профайл. `null` = уран бүтээлч биш. */

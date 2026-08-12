@@ -114,6 +114,8 @@ export interface RouterActions {
   onSubscribe: () => void;
   onCancelSub: () => void;
   onOpenAdminPanel: () => void;
+  /** «Дуу нэмэх» дэлгэцээс уран бүтээлчийн профайл руу (цомог оруулах эрх авахад). */
+  onOpenArtistProfile: () => void;
   onOpenCalibrate: () => void;
   onOpenAnalysis: (songId: string) => void;
   onFeelTest: (track: PlayerTrack) => void;
@@ -199,7 +201,9 @@ export default function PlayerViewRouter({ view, catalog, collections, selection
   /* Дуу нэмэх: PRO захиалагч ЭСВЭЛ уран бүтээлч. Хоёр дахь нөхцөлийг энд шалгах
      боломжгүй (профайл нь серверт байна) тул дэлгэц өөрөө эрхгүй тохиолдлыг
      тайлбарлана — backend ямар ч байсан `Role.USER`-т зөвшөөрдөг. */
-  if (view === "upload" && !session.isAdmin) return <UploadSongView onBack={goHome} />;
+  if (view === "upload" && !session.isAdmin) {
+    return <UploadSongView onBack={goHome} onOpenArtistProfile={actions.onOpenArtistProfile} />;
+  }
   if (view === "artistProfile" && !session.isAdmin) return <ArtistProfileView onBack={goHome} />;
   if (view === "progress") return <ProgressView onBack={goHome} />;
   if (view === "profile") return <ProfileView onBack={goHome} prefs={settings.prefs} onUpdatePrefs={settings.onUpdatePrefs} />;

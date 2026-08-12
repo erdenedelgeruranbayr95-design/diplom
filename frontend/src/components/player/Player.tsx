@@ -395,6 +395,7 @@ export default function Player({
                   onSubscribe,
                   onCancelSub,
                   onOpenAdminPanel: onAdmin,
+                  onOpenArtistProfile: () => setView("artistProfile"),
                   onOpenCalibrate: () => setCalibrateOpen(true),
                   onOpenAnalysis: openAnalysis,
                   onFeelTest: feelTest,
