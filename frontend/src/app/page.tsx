@@ -73,18 +73,9 @@ export default function Page() {
       <BackgroundEffects />
 
       <HeroSection />
-      <Dock
-        user={user}
-        isRoot={isRoot}
-        isAdmin={isAdmin}
-        isCurator={isCurator}
-        onLogin={() => setAuthOpen(true)}
-        onLogout={logout}
-        onRoot={() => setRootOpen(true)}
-        onAdmin={() => setAdminOpen(true)}
-        onCurator={() => setCuratorOpen(true)}
-        onPlayer={openPlayer}
-      />
+      {/* ROOT · Админ · Куратор товчнууд Dock-т байхаа больж, Тоглуулагчийн
+          хажуугийн цэсний «Удирдлага» хэсэг рүү шилжсэн. */}
+      <Dock user={user} onLogin={() => setAuthOpen(true)} onLogout={logout} onPlayer={openPlayer} />
       <Marquee />
       <Feel />
       <Gallery />
@@ -110,12 +101,18 @@ export default function Page() {
         user={user}
         subscribed={subscribed}
         onSubscribe={() => setSubOpen(true)}
+        isRoot={isRoot}
         isAdmin={isAdmin}
+        isCurator={isCurator}
         isTherapist={isTherapist}
         isParent={isParent}
+        onRoot={() => setRootOpen(true)}
         onAdmin={() => setAdminOpen(true)}
+        onCurator={() => setCuratorOpen(true)}
         onLogout={logout}
         onCancelSub={handleCancelSub}
+        /* Самбарууд Player-ийн дээр нээгддэг тул түүний Escape шатлалыг түр унтраана. */
+        panelOpen={rootOpen || adminOpen || curatorOpen}
       />
       <SubscribeModal open={subOpen} onClose={() => setSubOpen(false)} user={user} />
       {/* Stripe Checkout-аас `?status=success|cancel`-тэй буцаж ирэхийг барина. */}

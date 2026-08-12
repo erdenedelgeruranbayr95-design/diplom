@@ -102,8 +102,8 @@ test.describe("Хүртээмж — axe-core WCAG 2.2 AA audit", () => {
     await page.getByLabel("Нэвтрэх / Бүртгүүлэх").getByRole("button", { name: "Нэвтрэх" }).click();
     await expect(page.getByText("Тавтай морил, Систем эзэмшигч!")).toBeVisible({ timeout: 10_000 });
     await dismissAutoCalibrationIfOpen(page);
-    await page.locator("header").getByRole("button", { name: "Хаах" }).click();
-    await page.locator("#dock").getByRole("button", { name: "ROOT" }).click();
+    // ROOT товч Player-ийн хажуугийн цэсний «Удирдлага» хэсэгт (Sidebar.tsx).
+    await page.getByRole("navigation", { name: "Удирдлагын самбар" }).getByRole("button", { name: "ROOT" }).click();
     await expect(page.getByText("Систем эзэмшигчийн самбар")).toBeVisible({ timeout: 10_000 });
     const results = await runAxe(page, "root-panel");
     expect(results.violations.filter((v) => v.impact === "critical")).toHaveLength(0);

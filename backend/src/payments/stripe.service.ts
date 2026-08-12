@@ -26,7 +26,7 @@ export class StripeService {
 
   /** Тохируулга бүрэн эсэх — UI-д "төлбөр идэвхгүй" гэж ИЛ хэлэхэд ашиглана. */
   get configured(): boolean {
-    return Boolean(this.config.get<string>('STRIPE_SECRET_KEY') && this.priceId);
+    return Boolean(isSecretKey(this.config.get<string>('STRIPE_SECRET_KEY')) && this.priceId);
   }
 
   /** Сар бүрийн давтагдах Price (`price_...`) — Stripe Dashboard дээр үүсгэнэ. */
@@ -50,6 +50,21 @@ export class StripeService {
       );
     }
 
+    /* ⚠️ ХАМГИЙН ТҮГЭЭМЭЛ ТОХИРУУЛГЫН АЛДАА: `pk_...` (publishable) түлхүүрийг
+       `sk_...` (secret)-ийн оронд буулгах. Stripe Dashboard дээр хоёулаа зэрэгцээ
+       харагддаг тул андуурахад амархан. Ийм түлхүүрээр SDK үүсэх нь бүтнэ ч эхний
+       API дуудлагад Stripe `secret_key_required` гэж татгалзаж, хэрэглэгч тал
+       ойлгомжгүй 500 авдаг. Тиймээс ЭНД зогсоож, шалтгааныг нь шууд хэлнэ. */
+    if (!isSecretKey(key)) {
+      this.logger.error(
+        `STRIPE_SECRET_KEY нь нууц түлхүүр биш байна ("${key.slice(0, 3)}…"). ` +
+          'https://dashboard.stripe.com/test/apikeys → «Secret key» (sk_test_…) хуулж backend/.env-д тавина уу.',
+      );
+      throw new ServiceUnavailableException(
+        'Төлбөрийн систем буруу тохируулагдсан байна (STRIPE_SECRET_KEY нь sk_-ээр эхлэх ёстой).',
+      );
+    }
+
     this.client = new Stripe(key);
     this.logger.log(`Stripe client бэлэн (${key.startsWith('sk_live') ? 'LIVE' : 'TEST'} горим)`);
     return this.client;
@@ -69,4 +84,17 @@ export class StripeService {
     }
     return this.stripe.webhooks.constructEvent(rawBody, signature, secret);
   }
+}
+
+/** Stripe-ийн СЕРВЕР талын түлхүүр мөн эсэх.
+ *
+ *  `sk_test_…`/`sk_live_…` — энгийн нууц түлхүүр, `rk_…` — хязгаарлагдмал эрхтэй
+ *  (restricted) түлхүүр; хоёулаа server-side дуудлагад тохирно. `pk_…` нь клиент
+ *  талын publishable түлхүүр бөгөөд ЭНД ТААРАХГҮЙ. */
+/* ⚠️ `key is string` гэсэн type predicate БИШ — тийм байвал `if (!isSecretKey(key))`
+   салаанд TypeScript нь `key`-г `never` болгож нарийсгаж, доторх `key.slice()` нь
+   compile алдаа өгнө (түлхүүр нь тэр цэгт аль хэдийн `string` гэдэг нь мэдэгдэж
+   байгаа тул). Энгийн boolean хангалттай. */
+function isSecretKey(key: string | undefined): boolean {
+  return Boolean(key && (key.startsWith('sk_') || key.startsWith('rk_')));
 }

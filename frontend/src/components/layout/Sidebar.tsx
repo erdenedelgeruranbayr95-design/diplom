@@ -12,6 +12,32 @@ const NAV_ITEMS: { view: ViewName; label: string; icon: string }[] = [
   { view: "billing", label: "Захиалга", icon: "card" },
 ];
 
+/* Ажилтны самбарууд (ROOT · Админ · Куратор). Урьд нь Landing-ийн Dock дээр
+   байсан — одоо зөвхөн Тоглуулагчийн хажуугийн цэсэнд, эрхийн дагуу харагдана.
+   Товч нь Player-ийн ГАДНА байрлах overlay самбарыг нээдэг тул `view` төлөвт
+   оролцохгүй (aria-current-гүй). */
+const PANEL_BTN_CLS =
+  "flex items-center gap-3.5 w-full text-left py-3 px-3.5 rounded-2xl text-copy font-medium border transition-[background,color,border-color] duration-150 focus-visible:outline-none focus-visible:shadow-glow-aqua max-nav:w-auto max-nav:flex-1 max-nav:basis-0 max-nav:min-w-[96px] max-nav:justify-center max-nav:gap-2 max-nav:px-2.5";
+
+function PanelButton({
+  label,
+  icon,
+  accentClass,
+  onClick,
+}: {
+  label: string;
+  icon: string;
+  accentClass: string;
+  onClick: () => void;
+}) {
+  return (
+    <button className={PANEL_BTN_CLS + " " + accentClass} onClick={onClick} type="button">
+      <Icon name={icon} size={18} />
+      {label}
+    </button>
+  );
+}
+
 /* Товч дээр дууны ТОО л харагдана — урьд нь товч бүрийн доор `<SideList>`-ээр
    дуунуудын жагсаалт задарч, хажуугийн самбар хэт урт болдог байв. Дуунуудаа
    харах бол товчийг дарж тусдаа дэлгэц рүү орно. */
@@ -66,11 +92,25 @@ export default function Sidebar({
   likedTracks,
   savedTracks,
   recentTracks,
+  isRoot,
+  isAdmin,
+  isCurator,
+  onRoot,
+  onAdmin,
+  onCurator,
 }: {
   view: ViewName;
   likedTracks: PlayerTrack[];
   savedTracks: PlayerTrack[];
   recentTracks: PlayerTrack[];
+  /** Систем эзэмшигч — Root Panel-ийн товч зөвхөн түүнд харагдана. */
+  isRoot: boolean;
+  isAdmin: boolean;
+  /** Куратор/модератор — Curator Panel-ийн товч (ADMIN/ROOT-д ч харагдана). */
+  isCurator: boolean;
+  onRoot: () => void;
+  onAdmin: () => void;
+  onCurator: () => void;
 }) {
   /* Дэлгэц солих нь контекстээс — өмнө нь Player-ээс Sidebar руу prop дамждаг байв. */
   const { setView } = useTrackActions();
@@ -100,6 +140,44 @@ export default function Sidebar({
           );
         })}
       </nav>
+
+      {/* Ажилтны самбарууд — эрх байгаа үед л. Жинхэнэ хамгаалалт нь backend-ийн
+          RolesGuard; энэ нь зөвхөн харагдац. */}
+      {(isRoot || isAdmin || isCurator) && (
+        <>
+          <div className="h-px bg-white/[.06] max-nav:hidden" aria-hidden="true" />
+          <nav
+            className="flex flex-col gap-1.5 max-nav:flex-row max-nav:flex-wrap max-nav:gap-1.5 max-nav:mt-1.5"
+            aria-label="Удирдлагын самбар"
+          >
+            <span className="mono !text-meta px-3 mb-1 max-nav:hidden">Удирдлага</span>
+            {isRoot && (
+              <PanelButton
+                label="ROOT"
+                icon="shield"
+                accentClass="text-rose border-rose/25 bg-rose/[.07] hover:bg-rose/[.16] hover:border-rose/45"
+                onClick={onRoot}
+              />
+            )}
+            {isAdmin && (
+              <PanelButton
+                label="Админ"
+                icon="grid"
+                accentClass="text-warm border-warm/25 bg-warm/[.07] hover:bg-warm/[.16] hover:border-warm/45"
+                onClick={onAdmin}
+              />
+            )}
+            {isCurator && (
+              <PanelButton
+                label="Куратор"
+                icon="disc"
+                accentClass="text-purple border-purple/25 bg-purple/[.07] hover:bg-purple/[.16] hover:border-purple/45"
+                onClick={onCurator}
+              />
+            )}
+          </nav>
+        </>
+      )}
 
       <div className="h-px bg-white/[.06] max-nav:hidden" aria-hidden="true" />
 
