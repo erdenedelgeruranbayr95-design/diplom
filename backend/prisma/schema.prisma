@@ -17,6 +17,9 @@ enum Role {
   CURATOR
   MODERATOR
   THERAPIST
+  // Уран бүтээлч — бүртгүүлэхдээ сонгоно, админ баталгаажуулна. Баталгаажсаны
+  // дараа дуу, цомгоо ӨӨРӨӨ нэмнэ (дуу тус бүрд куратор шалгахгүй).
+  ARTIST
   USER
   PARENT
 }
@@ -343,7 +346,16 @@ model Artist {
   photoUrl   String?
   createdAt  DateTime @default(now())
 
-  songs Song[]
+  songs  Song[]
+  albums Album[]
+
+  // Админ баталгаажуулсан эсэх. Бүртгэлийн үед `false`-оор үүснэ.
+  //
+  // ⚠️ ШАЛГАЛТ ЗӨВХӨН НЭГ УДАА. Баталгаажсаны дараа уран бүтээлч дуу, цомгоо
+  // чөлөөтэй нэмнэ — дуу тус бүрд куратор шалгахгүй (эзэн нь тодорхой, хариуцлага
+  // хүлээнэ). Зөрчилтэй контент илэрвэл `docs/TAKEDOWN-PROCEDURE.md`-ээр хасна.
+  approved   Boolean   @default(false)
+  approvedAt DateTime?
 
   // Профайлыг эзэмшигч хэрэглэгч. NULL бол эзэнгүй — Jamendo/FMA импортоор
   // автоматаар үүссэн дуучид ийм байна.
@@ -357,12 +369,46 @@ model Artist {
   ownerId String? @unique
 }
 
+// Цомог — уран бүтээлчийн дуунуудын багц.
+//
+// ⚠️ ЯАГААД JOIN ХҮСНЭГТГҮЙ ВЭ
+// `Playlist` нь олон-олон холбоостой (нэг дуу олон жагсаалтад орно) тул
+// `PlaylistTrack` join хүснэгттэй. Цомог тийм биш: нэг дуу НЭГ цомогт л
+// харьяалагдана. Иймд `Song.albumId` + `Song.trackNumber` хангалттай —
+// нэмэлт хүснэгт нь дарааллыг өөрчлөхөд хоёр газар шинэчлэх шаардлага
+// үүсгэх байсан.
+model Album {
+  id       String  @id @default(cuid())
+  title    String
+  coverUrl String?
+  year     Int?
+
+  artistId String
+  artist   Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  songs Song[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Нэг уран бүтээлч ижил нэртэй хоёр цомог гаргахгүй.
+  @@unique([artistId, title])
+  @@index([artistId])
+}
+
 model Song {
   id          String   @id @default(cuid())
   title       String
   artist      String?
   artistId    String?
   artistRef   Artist?  @relation(fields: [artistId], references: [id], onDelete: SetNull)
+
+  // Цомгийн харьяалал. Цомог устгахад дуу нь ҮЛДЭНЭ (SetNull) — дан дуу болж
+  // хувирна, устахгүй. `trackNumber` нь цомог доторх дараалал (1-ээс эхэлнэ);
+  // уран бүтээлч чирж өөрчлөхөд энэ талбар шинэчлэгдэнэ.
+  albumId     String?
+  album       Album?   @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  trackNumber Int?
   genre       String?
   description String?
   // Уг үг (lyrics) — Үе шат 6 хүртээмжийн шаардлага: сонсголын бэрхшээлтэй хэрэглэгч

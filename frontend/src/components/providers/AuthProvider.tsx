@@ -4,6 +4,7 @@
    refresh нь httpOnly cookie-д. Ачаалахад refresh cookie-гоор session-оо чимээгүй сэргээнэ. */
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import * as api from "@/lib/api/client";
+import type { RegisterRole } from "@/lib/api/client";
 import { useWindowEvent } from "@/hooks/useWindowEvent";
 import { APP_EVENTS } from "@/lib/data/events";
 import type { SessionUser, UserSub } from "@/types/auth";
@@ -21,7 +22,14 @@ interface AuthContextValue {
   subscribed: boolean;
   ready: boolean;
   login: (email: string, password: string) => Promise<SessionUser>;
-  register: (name: string, email: string, password: string, password2: string) => Promise<SessionUser>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    password2: string,
+    role?: RegisterRole,
+    artistName?: string,
+  ) => Promise<SessionUser>;
   loginWithGoogle: (idToken: string) => Promise<SessionUser>;
   logout: () => Promise<void>;
   updateUser: (patch: Partial<SessionUser>) => void;
@@ -73,8 +81,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u);
     return u;
   }
-  async function register(name: string, email: string, password: string, password2: string) {
-    const u = await api.register(name, email, password, password2);
+  async function register(
+    name: string,
+    email: string,
+    password: string,
+    password2: string,
+    role: RegisterRole = "USER",
+    artistName?: string,
+  ) {
+    const u = await api.register(name, email, password, password2, role, artistName);
     setUser(u);
     return u;
   }

@@ -1,8 +1,11 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { ArtistsService } from './artists.service';
+import { AlbumsService } from './albums.service';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpsertMyArtistDto } from './dto/upsert-my-artist.dto';
+import { SetAlbumSongsDto, UpsertAlbumDto } from './dto/upsert-album.dto';
+import { SetApprovalDto } from './dto/set-approval.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Public } from '../common/decorators/public.decorator';
@@ -11,7 +14,10 @@ import type { AuthUser } from '../common/decorators/current-user.decorator';
 
 @Controller('artists')
 export class ArtistsController {
-  constructor(private artists: ArtistsService) {}
+  constructor(
+    private artists: ArtistsService,
+    private albums: AlbumsService,
+  ) {}
 
   /* ADMIN дуучны бүртгэл нэмнэ — SongLibraryPanel-ийн дуу нэмэх урсгалтай адил зарчим. */
   @UseGuards(RolesGuard)
@@ -43,6 +49,50 @@ export class ArtistsController {
   @Get('me/songs')
   mySongs(@CurrentUser() user: AuthUser) {
     return this.artists.mySongs(user.userId);
+  }
+
+  /* ---- Цомог (зөвхөн баталгаажсан уран бүтээлч) ---- */
+
+  @Get('me/albums')
+  myAlbums(@CurrentUser() user: AuthUser) {
+    return this.albums.listMine(user.userId);
+  }
+
+  @Post('me/albums')
+  createAlbum(@CurrentUser() user: AuthUser, @Body() dto: UpsertAlbumDto) {
+    return this.albums.create(user.userId, dto);
+  }
+
+  @Put('me/albums/:id')
+  updateAlbum(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: UpsertAlbumDto) {
+    return this.albums.update(user.userId, id, dto);
+  }
+
+  @Delete('me/albums/:id')
+  deleteAlbum(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.albums.remove(user.userId, id);
+  }
+
+  /** Цомгийн дуу ба ДАРААЛЛЫГ бүхэлд нь оноох — чирч өөрчлөхөд энэ дуудагдана. */
+  @Put('me/albums/:id/songs')
+  setAlbumSongs(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: SetAlbumSongsDto) {
+    return this.albums.setSongs(user.userId, id, dto.songIds);
+  }
+
+  /* ---- Админы баталгаажуулалт ---- */
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Get('admin/pending')
+  pending() {
+    return this.artists.pending();
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post(':id/approval')
+  setApproval(@Param('id') id: string, @Body() dto: SetApprovalDto) {
+    return this.artists.setApproval(id, dto.approved);
   }
 
   @Public()

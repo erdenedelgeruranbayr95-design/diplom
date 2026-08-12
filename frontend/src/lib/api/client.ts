@@ -19,6 +19,7 @@ import type {
   UserSub,
 } from "@/types/auth";
 import type {
+  Album,
   AnalyzeSongPayload,
   Artist,
   ArtistWithSongs,
@@ -29,6 +30,7 @@ import type {
   ListenHistoryRow,
   ListeningStatsRow,
   PaymentRow,
+  PendingArtist,
   PlaylistRow,
   SensoryProfile,
   Song,
@@ -123,10 +125,24 @@ async function apiFetch<T>(path: string, opts: RequestInit = {}, retry = true): 
   return JSON.parse(text) as T;
 }
 
-export async function register(name: string, email: string, password: string, password2: string) {
+/** Бүртгэлээр сонгож болох дүрүүд.
+ *
+ *  ⚠️ Энд ADMIN гэх мэт нэмж болохгүй — backend хаалттай жагсаалттай тул 400
+ *  буцаана, гэхдээ UI-д ч санал болгож болохгүй. */
+export type RegisterRole = "USER" | "ARTIST";
+
+export async function register(
+  name: string,
+  email: string,
+  password: string,
+  password2: string,
+  /** `ARTIST` бол `artistName` заавал — профайл нь бүртгэлтэй хамт үүснэ. */
+  role: RegisterRole = "USER",
+  artistName?: string,
+) {
   const data = await apiFetch<AuthResponse>("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ name, email, password, password2 }),
+    body: JSON.stringify({ name, email, password, password2, role, artistName }),
   });
   applyAccessToken(data.accessToken);
   return data.user;
@@ -201,9 +217,12 @@ export function subscribeMe(plan?: string) {
 
 /* ---- Уран бүтээлчийн профайл ----
 
-   Хэрэглэгч өөрөө үүсгэнэ; профайлтай бол «уран бүтээлч» гэсэн үг. Тусдаа дүр
-   (`Role`) нэмээгүй — дүр бол ЭРХ, уран бүтээлч бол ХЭН БОЛОХ. Мөн `Role` enum
-   өөрчлөх нь гар утасны аппыг хөндөх байсан. */
+   Бүртгүүлэхдээ «Уран бүтээлч» сонгосон хэрэглэгч ARTIST дүртэй болж, профайл
+   нь бүртгэлтэй хамт үүснэ. Профайл нь админы баталгаажуулалт хүлээнэ —
+   баталгаажсаны ДАРАА дуу, цомгоо чөлөөтэй нэмнэ (шалгалт нэг л удаа).
+
+   ARTIST дүргүй энгийн хэрэглэгч ч профайл үүсгэж болно (хуучин зан төлөв) —
+   тэдний дуу ноороглогдож, куратор нийтэлнэ. */
 
 export interface MyArtistPayload {
   name: string;
@@ -225,6 +244,58 @@ export function saveMyArtist(payload: MyArtistPayload) {
 /** Өөрийн дуунууд — ноорог хамт (хүлээгдэж буйг харуулахын тулд). */
 export function fetchMyArtistSongs() {
   return apiFetch<Song[]>("/artists/me/songs");
+}
+
+/* ---- Цомог (зөвхөн баталгаажсан уран бүтээлч) ---- */
+
+export interface AlbumPayload {
+  title: string;
+  /** Гадаад зургийн шууд холбоос. `coverKey` өгвөл түүнд дарагдана. */
+  coverUrl?: string;
+  /** Presigned upload-аар орсон зургийн key — нийтийн URL-ыг backend угсарна. */
+  coverKey?: string;
+  year?: number;
+}
+
+export function fetchMyAlbums() {
+  return apiFetch<Album[]>("/artists/me/albums");
+}
+
+export function createAlbum(payload: AlbumPayload) {
+  return apiFetch<Album>("/artists/me/albums", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function updateAlbum(id: string, payload: AlbumPayload) {
+  return apiFetch<Album>(`/artists/me/albums/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+
+export function deleteAlbum(id: string) {
+  return apiFetch<{ ok: true }>(`/artists/me/albums/${id}`, { method: "DELETE" });
+}
+
+/** Цомгийн бүрэлдэхүүн ба ДАРААЛЛЫГ бүхэлд нь оноох.
+ *
+ *  ⚠️ `songIds`-ийн дараалал нь эцсийн дараалал болно. Чирч өөрчлөхөд хэсэгчлэн
+ *  биш, БҮТЭН жагсаалтаа илгээнэ — сервер ялгааг нь өөрөө бодно. */
+export function setAlbumSongs(id: string, songIds: string[]) {
+  return apiFetch<Album>(`/artists/me/albums/${id}/songs`, {
+    method: "PUT",
+    body: JSON.stringify({ songIds }),
+  });
+}
+
+/* ---- Админы баталгаажуулалт ---- */
+
+/** Хэрэглэгч өөрөө бүртгүүлсэн профайлууд — хүлээгдэж буй нь эхэнд. */
+export function fetchPendingArtists() {
+  return apiFetch<PendingArtist[]>("/artists/admin/pending");
+}
+
+export function setArtistApproval(id: string, approved: boolean) {
+  return apiFetch<Artist>(`/artists/${id}/approval`, {
+    method: "POST",
+    body: JSON.stringify({ approved }),
+  });
 }
 
 export type AdminPaymentStatus = "SUCCESS" | "PENDING" | "FAILED";
@@ -456,6 +527,8 @@ export function createSong(payload: {
   genre?: string;
   storageKey?: string;
   sourceUrl?: string;
+  /** Presigned upload-аар орсон ковер зургийн key — URL-ыг backend угсарна. */
+  coverKey?: string;
   license: SongLicense;
   licenseSrc?: string;
 }) {
@@ -475,10 +548,11 @@ export function submitAnalysis(id: string, payload: AnalyzeSongPayload) {
 }
 
 // ---- Songs: лиценз · нийтлэл · Curator каталог (Phase 5) ----
-export function getUploadUrl(filename: string, contentType: string) {
+/** `kind` нь S3 key-ийн угтвар БА зөвшөөрөгдөх MIME-г шийднэ (backend талд). */
+export function getUploadUrl(filename: string, contentType: string, kind: "song" | "cover" = "song") {
   return apiFetch<UploadUrlResponse>("/songs/upload-url", {
     method: "POST",
-    body: JSON.stringify({ filename, contentType }),
+    body: JSON.stringify({ filename, contentType, kind }),
   });
 }
 

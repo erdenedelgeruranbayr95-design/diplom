@@ -6,11 +6,14 @@
    `SongsController.create` дуудагчийн профайлыг хайдаг). Өөрийгөө өөр дуучин
    гэж бичих боломжгүй.
 
-   ⚠️ Тусдаа `ARTIST` дүр нэмээгүй: дүр бол ЭРХ, уран бүтээлч бол ХЭН БОЛОХ.
-   Мөн `Role` enum өөрчлөх нь гар утасны аппын дүрийн хүснэгтийг хөндөх байсан.
+   Хоёр төрлийн эзэн энд ирнэ:
+     • ARTIST дүртэй — бүртгүүлэхдээ «Уран бүтээлч» сонгосон. Профайл нь админы
+       баталгаажуулалт хүлээнэ; БАТАЛГААЖСАНЫ ДАРАА дуу, цомог нь ШУУД нийтлэгдэнэ.
+     • Энгийн хэрэглэгч — профайл үүсгэсэн ч дуу нь ноорог хэвээр үүсч, куратор
+       нийтэлнэ (хуучин зам).
 
-   Дуу нь ноорог хэвээр үүсч, куратор/админ нийтэлнэ — энэ дэлгэц түүнийг
-   ил харуулна, эс бөгөөс уран бүтээлч «дуу минь алга болов» гэж бодно. */
+   Аль ч тохиолдолд төлөвийг ИЛ харуулна, эс бөгөөс уран бүтээлч «дуу минь алга
+   болов» гэж бодно. */
 import { useCallback, useEffect, useState } from "react";
 import BackBar from "../BackBar";
 import Icon from "@/components/ui/Icon";
@@ -18,6 +21,7 @@ import { ActionButton } from "@/components/ui/ActionGroup";
 import { Empty, ErrorState } from "@/components/ui/States";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { FIELD_CAPTION_CLS, FIELD_INPUT_CLS, FIELD_LABEL_CLS } from "@/components/ui/form-styles";
+import ArtistAlbumsPanel from "@/components/artist/ArtistAlbumsPanel";
 import { fetchMyArtist, fetchMyArtistSongs, saveMyArtist } from "@/lib/api/client";
 import { useToast } from "@/components/providers/ToastProvider";
 import type { Artist, Song } from "@/types/song";
@@ -91,6 +95,37 @@ export default function ArtistProfileView({ onBack }: { onBack: () => void }) {
             </div>
           )}
 
+          {/* Баталгаажуулалтын төлөв — уран бүтээлч «яагаад цомог нэмэх товч
+              байхгүй байна» гэж эргэлзэхээс сэргийлж ШАЛТГААНЫГ нь хэлнэ. */}
+          {artist && !artist.approved && (
+            <div className="rounded-panel border border-warm/25 bg-warm/[.06] p-5 mb-6 flex gap-3.5 items-start">
+              <span className="text-warm flex-none mt-0.5">
+                <Icon name="hourglass" size={18} />
+              </span>
+              <div>
+                <b className="font-display text-note block mb-1.5">Админы баталгаажуулалт хүлээж байна</b>
+                <p className="text-dim text-body leading-6">
+                  Профайл тань хянагдаж байна. Баталгаажмагц дуу, цомгоо чөлөөтэй нэмж, шууд
+                  нийтлэх боломжтой болно.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {artist?.approved && (
+            <div className="rounded-panel border border-aqua/25 bg-aqua/[.06] p-5 mb-6 flex gap-3.5 items-start">
+              <span className="text-aqua flex-none mt-0.5">
+                <Icon name="check" size={18} />
+              </span>
+              <div>
+                <b className="font-display text-note block mb-1.5">Профайл баталгаажсан</b>
+                <p className="text-dim text-body leading-6">
+                  Нэмсэн дуу, цомог тань сайт дээр шууд нийтлэгдэнэ.
+                </p>
+              </div>
+            </div>
+          )}
+
           <form className="flex flex-col gap-4 mb-9" onSubmit={save}>
             <div>
               <label className={FIELD_LABEL_CLS} htmlFor="ap-name">
@@ -157,6 +192,15 @@ export default function ArtistProfileView({ onBack }: { onBack: () => void }) {
               {busy ? "Хадгалж байна…" : artist ? "Хадгалах" : "Профайл үүсгэх"}
             </ActionButton>
           </form>
+
+          {/* Цомог зөвхөн БАТАЛГААЖСАН уран бүтээлчид — backend ч ялгаагүй
+              татгалздаг тул баталгаажаагүй хүнд харуулах нь зөвхөн 403 л өгнө. */}
+          {artist?.approved && (
+            <section className="mb-9">
+              <b className="font-display text-heading block mb-3">Миний цомгууд</b>
+              <ArtistAlbumsPanel artistName={artist.name} songs={songs} onSongsChanged={load} />
+            </section>
+          )}
 
           {artist && (
             <>

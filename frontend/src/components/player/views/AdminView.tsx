@@ -26,6 +26,7 @@ const ROLE_LABEL: Record<AdminUserRow["role"], string> = {
   ROOT: "Систем эзэмшигч",
   USER: "Хэрэглэгч",
   THERAPIST: "Эмч",
+  ARTIST: "Уран бүтээлч",
   PARENT: "Эцэг эх",
   ADMIN: "Админ",
   CURATOR: "Куратор",

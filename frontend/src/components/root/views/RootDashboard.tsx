@@ -16,6 +16,7 @@ const ROLE_LABEL: Record<UserRole, string> = {
   CURATOR: "Куратор",
   MODERATOR: "Модератор",
   THERAPIST: "Эмч",
+  ARTIST: "Уран бүтээлч",
   PARENT: "Эцэг эх",
   USER: "Хэрэглэгч",
 };
@@ -25,6 +26,7 @@ const ROLE_TONE: Record<UserRole, StatusTone> = {
   CURATOR: "purple",
   MODERATOR: "purple",
   THERAPIST: "purple",
+  ARTIST: "aqua",
   PARENT: "warm",
   USER: "faint",
 };

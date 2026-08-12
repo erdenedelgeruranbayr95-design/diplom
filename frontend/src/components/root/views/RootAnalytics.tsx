@@ -12,10 +12,11 @@ import type { UserRole } from "@/types/auth";
    DAU/MAU/retention нь `listen_events` хүснэгт шаарддаг тул энд ОРОЛЦООГҮЙ —
    хуурамч график зурахгүй (шинэ API зохиомжлохгүй). */
 
-const ROLE_ORDER: UserRole[] = ["USER", "THERAPIST", "PARENT", "ADMIN", "CURATOR", "MODERATOR", "ROOT"];
+const ROLE_ORDER: UserRole[] = ["USER", "ARTIST", "THERAPIST", "PARENT", "ADMIN", "CURATOR", "MODERATOR", "ROOT"];
 const ROLE_TEXT: Record<UserRole, string> = {
   USER: "Хэрэглэгч",
   THERAPIST: "Эмч",
+  ARTIST: "Уран бүтээлч",
   PARENT: "Эцэг эх",
   ADMIN: "Админ",
   CURATOR: "Куратор",

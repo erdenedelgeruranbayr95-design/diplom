@@ -36,6 +36,14 @@ export class CreateSongDto {
   @IsUrl()
   coverUrl?: string;
 
+  /* Presigned upload-аар байршуулсан КОВЕР ЗУРГИЙН key (`kind: 'cover'`).
+     `coverUrl`-ийн оронд ирнэ — backend өөрөө нийтийн URL болгож хөрвүүлнэ.
+     Клиент URL-ээ угсрахыг хүлээхгүй нь чухал: bucket/эндпойнт өөрчлөгдвөл
+     зөвхөн backend мэдэх ёстой. */
+  @IsOptional()
+  @IsString()
+  coverKey?: string;
+
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()

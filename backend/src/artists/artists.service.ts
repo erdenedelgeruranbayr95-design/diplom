@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpsertMyArtistDto } from './dto/upsert-my-artist.dto';
@@ -36,6 +36,43 @@ export class ArtistsService {
       return this.prisma.artist.update({ where: { id: existing.id }, data: dto });
     }
     return this.prisma.artist.create({ data: { ...dto, ownerId: userId } });
+  }
+
+  /* ---- Админы баталгаажуулалт ---- */
+
+  /** Эзэнтэй (хэрэглэгч өөрөө бүртгүүлсэн) профайлууд — хүлээгдэж буй нь эхэнд. */
+  pending() {
+    return this.prisma.artist.findMany({
+      where: { ownerId: { not: null } },
+      orderBy: [{ approved: 'asc' }, { createdAt: 'desc' }],
+      include: {
+        owner: { select: { id: true, name: true, email: true, createdAt: true } },
+        _count: { select: { songs: true, albums: true } },
+      },
+    });
+  }
+
+  /** Баталгаажуулах / буцаах.
+   *
+   *  ⚠️ Шалгалт ЗӨВХӨН энд нэг удаа. Баталгаажсаны дараа уран бүтээлч дуу,
+   *  цомгоо чөлөөтэй нэмнэ — дуу тус бүрд куратор шалгахгүй. */
+  async setApproval(artistId: string, approved: boolean) {
+    const artist = await this.prisma.artist.findUnique({ where: { id: artistId } });
+    if (!artist) throw new NotFoundException('Уран бүтээлч олдсонгүй');
+    return this.prisma.artist.update({
+      where: { id: artistId },
+      data: { approved, approvedAt: approved ? new Date() : null },
+    });
+  }
+
+  /** Дуу/цомог нэмэх эрхтэй эсэх — баталгаажсан профайлыг буцаана, эс бөгөөс алдаа. */
+  async requireApproved(userId: string) {
+    const artist = await this.prisma.artist.findUnique({ where: { ownerId: userId } });
+    if (!artist) throw new ForbiddenException('Уран бүтээлчийн профайл байхгүй байна');
+    if (!artist.approved) {
+      throw new ForbiddenException('Таны уран бүтээлчийн профайл админы баталгаажуулалт хүлээж байна');
+    }
+    return artist;
   }
 
   /** Дуудагчийн профайлд харьяалагдах бүх дуу — ноорог хамт.

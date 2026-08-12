@@ -12,6 +12,7 @@ import StaffCreationForm from "@/components/admin/StaffCreationForm";
 import AssignmentsPanel from "@/components/admin/AssignmentsPanel";
 import SongLibraryPanel from "@/components/admin/SongLibraryPanel";
 import ProManagementPanel from "@/components/admin/ProManagementPanel";
+import ArtistApprovalsPanel from "@/components/admin/ArtistApprovalsPanel";
 import type { AdminUserRow, SessionUser } from "@/types/auth";
 import type { Song, SongLicense } from "@/types/song";
 import type { ParentLinkRow, TherapistAssignmentRow } from "@/types/therapy";
@@ -340,6 +341,8 @@ export default function AdminPanel({
         )}
 
         {tab === "tracks" && <SongLibraryPanel msg={msg} busy={busy} onSubmit={addTrack} loading={songsLoading} songs={songs} />}
+
+        {tab === "artists" && <ArtistApprovalsPanel />}
 
         {tab === "pro" && <ProManagementPanel users={users} />}
 

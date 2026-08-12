@@ -39,10 +39,10 @@ export class SongsController {
      PUT хийнэ (backend дундуур том аудио байт дамжихгүй) — дараа нь POST /songs дуудаж
      `storageKey`-г дамжуулснаар Song мөр үүснэ (см. CreateSongDto.storageKey). */
   @UseGuards(RolesGuard)
-  @Roles(Role.USER, Role.ADMIN, ...CATALOG_ROLES)
+  @Roles(Role.USER, Role.ARTIST, Role.ADMIN, ...CATALOG_ROLES)
   @Post('upload-url')
   async requestUploadUrl(@Body() dto: RequestUploadUrlDto) {
-    const key = this.storage.buildKey('songs', dto.filename);
+    const key = this.storage.buildKey(dto.kind === 'cover' ? 'covers' : 'songs', dto.filename);
     const uploadUrl = await this.storage.getPresignedUploadUrl(key, dto.contentType);
     return { uploadUrl, key, publicUrl: this.storage.publicUrlFor(key) };
   }
@@ -51,7 +51,7 @@ export class SongsController {
      эсвэл гадаад холбоос (sourceUrl) — backend дундуур multipart байтаар дамжуулах
      (multer/локал диск) зам ЭНД БАЙХГҮЙ (Үе шат 5 DoD: "Файл S3-д, DB-д зөвхөн URL"). */
   @UseGuards(RolesGuard)
-  @Roles(Role.USER, Role.ADMIN, ...CATALOG_ROLES)
+  @Roles(Role.USER, Role.ARTIST, Role.ADMIN, ...CATALOG_ROLES)
   @Post()
   async upload(@Body() dto: CreateSongDto, @CurrentUser() user: AuthUser) {
     if (!dto.sourceUrl && !dto.storageKey) {
@@ -59,13 +59,22 @@ export class SongsController {
     }
 
     const fileUrl = dto.storageKey ? this.storage.publicUrlFor(dto.storageKey) : dto.sourceUrl!;
+    const coverUrl = dto.coverKey ? this.storage.publicUrlFor(dto.coverKey) : dto.coverUrl;
 
     const isCatalogStaff = CATALOG_ROLES.includes(user.role) || user.role === Role.ROOT;
 
     /* Нэмэгч нь уран бүтээлчийн профайлтай бол дуу нь АВТОМАТААР түүнд
        холбогдоно — өөрийгөө өөр дуучин гэж бичих боломжгүй.
-       Каталогийн ажилтан бусдын нэрээр дуу нэмдэг тул тэдэнд хамаарахгүй. */
-    const mine = isCatalogStaff ? null : await this.artists.findMine(user.userId);
+       Каталогийн ажилтан бусдын нэрээр дуу нэмдэг тул тэдэнд хамаарахгүй.
+
+       ⚠️ ARTIST дүртэй бол профайл нь БАТАЛГААЖСАН байх ёстой. Шалгалт зөвхөн
+       энд нэг удаа — баталгаажсаны дараа дуу нь ШУУД нийтлэгдэнэ, куратор
+       дуу тус бүрийг харахгүй (эзэн нь тодорхой, хариуцлага хүлээнэ). */
+    const mine = isCatalogStaff
+      ? null
+      : user.role === Role.ARTIST
+        ? await this.artists.requireApproved(user.userId)
+        : await this.artists.findMine(user.userId);
 
     const song = await this.songs.create({
       title: dto.title,
@@ -74,7 +83,7 @@ export class SongsController {
       genre: dto.genre,
       description: dto.description,
       releaseYear: dto.releaseYear,
-      coverUrl: dto.coverUrl,
+      coverUrl,
       featured: dto.featured,
       duration: dto.duration,
       bpm: dto.bpm,
@@ -82,15 +91,16 @@ export class SongsController {
       uploadedBy: user.userId,
       license: dto.license,
       licenseSrc: dto.licenseSrc,
-      /* Curator/Admin/Root өөрсдөө upload хийвэл шууд нийтэлнэ; энгийн хэрэглэгчийн
-         upload ноороглогдож (published=false), дараа нь Curator publish хийнэ. */
-      published: isCatalogStaff,
+      /* Curator/Admin/Root, мөн БАТАЛГААЖСАН уран бүтээлч — шууд нийтэлнэ.
+         Энгийн хэрэглэгчийн upload ноороглогдож (published=false), дараа нь
+         Curator publish хийнэ. */
+      published: isCatalogStaff || user.role === Role.ARTIST,
     });
 
     /* MinIO-д байгаа файл л Haptic Score тооцоолуулна — гадаад URL (sourceUrl)-ийг worker
        уншиж чадахгүй байж болзошгүй тул одоохондоо алгасна. */
     if (dto.storageKey) {
-      this.haptic.enqueueAnalysis(song.id, fileUrl, dto.coverUrl).catch(() => {});
+      this.haptic.enqueueAnalysis(song.id, fileUrl, coverUrl).catch(() => {});
     }
     return song;
   }

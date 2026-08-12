@@ -8,11 +8,46 @@ export interface Artist {
   careerInfo: string | null;
   photoUrl: string | null;
   createdAt: string;
-  _count?: { songs: number };
+  /** Админ баталгаажуулсан эсэх. Зөвхөн баталгаажсан нь дуу/цомог нэмнэ. */
+  approved?: boolean;
+  approvedAt?: string | null;
+  /** Эзэн хэрэглэгч. `null` = админ гараар үүсгэсэн каталогийн бичлэг. */
+  ownerId?: string | null;
+  _count?: { songs: number; albums?: number };
 }
 
 export interface ArtistWithSongs extends Artist {
   songs: Song[];
+}
+
+/** Админы баталгаажуулах жагсаалтын мөр — эзний мэдээлэл хамт. */
+export interface PendingArtist extends Artist {
+  owner: { id: string; name: string; email: string; createdAt: string } | null;
+}
+
+/** Цомгийн доторх трек.
+ *
+ *  ⚠️ Бүтэн `Song` БИШ: `GET /artists/me/albums` нь ачааллыг багасгахын тулд
+ *  цөөн талбар сонгож буцаадаг (`beatTimestamps` гэх мэт хүнд массивгүй).
+ *  Бүтэн Song гэж бичвэл байхгүй талбар руу найдаж эвдэрнэ. */
+export interface AlbumTrack {
+  id: string;
+  title: string;
+  trackNumber: number | null;
+  duration: number | null;
+  coverUrl: string | null;
+  analysisStatus?: string | null;
+}
+
+export interface Album {
+  id: string;
+  title: string;
+  coverUrl: string | null;
+  year: number | null;
+  artistId: string;
+  createdAt: string;
+  songs?: AlbumTrack[];
+  _count?: { songs: number };
 }
 
 export interface Song {
@@ -32,6 +67,10 @@ export interface Song {
   bpm: number | null;
   uploadedBy: string;
   createdAt: string;
+
+  /** Цомгийн харьяалал. `trackNumber` нь цомог доторх дараалал (1-ээс). */
+  albumId?: string | null;
+  trackNumber?: number | null;
 
   analyzedBpm: number | null;
   beatCount: number | null;

@@ -97,9 +97,36 @@ export class AuthService {
       throw new ConflictException('Энэ имэйл бүртгэлтэй байна');
     }
 
+    /* ⚠️ Дүрийг DTO-гийн хаалттай жагсаалтаас л авна (`SELF_REGISTER_ROLES`).
+       `dto.role`-ыг шууд Prisma руу дамжуулах нь ADMIN болох зам нээх байсан —
+       validation давхар хамгаалалт болж байгаа ч энд ил тодорхой хөрвүүлнэ. */
+    const wantsArtist = dto.role === 'ARTIST';
+    const role = wantsArtist ? Role.ARTIST : Role.USER;
+
+    const artistName = dto.artistName?.trim();
+    if (wantsArtist) {
+      /* Урт нь DTO-д шалгагдана (400). Энд зөвхөн ЗАЙ ХАССАНЫ ДАРААХ хоосролыг
+         барина — «  » гэсэн оролт валидацийг давдаг. */
+      if (!artistName || artistName.length < 2) {
+        throw new BadRequestException('Уран бүтээлчийн нэрээ оруулна уу');
+      }
+      const taken = await this.prisma.artist.findUnique({ where: { name: artistName } });
+      if (taken) throw new ConflictException(`«${artistName}» нэр аль хэдийн бүртгэгдсэн байна`);
+    }
+
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     const user = await this.prisma.user.create({
-      data: { name: dto.name.trim(), email, passwordHash },
+      data: {
+        name: dto.name.trim(),
+        email,
+        passwordHash,
+        role,
+        /* Уран бүтээлчийн профайл ХАМТ үүснэ, гэхдээ `approved: false` —
+           админ баталгаажуулах хүртэл дуу нэмэх боломжгүй. */
+        ...(wantsArtist && artistName
+          ? { artistProfile: { create: { name: artistName } } }
+          : {}),
+      },
     });
 
     const accessToken = this.signAccessToken(user);

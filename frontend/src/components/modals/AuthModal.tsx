@@ -12,6 +12,7 @@ import { useModalShell } from "@/hooks/useModalShell";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import { FIELD_LABEL_CLS, FIELD_CAPTION_CLS, VALIDATED_INPUT_CLS } from "@/components/ui/form-styles";
 import type { SessionUser } from "@/types/auth";
+import type { RegisterRole } from "@/lib/api/client";
 import Icon from "@/components/ui/Icon";
 import GoogleSignInButton from "./GoogleSignInButton";
 
@@ -70,6 +71,9 @@ export default function AuthModal({
 }) {
   const { login, register, loginWithGoogle } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
+  /* Бүртгэлийн дүр. Уран бүтээлч сонгосон үед нэмэлт талбар гарч, бүртгэл нь
+     админы баталгаажуулалт хүлээнэ. */
+  const [regRole, setRegRole] = useState<RegisterRole>("USER");
   const [email, setEmail] = useState(""); // таб солиход арилахгүйн тулд controlled
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
@@ -150,7 +154,16 @@ export default function AuthModal({
           return;
         }
 
-        const u = await register(name, mail, pass, pass2);
+        /* Уран бүтээлчээр бүртгүүлэхэд профайлын нэр ЗААВАЛ — backend тэрийг
+           шаарддаг (Artist.name нь unique тул хоосон байж болохгүй). */
+        const artistName = ((f.get("artistName") as string) || "").trim();
+        if (regRole === "ARTIST" && artistName.length < 2) {
+          setErr("Уран бүтээлчийн нэрээ оруулна уу");
+          setBusy(false);
+          return;
+        }
+
+        const u = await register(name, mail, pass, pass2, regRole, artistName || undefined);
         setOk("Тавтай морил, " + u.name + "!");
         onAuth(u);
         setTimeout(onClose, 700);
@@ -227,10 +240,68 @@ export default function AuthModal({
 
         <form className="flex flex-col gap-4" onSubmit={submit} key={mode}>
           {mode === "register" && (
-            <label className={labelCls}>
-              <span className={captionCls}>Нэр</span>
-              <input className={inputCls} name="name" type="text" placeholder="Таны нэр" autoComplete="name" aria-invalid={err.includes("нэрээ") || undefined} />
-            </label>
+            <>
+              {/* Дүрийн сонголт. Хоёр л сонголт байна — админ, куратор зэргийг
+                  ЭНД санал болгож БОЛОХГҮЙ (backend ч татгалздаг). */}
+              <div>
+                <span className={captionCls}>Та хэн бэ?</span>
+                <div
+                  className="grid grid-cols-2 gap-2 mt-1.5"
+                  role="radiogroup"
+                  aria-label="Бүртгэлийн төрөл"
+                >
+                  {(
+                    [
+                      { v: "USER" as const, label: "Сонсогч", hint: "Хөгжим сонсох" },
+                      { v: "ARTIST" as const, label: "Уран бүтээлч", hint: "Дуугаа нийтлэх" },
+                    ]
+                  ).map((o) => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      role="radio"
+                      aria-checked={regRole === o.v}
+                      onClick={() => setRegRole(o.v)}
+                      className={
+                        "rounded-xl border px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:shadow-glow-aqua " +
+                        (regRole === o.v
+                          ? "border-aqua bg-aqua/[.08]"
+                          : "border-white/[.1] hover:bg-white/[.04]")
+                      }
+                    >
+                      <b className={"block text-body " + (regRole === o.v ? "text-aqua" : "text-ink")}>
+                        {o.label}
+                      </b>
+                      <i className="not-italic text-dim text-note">{o.hint}</i>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className={labelCls}>
+                <span className={captionCls}>Нэр</span>
+                <input className={inputCls} name="name" type="text" placeholder="Таны нэр" autoComplete="name" aria-invalid={err.includes("нэрээ") || undefined} />
+              </label>
+
+              {regRole === "ARTIST" && (
+                <label className={labelCls}>
+                  <span className={captionCls}>Уран бүтээлчийн нэр</span>
+                  <input
+                    className={inputCls}
+                    name="artistName"
+                    type="text"
+                    placeholder="Тайзны нэр"
+                    aria-invalid={err.includes("Уран бүтээлчийн") || undefined}
+                  />
+                  {/* Хүлээлтийг УРЬДЧИЛАН хэлнэ — эс бөгөөс хэрэглэгч бүртгүүлээд
+                      дуу нэмэх гэж оролдоод «яагаад болохгүй байна» гэж эргэлзэнэ. */}
+                  <i className="not-italic text-faint text-note mt-1 block leading-4">
+                    Бүртгэл админы баталгаажуулалт хүлээнэ. Баталгаажсаны дараа дуу, цомгоо
+                    чөлөөтэй нэмнэ.
+                  </i>
+                </label>
+              )}
+            </>
           )}
           <label className={labelCls}>
             <span className={captionCls}>Имэйл</span>

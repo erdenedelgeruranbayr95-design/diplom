@@ -1,6 +1,6 @@
 /* ROOT нь ADMIN-аас ДЭЭР зэрэглэлтэй (систем эзэмшигч) — зөвхөн Root Panel-д нэвтэрнэ.
    Үе шат 2: CURATOR/MODERATOR нэмэгдэв (backend/prisma/schema.prisma: enum Role). */
-export type UserRole = "ROOT" | "ADMIN" | "CURATOR" | "MODERATOR" | "THERAPIST" | "USER" | "PARENT";
+export type UserRole = "ROOT" | "ADMIN" | "CURATOR" | "MODERATOR" | "THERAPIST" | "ARTIST" | "USER" | "PARENT";
 export type UserStatus = "ACTIVE" | "BANNED";
 
 /** Сонсголын байдал — ЭМЗЭГ мэдээлэл, заавал биш (§14). */
