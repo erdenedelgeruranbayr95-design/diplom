@@ -95,6 +95,15 @@ export class ArtistsController {
     return this.artists.setApproval(id, dto.approved);
   }
 
+  /* Хоосон профайл цэвэрлэх — эзэн нь бүртгэлээ устгасан, эсвэл алдаатай
+     үүсгэсэн мөрүүд. Дуутай дуучныг устгахгүй (409). */
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.artists.remove(id);
+  }
+
   @Public()
   @Get()
   list() {

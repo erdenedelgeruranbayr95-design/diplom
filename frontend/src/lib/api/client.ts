@@ -298,6 +298,11 @@ export function setArtistApproval(id: string, approved: boolean) {
   });
 }
 
+/** Хоосон профайл цэвэрлэх. Дуу/цомогтой дуучин бол 409 буцна. */
+export function deleteArtist(id: string) {
+  return apiFetch<{ ok: true }>(`/artists/${id}`, { method: "DELETE" });
+}
+
 export type AdminPaymentStatus = "SUCCESS" | "PENDING" | "FAILED";
 
 export interface AdminPayment {

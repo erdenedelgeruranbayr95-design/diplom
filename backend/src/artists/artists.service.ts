@@ -113,4 +113,27 @@ export class ArtistsService {
     if (!artist) throw new NotFoundException('Дуучин олдсонгүй');
     return this.prisma.song.findMany({ where: { artistId: id }, orderBy: { createdAt: 'desc' } });
   }
+
+  /** Каталогоос дуучин устгах (ADMIN).
+   *
+   *  ⚠️ ЗӨВХӨН ХООСОН профайл устгана. Дуутай профайлыг устгавал `Song.artistId`
+   *  нь NULL болж (`onDelete: SetNull`) дуунууд дуучингүй үлдэнэ — каталог
+   *  чимээгүй эвдэрнэ. Дуутай дуучныг арилгах шаардлагатай бол эхлээд дуунуудыг
+   *  нь `docs/TAKEDOWN-PROCEDURE.md`-ээр хасна. */
+  async remove(id: string) {
+    const artist = await this.prisma.artist.findUnique({
+      where: { id },
+      include: { _count: { select: { songs: true, albums: true } } },
+    });
+    if (!artist) throw new NotFoundException('Дуучин олдсонгүй');
+
+    if (artist._count.songs > 0 || artist._count.albums > 0) {
+      throw new ConflictException(
+        `«${artist.name}» дээр ${artist._count.songs} дуу, ${artist._count.albums} цомог байна — эхлээд тэдгээрийг хасна уу`,
+      );
+    }
+
+    await this.prisma.artist.delete({ where: { id } });
+    return { ok: true };
+  }
 }

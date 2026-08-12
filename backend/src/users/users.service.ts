@@ -334,7 +334,24 @@ export class UsersService {
       if (!valid) throw new UnauthorizedException('Нууц үг буруу байна');
     }
 
-    await this.prisma.user.delete({ where: { id: userId } });
+    /* Уран бүтээлчийн профайл нь `onDelete: SetNull` тул хэрэглэгч устахад
+       ӨӨРӨӨ үлдэнэ. Энэ нь дуутай профайлд ЗӨВ — эс бөгөөс нийтлэгдсэн дуунууд
+       дуучингүй болж каталог эвдэрнэ. Харин ХООСОН профайл (дуу, цомоггүй) нь
+       нийтийн `GET /artists` жагсаалтад эзэнгүй сүүдэр мөр болж үүрд үлдэх тул
+       хамт устгана.
+
+       Хэрэглэгчийг устгахаас ӨМНӨ шалгана: дараа нь `ownerId` нь NULL болсон
+       байх тул аль профайл түүнийх байсныг олох боломжгүй. */
+    const profile = await this.prisma.artist.findUnique({
+      where: { ownerId: userId },
+      select: { id: true, _count: { select: { songs: true, albums: true } } },
+    });
+    const emptyProfile = profile && profile._count.songs === 0 && profile._count.albums === 0;
+
+    await this.prisma.$transaction([
+      ...(emptyProfile ? [this.prisma.artist.delete({ where: { id: profile.id } })] : []),
+      this.prisma.user.delete({ where: { id: userId } }),
+    ]);
     return { ok: true };
   }
 

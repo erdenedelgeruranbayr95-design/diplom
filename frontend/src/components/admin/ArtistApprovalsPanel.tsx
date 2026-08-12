@@ -16,7 +16,7 @@ import UserAvatar from "@/components/ui/UserAvatar";
 import { ActionButton } from "@/components/ui/ActionGroup";
 import Icon from "@/components/ui/Icon";
 import { TableCard } from "@/components/ui/Surface";
-import { fetchPendingArtists, setArtistApproval } from "@/lib/api/client";
+import { deleteArtist, fetchPendingArtists, setArtistApproval } from "@/lib/api/client";
 import type { PendingArtist } from "@/types/song";
 
 type Filter = "pending" | "approved" | "all";
@@ -68,6 +68,22 @@ export default function ArtistApprovalsPanel() {
       );
     } catch (e) {
       setErr((e as Error).message || "Хадгалахад алдаа гарлаа");
+    } finally {
+      setBusyId("");
+    }
+  }
+
+  /** Хоосон профайл цэвэрлэх — ихэвчлэн эзэн нь бүртгэлээ устгасан тохиолдол.
+   *  Дуутай дуучныг сервер өөрөө 409-ээр татгалзана. */
+  async function remove(artist: PendingArtist) {
+    if (!confirm(`«${artist.name}» профайлыг устгах уу?`)) return;
+    setBusyId(artist.id);
+    setErr("");
+    try {
+      await deleteArtist(artist.id);
+      setRows((prev) => prev.filter((r) => r.id !== artist.id));
+    } catch (e) {
+      setErr((e as Error).message || "Устгахад алдаа гарлаа");
     } finally {
       setBusyId("");
     }
@@ -168,7 +184,7 @@ export default function ArtistApprovalsPanel() {
                 />
               </span>
 
-              <span className="flex gap-2 justify-end flex-none">
+              <span className="flex gap-2 items-center justify-end flex-none">
                 {a.approved ? (
                   <ActionButton
                     variant="danger"
@@ -188,6 +204,20 @@ export default function ArtistApprovalsPanel() {
                     <Icon name="check" size={14} />
                     Батлах
                   </ActionButton>
+                )}
+                {/* Устгах нь ЗӨВХӨН хоосон профайлд утгатай — дуутай бол сервер
+                    409 буцаана. Товчийг нуухгүй: эзэнгүй сүүдэр мөрийг цэвэрлэх
+                    цорын ганц зам энэ. */}
+                {(a._count?.songs ?? 0) === 0 && (a._count?.albums ?? 0) === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => remove(a)}
+                    disabled={busyId === a.id}
+                    aria-label={`«${a.name}» профайлыг устгах`}
+                    className="p-1.5 rounded-md text-dim transition-colors duration-150 hover:text-danger hover:bg-danger/[.08] disabled:opacity-40 focus-visible:outline-none focus-visible:shadow-glow-aqua"
+                  >
+                    <Icon name="trash" size={14} />
+                  </button>
                 )}
               </span>
             </div>

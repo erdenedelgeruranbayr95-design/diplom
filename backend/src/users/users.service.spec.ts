@@ -20,6 +20,7 @@ describe('UsersService', () => {
     progress: { findMany: jest.Mock };
     therapySession: { findMany: jest.Mock };
     qRSession: { findMany: jest.Mock };
+    artist: { findUnique: jest.Mock; delete: jest.Mock };
     $transaction: jest.Mock;
   };
 
@@ -50,6 +51,7 @@ describe('UsersService', () => {
       progress: { findMany: jest.fn() },
       therapySession: { findMany: jest.fn() },
       qRSession: { findMany: jest.fn() },
+      artist: { findUnique: jest.fn().mockResolvedValue(null), delete: jest.fn() },
       $transaction: jest.fn((ops) => Promise.all(ops)),
     };
     const config = { get: () => 'test-hearing-profile-key' } as unknown as ConfigService;
@@ -238,6 +240,53 @@ describe('UsersService', () => {
       expect(result.listenHistory).toEqual([{ id: 'listen-1' }]);
       expect(result.playlists).toEqual([{ id: 'playlist-1', tracks: [] }]);
       expect(result.exportedAt).toEqual(expect.any(String));
+    });
+  });
+
+  describe('deleteMyAccount — уран бүтээлчийн профайлын хувь заяа', () => {
+    beforeEach(() => {
+      prisma.user.findUnique.mockResolvedValue({ ...baseUser, passwordHash: '' });
+    });
+
+    it('ХООСОН профайлыг хамт устгана (нийтийн жагсаалтад сүүдэр үлдэхгүй)', async () => {
+      prisma.artist.findUnique.mockResolvedValue({ id: 'art-1', _count: { songs: 0, albums: 0 } });
+      await service.deleteMyAccount('user-1', '');
+      expect(prisma.artist.delete).toHaveBeenCalledWith({ where: { id: 'art-1' } });
+      expect(prisma.user.delete).toHaveBeenCalledWith({ where: { id: 'user-1' } });
+    });
+
+    it('ДУУТАЙ профайлыг ҮЛДЭЭНЭ (эс бөгөөс дуунууд дуучингүй болно)', async () => {
+      prisma.artist.findUnique.mockResolvedValue({ id: 'art-1', _count: { songs: 4, albums: 0 } });
+      await service.deleteMyAccount('user-1', '');
+      expect(prisma.artist.delete).not.toHaveBeenCalled();
+      expect(prisma.user.delete).toHaveBeenCalled();
+    });
+
+    it('ЦОМОГТОЙ профайлыг ч үлдээнэ', async () => {
+      prisma.artist.findUnique.mockResolvedValue({ id: 'art-1', _count: { songs: 0, albums: 2 } });
+      await service.deleteMyAccount('user-1', '');
+      expect(prisma.artist.delete).not.toHaveBeenCalled();
+    });
+
+    it('профайлгүй хэрэглэгч энгийнээр устана', async () => {
+      prisma.artist.findUnique.mockResolvedValue(null);
+      await expect(service.deleteMyAccount('user-1', '')).resolves.toEqual({ ok: true });
+      expect(prisma.artist.delete).not.toHaveBeenCalled();
+    });
+
+    it('профайлыг хэрэглэгч устахаас ӨМНӨ хайна (дараа нь ownerId нь NULL болно)', async () => {
+      prisma.artist.findUnique.mockResolvedValue({ id: 'art-1', _count: { songs: 0, albums: 0 } });
+      await service.deleteMyAccount('user-1', '');
+      expect(prisma.artist.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { ownerId: 'user-1' } }),
+      );
+    });
+
+    it('нууц үг буруу бол юу ч устгахгүй', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...baseUser, passwordHash: await bcrypt.hash('зөв-нууц-үг', 4) });
+      await expect(service.deleteMyAccount('user-1', 'буруу')).rejects.toThrow(UnauthorizedException);
+      expect(prisma.user.delete).not.toHaveBeenCalled();
+      expect(prisma.artist.delete).not.toHaveBeenCalled();
     });
   });
 
