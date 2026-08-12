@@ -133,10 +133,15 @@ export class JamendoService {
     uploaderId: string,
     artistPhotoUrl?: string,
   ) {
+    /* `approved: true` — импортын дуучин нь каталогийн ажилтны оруулсан контент,
+       баталгаажуулалт шаардахгүй (`requireApproved` нь зөвхөн эзэнтэй профайлд
+       хамаатай). Мөн энэ нь `approved=false + ownerId=NULL` хослолыг ЗӨВХӨН
+       «эзэн нь бүртгэлээ устгасан сүүдэр мөр» гэсэн утгатай болгож,
+       `pending()` түүнийг цэвэрлэхэд ил гаргаж чадна. */
     const artistRef = await this.prisma.artist.upsert({
       where: { name: track.artist },
       update: artistPhotoUrl ? { photoUrl: artistPhotoUrl } : {},
-      create: { name: track.artist, photoUrl: artistPhotoUrl },
+      create: { name: track.artist, photoUrl: artistPhotoUrl, approved: true, approvedAt: new Date() },
     });
 
     const song = await this.prisma.song.create({

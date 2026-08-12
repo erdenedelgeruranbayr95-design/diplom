@@ -40,10 +40,17 @@ export class ArtistsService {
 
   /* ---- Админы баталгаажуулалт ---- */
 
-  /** Эзэнтэй (хэрэглэгч өөрөө бүртгүүлсэн) профайлууд — хүлээгдэж буй нь эхэнд. */
+  /** Админы анхаарал шаардах профайлууд — хүлээгдэж буй нь эхэнд.
+   *
+   *  Хоёр бүлэг:
+   *    1. Эзэнтэй — хэрэглэгч өөрөө бүртгүүлсэн, батлах/буцаах шийдвэр хүлээж буй
+   *    2. Эзэнгүй БӨГӨӨД баталгаажаагүй — эзэн нь бүртгэлээ устгасан «сүүдэр» мөр.
+   *       Каталогийн (Jamendo/ADMIN) дуучид `approved: true` үүсдэг тул энд орохгүй.
+   *       Эдгээрийг устгахаас өөр үйлдэл байхгүй — жагсаалтад гаргаагүй бол
+   *       нийтийн `GET /artists`-д үүрд үлдэнэ. */
   pending() {
     return this.prisma.artist.findMany({
-      where: { ownerId: { not: null } },
+      where: { OR: [{ ownerId: { not: null } }, { approved: false }] },
       orderBy: [{ approved: 'asc' }, { createdAt: 'desc' }],
       include: {
         owner: { select: { id: true, name: true, email: true, createdAt: true } },
@@ -88,8 +95,10 @@ export class ArtistsService {
     });
   }
 
+  /** ADMIN гараар каталогийн дуучин нэмэх — эзэнгүй, шууд баталгаажсан.
+   *  (Хэрэглэгч өөрөө үүсгэдэг зам нь `upsertMine`, тэр нь баталгаажаагүй үүснэ.) */
   create(dto: CreateArtistDto) {
-    return this.prisma.artist.create({ data: dto });
+    return this.prisma.artist.create({ data: { ...dto, approved: true, approvedAt: new Date() } });
   }
 
   list() {

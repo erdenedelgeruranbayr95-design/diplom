@@ -48,9 +48,15 @@ export default function ArtistApprovalsPanel() {
     load();
   }, [load]);
 
-  const pendingCount = useMemo(() => rows.filter((r) => !r.approved).length, [rows]);
+  /* «Хүлээгдэж буй» гэдэг нь ЭЗЭНТЭЙ бөгөөд шийдвэр хүлээж буй хүсэлт. Эзэнгүй
+     мөр нь шийдвэр биш — цэвэрлэгээ, тиймээс тусад нь тоологдоно. */
+  const pendingCount = useMemo(() => rows.filter((r) => r.owner && !r.approved).length, [rows]);
+  const orphanCount = useMemo(() => rows.filter((r) => !r.owner).length, [rows]);
   const shown = useMemo(
-    () => rows.filter((r) => (filter === "all" ? true : filter === "pending" ? !r.approved : r.approved)),
+    () =>
+      rows.filter((r) =>
+        filter === "all" ? true : filter === "pending" ? !!r.owner && !r.approved : r.approved,
+      ),
     [rows, filter],
   );
 
@@ -107,9 +113,12 @@ export default function ArtistApprovalsPanel() {
             </p>
           </div>
         </div>
-        {pendingCount > 0 && (
-          <StatusBadge label={`${pendingCount} хүлээгдэж буй`} tone="warm" dot className="flex-none" />
-        )}
+        <span className="flex gap-2 flex-none">
+          {pendingCount > 0 && <StatusBadge label={`${pendingCount} хүлээгдэж буй`} tone="warm" dot />}
+          {/* Эзэнгүй мөр «Бүгд» шүүлтүүрт л харагдана — эндээс сануулахгүй бол
+              админ түүнийг хэзээ ч олохгүй. */}
+          {orphanCount > 0 && <StatusBadge label={`${orphanCount} эзэнгүй`} tone="rose" dot />}
+        </span>
       </div>
 
       <div className="grid grid-cols-3 border border-white/[.08] rounded-xl overflow-hidden" role="tablist" aria-label="Шүүлтүүр">
@@ -178,14 +187,16 @@ export default function ArtistApprovalsPanel() {
 
               <span className="max-[760px]:hidden">
                 <StatusBadge
-                  label={a.approved ? "Баталгаажсан" : "Хүлээгдэж буй"}
-                  tone={a.approved ? "aqua" : "warm"}
+                  label={!a.owner ? "Эзэнгүй" : a.approved ? "Баталгаажсан" : "Хүлээгдэж буй"}
+                  tone={!a.owner ? "rose" : a.approved ? "aqua" : "warm"}
                   dot
                 />
               </span>
 
               <span className="flex gap-2 items-center justify-end flex-none">
-                {a.approved ? (
+                {/* Эзэнгүй мөрд батлах утгагүй — нэвтрэх хүн нь байхгүй.
+                    Үлдсэн цорын ганц үйлдэл нь устгах. */}
+                {!a.owner ? null : a.approved ? (
                   <ActionButton
                     variant="danger"
                     size="sm"

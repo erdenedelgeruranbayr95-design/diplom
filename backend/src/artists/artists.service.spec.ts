@@ -17,10 +17,26 @@ describe('ArtistsService', () => {
     service = new ArtistsService(prisma as unknown as PrismaService);
   });
 
-  it('create() passes the DTO through to prisma.artist.create', () => {
+  it('create() нь каталогийн дуучныг ШУУД баталгаажсанаар үүсгэнэ', () => {
+    /* Админы оруулсан каталогийн контент — баталгаажуулалт шаардахгүй. Мөн
+       `approved=false + ownerId=NULL` нь ЗӨВХӨН сүүдэр мөрийг тэмдэглэх ёстой. */
     prisma.artist.create.mockResolvedValue({ id: 'a1' });
     service.create({ name: 'Батаа' } as never);
-    expect(prisma.artist.create).toHaveBeenCalledWith({ data: { name: 'Батаа' } });
+    const [[arg]] = prisma.artist.create.mock.calls;
+    expect(arg.data.name).toBe('Батаа');
+    expect(arg.data.approved).toBe(true);
+    expect(arg.data.approvedAt).toBeInstanceOf(Date);
+  });
+
+  it('pending() нь эзэнтэй ба эзэнгүй-баталгаажаагүй хоёуланг татна', () => {
+    prisma.artist.findMany.mockResolvedValue([]);
+    service.pending();
+    expect(prisma.artist.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { OR: [{ ownerId: { not: null } }, { approved: false }] },
+        orderBy: [{ approved: 'asc' }, { createdAt: 'desc' }],
+      }),
+    );
   });
 
   it('list() orders artists alphabetically and includes song counts', () => {
