@@ -134,8 +134,10 @@ export default function ProfileDropdown({
 
           <div className="h-px bg-white/[.06] my-1 mx-1" aria-hidden="true"></div>
 
+          {/* «Миний жагсаалт · статистик · сонссон түүх» энд БАЙХГҮЙ: жагсаалт,
+              статистик нь хажуугийн үндсэн цэсэнд, сонссон түүх нь нүүрний
+              түргэн үйлдэлд аль хэдийн байгаа тул цэс давхардаж байв. */}
           <MenuItem icon="user" label="Профайл засах" onClick={() => go("profile")} />
-          <MenuItem icon="playlist" label="Миний жагсаалт" onClick={() => go("playlists")} />
           {/* Уран бүтээлч болох нь ҮНЭГҮЙ — контент нийлүүлдэг хүнээс төлбөр
               авах нь эсрэг үр дүнтэй. PRO нь сонсогчдод зориулагдсан. */}
           {!isAdmin && <MenuItem icon="mic" label="Уран бүтээлч" onClick={() => go("artistProfile")} />}
@@ -144,8 +146,6 @@ export default function ProfileDropdown({
             <MenuItem icon="upload" label="Дуу, цомог нэмэх" onClick={() => go("upload")} />
           )}
           <MenuItem icon="device" label="Төхөөрөмж холбох" onClick={() => go("devices")} />
-          <MenuItem icon="chart" label="Миний статистик" onClick={() => go("stats")} />
-          <MenuItem icon="clock" label="Сонссон түүх" onClick={() => go("history")} />
           <MenuItem icon="trend" label="Миний ахиц" onClick={() => go("progress")} />
           <MenuItem icon="card" label="Захиалга удирдах" onClick={() => go("billing")} />
           <MenuItem icon="help" label="Тусламж" onClick={() => go("help")} />
