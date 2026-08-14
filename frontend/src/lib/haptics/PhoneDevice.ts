@@ -3,6 +3,8 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import { supportsVibration, vibrate } from "@/lib/audio/tone";
 import type { HapticDevice } from "./HapticDevice";
+/* Plugin-ий тогтмол нь `HapticWaveform` нэртэй тул төрлийг өөр нэрээр оруулна. */
+import type { HapticWaveform as BeatWaveform } from "./beat-pattern";
 
 /* Android native дотор (Capacitor) ажиллаж байвал Web Vibration API-ийн on/off
    хязгаараас давж, `VibrationEffect.createWaveform` (амплитуд 0-255) ашиглана —
@@ -14,6 +16,16 @@ interface HapticWaveformPlugin {
   vibrateWaveform(opts: { timings: number[]; amplitudes: number[] }): Promise<void>;
 }
 const HapticWaveform = registerPlugin<HapticWaveformPlugin>("HapticWaveform");
+
+/** Энэ орчинд амплитуд (0–255) удирдах боломжтой эсэх.
+ *
+ *  Браузерын `navigator.vibrate` нь ЗӨВХӨН on/off — хүчний ойлголт огт байхгүй.
+ *  Capacitor доторх Android л `VibrationEffect.createWaveform`-оор амплитуд өгнө.
+ *  Дуудагч тал (useHapticEngine) үүнээс хамааран эрчмийг амплитудаар эсвэл
+ *  ХУГАЦААГААР кодлохоо сонгоно. */
+export function supportsAmplitude(): boolean {
+  return Capacitor.isNativePlatform();
+}
 
 /* `navigator.vibrate` ороосон HapticDevice хэрэгжилт — энэ төхөөрөмжийн (өөрийн
    утас/таблет) чичиргээ. Нэг моторт тул `supportsMultiZone: false` — 8 бүсийн Score
@@ -55,6 +67,20 @@ export class PhoneDevice implements HapticDevice {
       return;
     }
     vibrate(ms);
+  }
+
+  /** Цохилтын дугтуйг энэ орчинд илэрхийлэх хамгийн сайн хэлбэрээр өгнө.
+   *
+   *  Native (Capacitor) — амплитудтай waveform, хамгийн үнэн.
+   *  Браузер — `navigator.vibrate` нь амплитуд ойлгодоггүй тул эрчмийг ХУГАЦААНД
+   *  шингээсэн хэв маягийг өгнө (эс бөгөөс бүх цохилт ижил урттай болж, эрчмийн
+   *  ялгаа бүрэн алга болно). */
+  pulseShaped(waveform: BeatWaveform, timings: number[]): void {
+    if (Capacitor.isNativePlatform()) {
+      HapticWaveform.vibrateWaveform({ timings: waveform.timings, amplitudes: waveform.amplitudes }).catch(() => {});
+      return;
+    }
+    vibrate(timings);
   }
 
   setBand(_zone: number, level: number): void {

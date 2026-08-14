@@ -29,6 +29,15 @@ export interface HapticPattern {
   timings: number[];
   /** Тус бүрийн амплитуд 0–255, `timings`-тэй ИЖИЛ уртай. */
   amplitudes: number[];
+  /** Амплитуд ДЭМЖДЭГГҮЙ мотор дээрх хувилбар — эрчмийг хугацаанд шингээсэн.
+   *
+   *  ⚠️ ЯАГААД ТУСДАА ХЭРЭГТЭЙ ВЭ
+   *  Утасны мотор амплитуд дэмжихгүй бол Android `createWaveform`-ийн амплитудын
+   *  утгуудыг ҮЛ ТООМСОРЛОЖ, бүх алхмыг ижил хүчээр гаргадаг. Дээрх `timings` нь
+   *  зөвхөн өнгө/түвшнээс хамаардаг тул тийм утсан дээр эрчмийн ялгаа БҮРЭН алга
+   *  болж, бүх цохилт ижил мэдрэгддэг («нэг хэмнэлээр л явна»). Энэ талбар нь
+   *  эрчмийг УРТААР илэрхийлж тэр алдагдлыг нөхнө. */
+  timingOnly: number[];
   /** Preset сувагт ямар түвшин болж хураагдах.
    *
    *  ⚠️ ЯАГААД ОРГИЛООС ТААМАГЛАЖ БОЛОХГҮЙ ВЭ
@@ -121,7 +130,36 @@ export function beatPattern(
     envelope *= decay;
   }
 
-  return { timings, amplitudes, presetStyle: level.preset };
+  return { timings, amplitudes, timingOnly: timingPattern(intensity, brightness, level, accent), presetStyle: level.preset };
+}
+
+/* Хугацаагаар кодлох сувгийн хязгаарууд.
+   ДООД: 12мс-ээс богиныг мотор эргэлдэж ч амжихгүй.
+   ДЭЭД: 130мс-ээс урт нь дараагийн цохилттой нийлж эхэлнэ (120 BPM → 500мс зай). */
+const WEB_MIN_MS = 12;
+const WEB_MAX_MS = 130;
+
+/** Эрчмийг ХУГАЦААГААР илэрхийлсэн хэв маяг — амплитудгүй сувагт.
+ *
+ *  `frontend/src/lib/haptics/beat-pattern.ts`-ийн `beatTimingPattern`-тэй ИЖИЛ
+ *  томьёо: хоёр платформ ижил мэдрэмж өгөх ёстой. */
+export function timingPattern(intensity: number, brightness: number, level: LevelShape, accent = 1): number[] {
+  const i = clamp01(intensity);
+  const b = clamp01(brightness);
+  const a = clamp01(accent);
+
+  const base = lerp(WEB_MAX_MS, 26, b);
+  /* Эрчмийн 0.35..1 мужийг 0.25..1 болгож сунгана — анализын хамгийн сул цохилт
+     ч 0.35 байдаг тул шууд үржүүлбэл ялгаа бүдэг болно. */
+  const stretched = clamp01((i - 0.3) / 0.7) * 0.75 + 0.25;
+  const ms = Math.round(base * stretched * Math.max(0.1, level.body) * (0.55 + 0.45 * a));
+  const clamped = Math.max(WEB_MIN_MS, Math.min(WEB_MAX_MS, ms));
+
+  /* Маш хүчтэй, гүн цохилт — давхар импульсээр нэмэлт «жин». */
+  if (i > 0.82 && b < 0.4 && a > 0.9) {
+    return [clamped, 28, Math.max(WEB_MIN_MS, Math.round(clamped * 0.45))];
+  }
+  return [clamped];
 }
 
 /** Хэв маягийн нийт үргэлжлэх хугацаа — оношилгоо/тестэд. */

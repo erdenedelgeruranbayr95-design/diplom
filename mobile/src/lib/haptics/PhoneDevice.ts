@@ -159,7 +159,22 @@ export class PhoneDevice implements HapticDevice {
   pulsePattern(pattern: HapticPattern): void {
     if (HapticWaveform) {
       try {
-        HapticWaveform.vibrateWaveform(pattern.timings, pattern.amplitudes);
+        /* ⚠️ Мотор амплитуд дэмжихгүй бол Android амплитудын массивыг ҮЛ
+           ТООМСОРЛОЖ бүх алхмыг ижил хүчээр гаргадаг. Тийм үед дугтуйн `timings`
+           нь зөвхөн өнгө/түвшнээс хамаардаг тул эрчмийн ялгаа бүрэн алга болж,
+           бүх цохилт ижил мэдрэгддэг байв. Иймд эрчмийг УРТААР илэрхийлсэн
+           хувилбарыг өгнө — амплитудгүй ч гэсэн «намуухан үед богино, хүчтэй үед
+           урт» гэсэн ялгаа хадгалагдана. */
+        if (this.backend === "amplitude") {
+          HapticWaveform.vibrateWaveform(pattern.timings, pattern.amplitudes);
+        } else {
+          const timings = [0, ...pattern.timingOnly];
+          /* Хугацааны хэв маягт эхний элемент нь хүлээх зай, дараа нь чичрэх/завсар
+             ээлжилнэ. Амплитудыг 255 (чичрэх) / 0 (завсар) гэж өгнө — дэмжигдэхгүй
+             үед хэрхэн ч байсан үл тоомсорлогдоно, дэмжигдвэл бүтэн хүчээр. */
+          const amplitudes = timings.map((_, idx) => (idx === 0 || idx % 2 === 0 ? 0 : 255));
+          HapticWaveform.vibrateWaveform(timings, amplitudes);
+        }
         return;
       } catch {
         // Доорх preset руу уначина.

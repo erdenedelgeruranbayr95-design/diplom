@@ -77,6 +77,20 @@ export interface Song {
   analyzedBpm: number | null;
   beatCount: number | null;
   beatTimestamps: number[] | null;
+  /* Цохилт бүрийн эрчим (0..1) ба өнгө (0 = гүн бас, 1 = хурц таваг).
+     `beatTimestamps`-тай ИЖИЛ уртай — индексээр харгалзана. Чичиргээний дугтуйг
+     эдгээр хэлбэржүүлнэ: эдгээргүйгээр бүх цохилт ижил хүчээр өгөгдөнө.
+
+     ⚠️ ЗААВАЛ БИШ: `GET /songs` (жагсаалт) нь ачааллыг багасгахын тулд эдгээрийг
+     хасаж буцаадаг (`SongsService.stripBeats`). Зөвхөн `GET /songs/:id` бүтнээр
+     өгнө — тоглуулагч дуу эхлэхэд тэрийг дуудна. */
+  beatIntensity?: number[] | null;
+  beatBrightness?: number[] | null;
+  /* Онсет = аливаа шинэ авиа эхлэх мөч. Цохилтоос 3–6 дахин олон бөгөөд аялгуу,
+     гитарын цохилт, дуучны үгийг агуулдаг тул хөгжмийн бодит бүтцийг өгнө. */
+  onsetTimestamps?: number[] | null;
+  onsetIntensity?: number[] | null;
+  onsetBrightness?: number[] | null;
   rms: number | null;
   peak: number | null;
   bassEnergy: number | null;

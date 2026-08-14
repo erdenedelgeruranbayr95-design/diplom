@@ -11,6 +11,8 @@
    0..7 (BAND_EDGES_HZ индекс), level нь 0..1 normalize утга. Ганц моторт (утасны
    vibrate) төхөөрөмж бүх бүсийг нэг хэмнэлд нэгтгэдэг (`supportsMultiZone: false`),
    олон моторт (BLE хантааз) бүс тус бүрийг тусад нь мэдрүүлж чадна. */
+import type { HapticWaveform } from "./beat-pattern";
+
 export interface HapticDevice {
   readonly id: string;
   readonly label: string;
@@ -26,6 +28,14 @@ export interface HapticDevice {
 
   /** Ганц импульс (beat/onset) — `strength` 0..1, `durationMs` сонголтоор. */
   pulse(strength: number, durationMs?: number): void;
+  /** Хэлбэржүүлсэн импульс — цохилтын БОДИТ эрчим/өнгөнөөс гарсан дугтуй.
+   *
+   *  Хоёр хэлбэрээр зэрэг өгнө, төхөөрөмж аль нь илэрхийлж чадахаа сонгоно:
+   *    · `waveform` — амплитудтай (Android `createWaveform`)
+   *    · `timings`  — зөвхөн on/off, эрчим нь ХУГАЦААНД шингэсэн (`navigator.vibrate`)
+   *
+   *  Хэрэгжүүлээгүй төхөөрөмжид `DeviceRouter` энгийн `pulse()` руу уначина. */
+  pulseShaped?(waveform: HapticWaveform, timings: number[]): void;
   /** Тодорхой бүсийн (zone) түвшинг тохируулна — `supportsMultiZone: false` үед
    *  бүх дуудлага нэг ерөнхий моторт нэгтгэгдэнэ (жишээ: хамгийн өндөр идэвхтэй бүс). */
   setBand(zone: number, level: number): void;

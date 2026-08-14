@@ -5,7 +5,9 @@ import { BeatScheduler } from "@/lib/audio/beat-scheduler";
 import { supportsVibration, vibrate } from "@/lib/audio/tone";
 import { frameIndexAt } from "@/lib/audio/haptic-score";
 import { DeviceRouter } from "@/lib/haptics/DeviceRouter";
-import { LIGHT_LEVELS, VIB_LEVELS } from "@/lib/player/constants";
+import { beatTimingPattern, beatWaveform } from "@/lib/haptics/beat-pattern";
+import { accentFor, type HapticTrack } from "@/lib/player/haptic-track";
+import { BEAT_LEVELS, DEFAULT_BRIGHTNESS, LIGHT_LEVELS, VIB_LEVELS } from "@/lib/player/constants";
 import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
 import type { BandLevels, Prefs } from "@/types/player";
 import type { BeatFlash } from "@/lib/player/visualizer-modes";
@@ -58,8 +60,15 @@ export interface HapticEngine {
    *  харуулах эсэхээ шийдэхэд ашиглана. */
   hasHapticScore: boolean;
 
-  /** Тухайн дууны beatTimestamps-ийг оноох (шинэ дуу эхлэхэд). */
+  /** Тухайн дууны beatTimestamps-ийг оноох (шинэ дуу эхлэхэд). Эрчмийн өгөгдөлгүй
+   *  тул бүх цохилт ойролцоо хүчтэй болно — боломжтой бол `setHapticTrack`. */
   setBeatTimestamps: (timestamps: number[] | null | undefined) => void;
+  /** Цохилт + онсет нэгтгэсэн бүтэн зам — ҮНДСЭН зам.
+   *
+   *  Зөвхөн цохилтоор чичрүүлэхэд метроном шиг мэдрэгддэг. Онсет нь цохилтоос
+   *  3–6 дахин олон бөгөөд хөгжмийн бодит бүтцийг дагадаг тул аялгуу, хэмнэлийн
+   *  нарийн ширийн нь мэдрэгдэнэ. */
+  setHapticTrack: (track: HapticTrack | null) => void;
   /** Тухайн дууны Haptic Score-ийг оноох (worker бэлдсэн бол) — байхгүй бол `null`
    *  дамжуулж 3-бүсийн realtime fallback руу шилжинэ. */
   setHapticScore: (score: HapticScore | null) => void;
@@ -134,6 +143,9 @@ export function useHapticEngine({
   const rollingAvgRef = useRef<BandLevels>({ lo: 0, mi: 0, hi: 0 });
   const lastFireAtRef = useRef(0);
   const hapticScoreRef = useRef<HapticScore | null>(null);
+  /* Цохилт + онсет нэгтгэсэн зам. Индекс нь scheduler-ийн timestamp массивтай
+     ЯГ харгалзана (хоёулаа `setHapticTrack`-д нэг дор оноогддог). */
+  const hapticTrackRef = useRef<HapticTrack | null>(null);
   const [hasHapticScore, setHasHapticScore] = useState(false);
   const deviceRouterRef = useRef<DeviceRouter | null>(null);
   if (!deviceRouterRef.current) deviceRouterRef.current = new DeviceRouter();
@@ -190,7 +202,7 @@ export function useHapticEngine({
       if (playing && vibrationOn) {
         const scheduler = beatSchedulerRef.current;
         if (scheduler.hasTimestamps && audioRef.current) {
-          const { fired: crossed, crossedAt } = scheduler.pollDetailed(audioRef.current.currentTime);
+          const { fired: crossed, crossedAt, index } = scheduler.pollDetailed(audioRef.current.currentTime);
           if (crossed) {
             if (
               crossedAt !== undefined &&
@@ -201,16 +213,33 @@ export function useHapticEngine({
               console.log("LATENCY_DEBUG", JSON.stringify({ latencyMs: Math.round(latencyMs * 100) / 100 }));
             }
             const bp = prefsRef.current;
-            const bStrength = VIB_LEVELS[bp.vib].mult;
             const bSync = deviceSyncRef.current;
             const { lo: blo, mi: bmi, hi: bhi } = levelRef.current;
             const band = dominantBand(blo, bmi, bhi);
             const level = band === "bass" ? blo : band === "mid" ? bmi : bhi;
             beatFlashRef.current = { band, level, at: performance.now() };
+
+            /* Цохилт бүр ӨӨР байх ёстой — хөгжим бол метроном биш.
+
+               Урьд нь энд гурван ТОГТМОЛ салбар байв (бас 60+level*80мс, дунд
+               [30,30,30], өндөр 12мс) бөгөөд дунд/өндөр нь дууны эрчмийг ОГТ
+               тоолдоггүй байсан тул бүх цохилт ижил хүчтэй мэдрэгддэг байв.
+               Одоо анализын тухайн цохилтын БОДИТ эрчим (`intensity`) ба өнгө
+               (`brightness`) дугтуйг хэлбэржүүлнэ: чанга найрал хүчтэй, тайван
+               шүлэг зөөлөн; бөмбөр гүн бөгөөд урт, таваг богино бөгөөд хурц. */
+            const trk = hapticTrackRef.current;
+            const bi = index ?? -1;
+            const hasDyn = trk && bi >= 0 && bi < trk.intensity.length;
+            const intensity = hasDyn ? trk!.intensity[bi] : Math.max(0.35, level);
+            const brightness = hasDyn ? trk!.brightness[bi] : band === "bass" ? 0.1 : band === "mid" ? 0.5 : 0.9;
+            const accent = trk && bi >= 0 && bi < trk.isBeat.length ? accentFor(trk.isBeat[bi]) : 1;
+            const shape = BEAT_LEVELS[bp.vib] ?? BEAT_LEVELS[1];
+
             if (canVibrate) {
-              if (band === "bass") deviceRouterRef.current!.pulse(bStrength, Math.round((60 + level * 80) * bStrength));
-              else if (band === "mid") vibrate([Math.round(30 * bStrength), 30, Math.round(30 * bStrength)]);
-              else deviceRouterRef.current!.pulse(bStrength, Math.max(8, Math.round(12 * bStrength)));
+              deviceRouterRef.current!.pulseShaped(
+                beatWaveform(intensity, brightness, shape, accent),
+                beatTimingPattern(intensity, brightness, shape, accent),
+              );
             }
             /* 8-бүсийн Score байвал олон моторт төхөөрөмж (BLE хантааз) бүс тус
                бүрийг тусад нь мэдрүүлнэ — tonotopic мэдрэмж (§Үе шат 4 DoD). */
@@ -388,6 +417,14 @@ export function useHapticEngine({
     hasHapticScore,
     setBeatTimestamps: (timestamps) => {
       beatSchedulerRef.current.setTrack(timestamps);
+      hapticTrackRef.current = null;
+      rollingAvgRef.current = { lo: 0, mi: 0, hi: 0 };
+    },
+    setHapticTrack: (track) => {
+      /* Scheduler болон зам ХОЁУЛАА нэг дор оногдох ЁСТОЙ — эс бөгөөс индекс
+         зөрж, өөр цохилтын эрчим оногдоно. */
+      beatSchedulerRef.current.setTrack(track ? track.times : null);
+      hapticTrackRef.current = track;
       rollingAvgRef.current = { lo: 0, mi: 0, hi: 0 };
     },
     setHapticScore: (score) => {

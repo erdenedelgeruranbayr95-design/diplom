@@ -33,6 +33,8 @@ import { APP_EVENTS } from "@/lib/data/events";
 import { feelProfileFor } from "@/lib/player/constants";
 import { ToneGenerator, vibrate } from "@/lib/audio/tone";
 import { loadHapticScore } from "@/lib/audio/haptic-score";
+import { buildHapticTrack } from "@/lib/player/haptic-track";
+import { DEFAULT_BRIGHTNESS } from "@/lib/player/constants";
 import { ALL_GENRES, filterTracks, indexTracksById, resolveTracks } from "@/lib/player/track-index";
 import { scoreRecommendations } from "@/lib/player/recommendations";
 import * as songsApi from "@/lib/api/client";
@@ -123,12 +125,24 @@ export default function Player({
     onTrackStart: (track) => {
       /* songId-тэй (analyze хийгдсэн) бол beatTimestamps-ийг татаж scheduler-т тохируулна;
          эс бол scheduler хоосорч, level-threshold fallback идэвхжинэ. */
-      haptics.setBeatTimestamps(null);
+      haptics.setHapticTrack(null);
       haptics.setHapticScore(null);
       if (track.songId) {
         songsApi
           .getSong(track.songId)
-          .then((song) => haptics.setBeatTimestamps(song.beatTimestamps))
+          .then((song) => {
+            /* Цохилт + онсетыг нэгтгэсэн зам — цохилт бүрийн БОДИТ эрчим/өнгө
+               эндээс ирнэ. Урьд нь зөвхөн `beatTimestamps` дамжуулдаг байсан тул
+               эрчмийн өгөгдөл (`beatIntensity`) огт ашиглагдалгүй хаягдаж, бүх
+               цохилт ижил хүчээр өгөгддөг байв. */
+            const hapticTrack = buildHapticTrack(
+              { times: song.beatTimestamps, intensity: song.beatIntensity, brightness: song.beatBrightness },
+              { times: song.onsetTimestamps, intensity: song.onsetIntensity, brightness: song.onsetBrightness },
+              DEFAULT_BRIGHTNESS,
+            );
+            if (hapticTrack) haptics.setHapticTrack(hapticTrack);
+            else haptics.setBeatTimestamps(song.beatTimestamps);
+          })
           .catch(() => {});
         /* Haptic Score (8-бүс, worker бэлдсэн) — READY бол л татна, эс бол дуудлага
            дэмий үрэхгүй (score.getAnalysisStatus 1 удаагийн хямд GET). */

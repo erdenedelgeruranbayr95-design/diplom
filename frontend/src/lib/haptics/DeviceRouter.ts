@@ -3,6 +3,7 @@
 import { PhoneDevice } from "./PhoneDevice";
 import { GamepadDevice } from "./GamepadDevice";
 import type { HapticDevice } from "./HapticDevice";
+import { waveformDurationMs, type HapticWaveform } from "./beat-pattern";
 
 /* Холбогдсон бүх HapticDevice-уудыг нэг дор удирдаж, `pulse`/`setBand` дуудлагыг
    БҮГДЭД зэрэг дамжуулна ("нэг дууг олон төхөөрөмж дээр зэрэг синхроноор мэдрүүлэх" —
@@ -38,6 +39,20 @@ export class DeviceRouter {
 
   pulse(strength: number, durationMs?: number): void {
     for (const d of this.connected) d.pulse(strength, durationMs);
+  }
+
+  /** Хэлбэржүүлсэн импульсийг бүх төхөөрөмжид дамжуулна. Дугтуй дэмждэггүй
+   *  төхөөрөмж (жиш. gamepad) энгийн `pulse`-руу уначина — оргил амплитуд ба
+   *  нийт үргэлжлэх хугацааг нь хадгална. */
+  pulseShaped(waveform: HapticWaveform, timings: number[]): void {
+    for (const d of this.connected) {
+      if (d.pulseShaped) {
+        d.pulseShaped(waveform, timings);
+        continue;
+      }
+      const peak = Math.max(0, ...waveform.amplitudes) / 255;
+      d.pulse(peak, waveformDurationMs(waveform));
+    }
   }
 
   setBand(zone: number, level: number): void {

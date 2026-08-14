@@ -29,9 +29,12 @@ export class BeatScheduler {
     return this.pollDetailed(currentTime).fired;
   }
 
-  /** `poll()`-той адил, гэхдээ latency хэмжилт/дебаг зориулалттай сүүлд шатсан
-   *  ground-truth timestamp-ыг ч буцаана (`crossedAt`). */
-  pollDetailed(currentTime: number): { fired: boolean; crossedAt?: number } {
+  /** `poll()`-той адил, гэхдээ нэмэлт мэдээлэлтэй:
+   *   · `crossedAt` — latency хэмжилт/дебагт (ground-truth timestamp)
+   *   · `index`     — шатсан үйлийн ИНДЕКС. Үүгээр дуудагч тал тухайн цохилтын
+   *                   эрчим/өнгийг (`beatIntensity`/`beatBrightness`) хайна —
+   *                   энэгүйгээр бүх цохилт ижил хүчээр өгөгдөнө. */
+  pollDetailed(currentTime: number): { fired: boolean; crossedAt?: number; index?: number } {
     if (!this.timestamps.length) return { fired: false };
     if (this.cursor < this.timestamps.length && currentTime < this.timestamps[this.cursor] - 1) {
       // цаг ухарсан (seek) — cursor-ийг дахин тохируулна
@@ -40,11 +43,13 @@ export class BeatScheduler {
     }
     let fired = false;
     let crossedAt: number | undefined;
+    let index: number | undefined;
     while (this.cursor < this.timestamps.length && this.timestamps[this.cursor] <= currentTime) {
       crossedAt = this.timestamps[this.cursor];
+      index = this.cursor;
       this.cursor++;
       fired = true;
     }
-    return { fired, crossedAt };
+    return { fired, crossedAt, index };
   }
 }
