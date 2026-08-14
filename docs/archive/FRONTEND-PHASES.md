@@ -366,10 +366,9 @@ npm run dev -- -p 3001          # → http://localhost:3001
 
 | Дүр | Email | Нууц үг |
 |---|---|---|
+| ROOT | `root@medreh.mn` | `root123` |
 | ADMIN | `admin@medreh.mn` | `admin123` |
-| THERAPIST | `therapist@medreh.mn` | `therapist123` |
 | USER | `user@medreh.mn` | `user123` |
-| PARENT | `parent@medreh.mn` | `parent123` |
 
 ---
 
