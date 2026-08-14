@@ -110,11 +110,16 @@ export default function TopBar({
           >
             <Icon name="home" size={19} />
           </button>
-          {/* Фокусын тэмдэглэгээ НЭГ давхар: хүрээний өнгө + зөөлөн ореол. Урьд нь
-              `shadow-glow-aqua` (2px хатуу цагираг + ореол) хүрээн дээр давхарлаж
-              хоёр цагираг харагдуулж байв. */}
-          <div className="flex-1 max-w-[500px] max-viz:max-w-none mx-auto flex items-center gap-3 h-[46px] max-nav:h-10 bg-white/[.05] border border-white/[.07] rounded-full px-[18px] max-nav:px-3.5 text-dim transition-[border-color,background,box-shadow] duration-300 focus-within:bg-white/[.08] focus-within:border-aqua/60 focus-within:shadow-[0_0_0_4px_rgba(56,232,206,.13)]">
+          {/* Фокусын тэмдэглэгээ ЯГ НЭГ: хүрээний өнгө + дэвсгэрийн өөрчлөлт.
+              ⚠️ Энд `box-shadow` цагираг БҮҮ нэм. `0 0 0 Npx` хэлбэрийн сүүдэр нь
+              бүдгэрэлтгүй тул «зөөлөн ореол» биш, ХОЁР ДАХЬ ХАТУУ ЦАГИРАГ болж
+              зурагддаг — хүрээтэйгээ давхарлаад хайлтын талбар давхар хүрээтэй
+              харагдана. Өмнө нь `shadow-glow-aqua` (2px + 5px), дараа нь 4px
+              хувилбар хоёулаа яг энэ алдааг үүсгэсэн. */}
+          <div className="flex-1 max-w-[500px] max-viz:max-w-none mx-auto flex items-center gap-3 h-[46px] max-nav:h-10 bg-white/[.05] border border-white/[.07] rounded-full px-[18px] max-nav:px-3.5 text-dim transition-[border-color,background] duration-300 focus-within:bg-white/[.09] focus-within:border-aqua">
             <Icon name="search" size={17} />
+            {/* Хөтөч фокуст талбарт өөрийн хүрээ зурдаг — эцэг div дээрх хүрээтэй
+                давхарлана. Тиймээс input-ийн бүх фокусын тэмдэглэгээг таслана. */}
             <input
               type="search"
               placeholder="Дуу, дуучин, төрөл, цомгоор хайх"
@@ -122,7 +127,7 @@ export default function TopBar({
               onFocus={() => setView("home")}
               onChange={(e) => setQuery(e.target.value)}
               aria-label="Дуу, дуучин, төрөл, цомгоор хайх"
-              className="flex-1 bg-transparent border-none text-ink font-body text-copy cursor-none outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden appearance-none"
+              className="flex-1 bg-transparent border-none text-ink font-body text-copy cursor-none outline-none focus:outline-none focus-visible:outline-none focus:shadow-none focus-visible:shadow-none [&:focus]:[outline:none] [&:focus-visible]:[outline:none] placeholder:text-faint [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden appearance-none"
             />
           </div>
           <div className="max-viz:hidden flex items-end gap-[3px] h-6 w-[34px] flex-none" aria-hidden="true">

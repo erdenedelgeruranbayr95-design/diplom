@@ -9,17 +9,27 @@
  * ⚠️ БУЦААХ БОЛОМЖГҮЙ. Дуу болон түүний файл (аудио, ковер) хоёулаа устана.
  * Эхлээд ЗААВАЛ `--dry-run`-ээр юу устахыг хараарай.
  *
- * ХЭРЭГЛЭЭ
- *   set API_URL=https://diplom-api-p785.onrender.com/api
- *   set ADMIN_EMAIL=admin@medreh.mn
- *   set ADMIN_PASSWORD=...
+ * ХЭРЭГЛЭЭ — хоёр аргын аль нэгээр эрх авна
+ *
+ *   1. ТОКЕН (Google-ээр нэвтэрдэг бүртгэлд ЦОРЫН ГАНЦ арга — тийм бүртгэлд
+ *      нууц үг байдаггүй тул `/auth/login` үргэлж 401 өгнө):
+ *        $env:ADMIN_TOKEN = "eyJ..."
+ *
+ *      Токеныг хөтчөөс авна: сайт руугаа нэвтэрсэн байхдаа F12 → Network →
+ *      аль нэг `/api/...` хүсэлт → Request Headers → `Authorization: Bearer ...`
+ *      мөрийн `Bearer `-ийн дараах хэсгийг хуулна.
+ *
+ *   2. ИМЭЙЛ + НУУЦ ҮГ (нууц үгтэй бүртгэлд):
+ *        $env:ADMIN_EMAIL = "..."
+ *        $env:ADMIN_PASSWORD = "..."
+ *
+ *   $env:API_URL = "https://diplom-api-p785.onrender.com/api"
  *   node scripts/purge-unanalyzed-songs.js --dry-run
  *   node scripts/purge-unanalyzed-songs.js
- *
- * (PowerShell дээр `set` биш `$env:API_URL = "..."`)
  */
 
 const API = process.env.API_URL || "http://localhost:3000/api";
+const TOKEN = process.env.ADMIN_TOKEN;
 const EMAIL = process.env.ADMIN_EMAIL;
 const PASSWORD = process.env.ADMIN_PASSWORD;
 const dryRun = process.argv.includes("--dry-run");
@@ -43,7 +53,9 @@ async function api(path, opts = {}, token) {
 }
 
 async function main() {
-  if (!EMAIL || !PASSWORD) throw new Error("ADMIN_EMAIL ба ADMIN_PASSWORD орчны хувьсагчийг заана уу");
+  if (!TOKEN && !(EMAIL && PASSWORD)) {
+    throw new Error("ADMIN_TOKEN эсвэл (ADMIN_EMAIL + ADMIN_PASSWORD) орчны хувьсагчийг заана уу");
+  }
 
   console.log(`Сервер: ${API}`);
   const songs = await api("/songs");
@@ -57,8 +69,18 @@ async function main() {
   if (!dead.length) return console.log("\nУстгах зүйл алга.");
   if (dryRun) return console.log(`\n--dry-run: юу ч устгасангүй. Бодитоор устгахын тулд --dry-run-гүй ажиллуулна уу.`);
 
-  const { accessToken } = await api("/auth/login", { method: "POST", body: JSON.stringify({ email: EMAIL, password: PASSWORD }) });
-  console.log(`\n${EMAIL} нэрээр нэвтэрлээ. Устгаж байна…\n`);
+  let accessToken = TOKEN;
+  if (accessToken) {
+    console.log("\nБэлэн токеноор ажиллаж байна.");
+  } else {
+    ({ accessToken } = await api("/auth/login", { method: "POST", body: JSON.stringify({ email: EMAIL, password: PASSWORD }) }));
+    console.log(`\n${EMAIL} нэрээр нэвтэрлээ.`);
+  }
+
+  /* Токен зөв эрхтэй эсэхийг УРЬДЧИЛЖ шалгана — эс бөгөөс эхний устгалт дээр
+     403 өгч, хэрэглэгч аль алхам дээр буруудсанаа мэдэхгүй. */
+  const me = await api("/auth/me", {}, accessToken);
+  console.log(`Эрх: ${me?.email ?? "?"} (${me?.role ?? "?"})\n`);
 
   let ok = 0;
   for (const s of dead) {
