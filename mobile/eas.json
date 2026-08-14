@@ -15,6 +15,10 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://diplom-api-p785.onrender.com/api",
+        "EXPO_PUBLIC_WEB_URL": "https://diplom-two-weld.vercel.app"
       }
     },
     "production": {
