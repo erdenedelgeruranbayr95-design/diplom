@@ -38,9 +38,6 @@ export type ViewName =
   | "recent"
   | "analysis"
   | "history"
-  | "therapist"
-  | "progress"
-  | "parent"
   | "upload"
   /** Уран бүтээлчийн профайл — өөрөө үүсгэж, засна. */
   | "artistProfile";

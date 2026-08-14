@@ -12,12 +12,10 @@ import type { UserRole } from "@/types/auth";
    DAU/MAU/retention нь `listen_events` хүснэгт шаарддаг тул энд ОРОЛЦООГҮЙ —
    хуурамч график зурахгүй (шинэ API зохиомжлохгүй). */
 
-const ROLE_ORDER: UserRole[] = ["USER", "ARTIST", "THERAPIST", "PARENT", "ADMIN", "CURATOR", "MODERATOR", "ROOT"];
+const ROLE_ORDER: UserRole[] = ["USER", "ARTIST", "ADMIN", "CURATOR", "MODERATOR", "ROOT"];
 const ROLE_TEXT: Record<UserRole, string> = {
   USER: "Хэрэглэгч",
-  THERAPIST: "Эмч",
   ARTIST: "Уран бүтээлч",
-  PARENT: "Эцэг эх",
   ADMIN: "Админ",
   CURATOR: "Куратор",
   MODERATOR: "Модератор",
@@ -71,7 +69,7 @@ export default function RootAnalytics({ data }: { data: RootData }) {
     <RootSection
       title="Аналитик"
       eyebrow="ROOT"
-      description="GET /users ба GET /songs дээр тооцоологдсон бодит хуваарилалт. DAU/MAU/retention нь listen_events хүснэгт шаарддаг тул энд ороогүй."
+      description="Хэрэглэгчийн дүр ба каталогийн төрлийн бодит хуваарилалт."
       loading={data.loading}
       error={data.error}
       onRetry={data.reload}

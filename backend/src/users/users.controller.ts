@@ -25,7 +25,7 @@ export class UsersController {
     return this.users.list();
   }
 
-  /* ADMIN THERAPIST/ADMIN эрхтэй account үүсгэнэ — self-service бус. */
+  /* ADMIN нь ADMIN/ARTIST эрхтэй account үүсгэнэ — self-service бус. */
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Post()

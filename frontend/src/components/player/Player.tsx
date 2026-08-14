@@ -59,8 +59,6 @@ export default function Player({
   isRoot,
   isAdmin,
   isCurator,
-  isTherapist,
-  isParent,
   onRoot,
   onAdmin,
   onCurator,
@@ -78,8 +76,6 @@ export default function Player({
   isRoot: boolean;
   isAdmin: boolean;
   isCurator: boolean;
-  isTherapist: boolean;
-  isParent: boolean;
   onRoot: () => void;
   onAdmin: () => void;
   onCurator: () => void;
@@ -205,10 +201,10 @@ export default function Player({
      хуудас нээгдэнэ. Калибровк өөрөө хэвээр: Тохиргоо цэс (SettingsDropdown) болон
      Тусламж хуудсаас (HelpView) хүссэн үедээ нээж болно. */
 
-  /* нээгдэхэд: админ/эмч бол өөрийн самбараас, энгийн хэрэглэгч нүүрээс эхэлнэ */
+  /* нээгдэхэд: админ бол хяналтын самбараас, энгийн хэрэглэгч нүүрээс эхэлнэ */
   useEffect(() => {
-    if (open) setView(isAdmin ? "admin" : isTherapist ? "therapist" : isParent ? "parent" : "home");
-  }, [open, isAdmin, isTherapist, isParent]);
+    if (open) setView(isAdmin ? "admin" : "home");
+  }, [open, isAdmin]);
 
   /* хаагдахад: тоглуулалтыг зогсоож, түүхэнд бичээд, утасны холболтыг таслана */
   useEffect(() => {
@@ -336,8 +332,6 @@ export default function Player({
           vizRef={haptics.vizRef}
           user={user}
           isAdmin={isAdmin}
-          isTherapist={isTherapist}
-          isParent={isParent}
           subscribed={subscribed}
           onSubscribe={onSubscribe}
           onLogout={onLogout}
@@ -379,7 +373,7 @@ export default function Player({
                   stats: library.statsRef.current,
                 }}
                 selection={{ detailTrack, detailReasons, artistId, analysisSongId }}
-                session={{ user, email, subscribed, renewDate, isAdmin, isTherapist, isParent }}
+                session={{ user, email, subscribed, renewDate, isAdmin }}
                 settings={{
                   prefs: library.prefs,
                   onUpdatePrefs: library.updatePrefs,

@@ -13,6 +13,6 @@ export class CreateUserDto {
   @MinLength(6)
   password: string;
 
-  @IsIn([Role.ADMIN, Role.THERAPIST])
-  role: typeof Role.ADMIN | typeof Role.THERAPIST;
+  @IsIn([Role.ADMIN, Role.ARTIST])
+  role: typeof Role.ADMIN | typeof Role.ARTIST;
 }

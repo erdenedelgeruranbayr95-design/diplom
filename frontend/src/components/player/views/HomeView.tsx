@@ -41,8 +41,6 @@ export interface HomeViewProps {
   stats: ListeningStats | null | undefined;
   playlists: Playlist[];
   isAdmin: boolean;
-  isTherapist: boolean;
-  isParent: boolean;
 }
 
 export default function HomeView({
@@ -54,8 +52,6 @@ export default function HomeView({
   stats,
   playlists,
   isAdmin,
-  isTherapist,
-  isParent,
 }: HomeViewProps) {
   const { currentId, likedIds, savedIds, setView } = useTrackActions();
   const catalog = useHomeCatalog(allTracks);
@@ -96,7 +92,7 @@ export default function HomeView({
 
   return (
     <>
-      <HomeGreeting isAdmin={isAdmin} isTherapist={isTherapist} isParent={isParent} />
+      <HomeGreeting isAdmin={isAdmin} />
 
       <ArtistRail artists={catalog.artists} loading={catalog.artistsLoading} />
 

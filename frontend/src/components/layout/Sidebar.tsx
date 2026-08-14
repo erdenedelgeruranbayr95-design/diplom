@@ -154,7 +154,7 @@ export default function Sidebar({
             {isRoot && (
               <PanelButton
                 label="ROOT"
-                icon="shield"
+                icon="gem"
                 accentClass="text-rose border-rose/25 bg-rose/[.07] hover:bg-rose/[.16] hover:border-rose/45"
                 onClick={onRoot}
               />
@@ -162,7 +162,7 @@ export default function Sidebar({
             {isAdmin && (
               <PanelButton
                 label="Админ"
-                icon="grid"
+                icon="sliders"
                 accentClass="text-warm border-warm/25 bg-warm/[.07] hover:bg-warm/[.16] hover:border-warm/45"
                 onClick={onAdmin}
               />
@@ -170,7 +170,7 @@ export default function Sidebar({
             {isCurator && (
               <PanelButton
                 label="Куратор"
-                icon="disc"
+                icon="playlist"
                 accentClass="text-purple border-purple/25 bg-purple/[.07] hover:bg-purple/[.16] hover:border-purple/45"
                 onClick={onCurator}
               />

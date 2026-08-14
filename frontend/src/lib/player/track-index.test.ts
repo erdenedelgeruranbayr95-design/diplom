@@ -7,9 +7,9 @@ function track(overrides: Partial<PlayerTrack> & { id: PlayerTrack["id"]; title:
 }
 
 const TRACKS: PlayerTrack[] = [
-  track({ id: 1, title: "Хөх тэнгэр", artist: "Батаа", genre: "Поп" }),
+  track({ id: 1, title: "Хөх тэнгэр", artist: "Батаа", genre: "Поп", album: "Анхны алхам" }),
   track({ id: 2, title: "Уулын салхи", artist: "Сараа", genre: "Ардын" }),
-  track({ id: "backend-3", title: "Talst Night", artist: "DJ Whisper", genre: "Электрон" }),
+  track({ id: "backend-3", title: "Talst Night", artist: "DJ Whisper", genre: "Электрон", album: "Neon Steppe" }),
 ];
 
 describe("filterTracks", () => {
@@ -26,6 +26,17 @@ describe("filterTracks", () => {
     expect(filterTracks(TRACKS, { genre: ALL_GENRES, query: "БАтаа" }).map((t) => t.id)).toEqual([1]);
     expect(filterTracks(TRACKS, { genre: ALL_GENRES, query: "whisper" }).map((t) => t.id)).toEqual(["backend-3"]);
     expect(filterTracks(TRACKS, { genre: ALL_GENRES, query: "электрон" }).map((t) => t.id)).toEqual(["backend-3"]);
+  });
+
+  it("matches the album name too", () => {
+    expect(filterTracks(TRACKS, { genre: ALL_GENRES, query: "neon steppe" }).map((t) => t.id)).toEqual(["backend-3"]);
+    expect(filterTracks(TRACKS, { genre: ALL_GENRES, query: "анхны" }).map((t) => t.id)).toEqual([1]);
+  });
+
+  /* Талбаруудыг шууд залгавал цомоггүй дуу "undefined" гэсэн текст агуулж,
+     "undef" гэж хайхад олдоно — хоосон талбарыг шүүж байгаагийн баталгаа. */
+  it("does not leak undefined fields into the searchable text", () => {
+    expect(filterTracks(TRACKS, { genre: ALL_GENRES, query: "undefined" })).toHaveLength(0);
   });
 
   it("combines genre and query filters (both must match)", () => {

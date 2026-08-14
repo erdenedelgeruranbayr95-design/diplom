@@ -33,7 +33,7 @@ export default function RootMonitoring() {
     <RootSection
       title="Мониторинг"
       eyebrow="ROOT"
-      description="GET /health · GET /health/db — сервер/DB холболтын одоогийн төлөв."
+      description="Сервер ба өгөгдлийн сангийн холболтын одоогийн төлөв."
       loading={loading}
       error={error}
       onRetry={reload}

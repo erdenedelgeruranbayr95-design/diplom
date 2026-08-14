@@ -5,38 +5,29 @@ import * as api from "@/lib/api/client";
 import { useAsyncResource } from "@/hooks/useAsyncResource";
 import type { AdminUserRow } from "@/types/auth";
 import type { Artist, Song } from "@/types/song";
-import type { TherapistAssignmentRow } from "@/types/therapy";
 
 /* Root Panel-ийн бүх тоо ЗӨВХӨН одоо байгаа endpoint-оос гарна:
-     GET /users · GET /songs · GET /artists · GET /assignments/therapists
-   Шинэ backend API зохиомжлоогүй. Эх сурвалжгүй метрикийг (Online, Revenue,
-   Connected Devices, QR Sessions) `null` буцааж, UI нь "—" + шалтгааныг харуулна —
-   хуурамч тоо ХЭЗЭЭ Ч гаргахгүй. */
-
-export interface RootMetric {
-  /** `null` = энэ тоог өгөх backend API одоогоор байхгүй. */
-  value: number | null;
-  /** `value === null` үед харагдах шалтгаан. */
-  unavailableReason?: string;
-}
+     GET /users · GET /songs · GET /artists · GET /revenue
+   Тухайн дуудлага унасан үед RootSection нь алдааны төлөвөө харуулна — өөрөөр
+   хэлбэл дэлгэц дээр гарсан тоо бүр бодит өгөгдөл дээр тулгуурлана. */
 
 export interface RootMetrics {
-  totalUsers: RootMetric;
-  onlineUsers: RootMetric;
-  premiumUsers: RootMetric;
-  revenue: RootMetric;
-  songs: RootMetric;
-  therapists: RootMetric;
-  parents: RootMetric;
-  connectedDevices: RootMetric;
-  qrSessions: RootMetric;
+  totalUsers: number;
+  premiumUsers: number;
+  /** Нийт орлого (₮). Дуудлага унасан бол 0. */
+  revenue: number;
+  songs: number;
+  artists: number;
+  /** Уран бүтээлчийн эрхтэй бүртгэлийн тоо. */
+  artistAccounts: number;
+  /** Куратор + модератор — каталог хариуцсан ажилтан. */
+  catalogStaff: number;
 }
 
 export interface RootData {
   users: AdminUserRow[];
   songs: Song[];
   artists: Artist[];
-  assignments: TherapistAssignmentRow[];
   metrics: RootMetrics;
   loading: boolean;
   error: string;
@@ -47,31 +38,25 @@ interface RootSnapshot {
   users: AdminUserRow[];
   songs: Song[];
   artists: Artist[];
-  assignments: TherapistAssignmentRow[];
-  revenue: number | null;
+  revenue: number;
 }
-const EMPTY: RootSnapshot = { users: [], songs: [], artists: [], assignments: [], revenue: null };
-
-const live = (value: number): RootMetric => ({ value });
-const missing = (reason: string): RootMetric => ({ value: null, unavailableReason: reason });
+const EMPTY: RootSnapshot = { users: [], songs: [], artists: [], revenue: 0 };
 
 export function useRootMetrics(enabled: boolean): RootData {
   const { data, loading, error, reload } = useAsyncResource<RootSnapshot>(
     async () => {
       /* `allSettled` — нэг endpoint унасан ч самбар бүхэлдээ хоосон болохгүй. */
-      const [users, songs, artists, assignments, revenue] = await Promise.allSettled([
+      const [users, songs, artists, revenue] = await Promise.allSettled([
         api.listUsers(),
         api.listSongs(),
         api.listArtists(),
-        api.listTherapistAssignments(),
         api.getRevenue(),
       ]);
       return {
         users: users.status === "fulfilled" ? users.value : [],
         songs: songs.status === "fulfilled" ? songs.value : [],
         artists: artists.status === "fulfilled" ? artists.value : [],
-        assignments: assignments.status === "fulfilled" ? assignments.value : [],
-        revenue: revenue.status === "fulfilled" ? revenue.value.total : null,
+        revenue: revenue.status === "fulfilled" ? revenue.value.total : 0,
       };
     },
     [],
@@ -79,22 +64,20 @@ export function useRootMetrics(enabled: boolean): RootData {
   );
 
   const metrics = useMemo<RootMetrics>(() => {
-    const { users, songs } = data;
+    const { users, songs, artists } = data;
     /* ROOT/ADMIN нь "хэрэглэгч" биш — платформын ажилтан тул тоолохгүй
        (AdminPanel-ийн `regular` тооцоолол ижил зарчимтай). */
     const staffRoles = new Set(["ROOT", "ADMIN"]);
     const regular = users.filter((u) => !staffRoles.has(u.role));
 
     return {
-      totalUsers: live(regular.length),
-      onlineUsers: missing("Идэвхтэй сесс тоолох endpoint байхгүй (WebSocket presence шаардлагатай)"),
-      premiumUsers: live(users.filter((u) => u.subActive).length),
-      revenue: data.revenue !== null ? live(data.revenue) : missing("GET /revenue дуудлага амжилтгүй боллоо"),
-      songs: live(songs.length),
-      therapists: live(users.filter((u) => u.role === "THERAPIST").length),
-      parents: live(users.filter((u) => u.role === "PARENT").length),
-      connectedDevices: missing("QRSession-ийг бүхэлд нь жагсаах endpoint байхгүй"),
-      qrSessions: missing("GET /qr/sessions (жагсаалт) байхгүй — зөвхөн token-оор дан унших"),
+      totalUsers: regular.length,
+      premiumUsers: users.filter((u) => u.subActive).length,
+      revenue: data.revenue,
+      songs: songs.length,
+      artists: artists.length,
+      artistAccounts: users.filter((u) => u.role === "ARTIST").length,
+      catalogStaff: users.filter((u) => u.role === "CURATOR" || u.role === "MODERATOR").length,
     };
   }, [data]);
 

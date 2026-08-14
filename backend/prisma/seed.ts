@@ -73,19 +73,7 @@ async function main() {
   });
   console.log('Seeded admin@medreh.mn / admin123');
 
-  const therapist = await prisma.user.upsert({
-    where: { email: 'therapist@medreh.mn' },
-    update: {},
-    create: {
-      name: 'Эмчилгээч',
-      email: 'therapist@medreh.mn',
-      passwordHash: await bcrypt.hash('therapist123', 10),
-      role: Role.THERAPIST,
-    },
-  });
-  console.log('Seeded therapist@medreh.mn / therapist123');
-
-  const demoUser = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: 'user@medreh.mn' },
     update: {},
     create: {
@@ -96,18 +84,6 @@ async function main() {
     },
   });
   console.log('Seeded user@medreh.mn / user123');
-
-  const parent = await prisma.user.upsert({
-    where: { email: 'parent@medreh.mn' },
-    update: {},
-    create: {
-      name: 'Эцэг эх',
-      email: 'parent@medreh.mn',
-      passwordHash: await bcrypt.hash('parent123', 10),
-      role: Role.PARENT,
-    },
-  });
-  console.log('Seeded parent@medreh.mn / parent123');
 
   // ---- Монгол дуучид + дуу каталог (демо метадата) ----
   // Аудио файл БОДИТООР татаж/хадгалаагүй (зохиогчийн эрхийн эрсдэлтэй тул зориудаар
@@ -303,18 +279,6 @@ async function main() {
     `Seeded ${ARTISTS.length} artists and ${songIndex} songs (placeholder audio/cover)` +
       (backfilled > 0 ? `, backfilled duration on ${backfilled} existing songs` : ''),
   );
-
-  await prisma.therapistAssignment.upsert({
-    where: { therapistId_userId: { therapistId: therapist.id, userId: demoUser.id } },
-    update: {},
-    create: { therapistId: therapist.id, userId: demoUser.id },
-  });
-  await prisma.parentLink.upsert({
-    where: { parentId_childUserId: { parentId: parent.id, childUserId: demoUser.id } },
-    update: {},
-    create: { parentId: parent.id, childUserId: demoUser.id },
-  });
-  console.log('Seeded demo TherapistAssignment + ParentLink (all pointing to user@medreh.mn)');
 }
 
 main()

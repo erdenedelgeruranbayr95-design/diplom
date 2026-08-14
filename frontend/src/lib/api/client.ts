@@ -42,17 +42,6 @@ import type {
   UserLibraryRow,
 } from "@/types/song";
 import type { QrSessionRow } from "@/types/qr";
-import type {
-  AssignedPatient,
-  CreateProgressPayload,
-  CreateTherapySessionPayload,
-  LinkedChild,
-  ParentLinkRow,
-  Progress,
-  TherapySession,
-  TherapistAssignmentRow,
-  UpdateTherapySessionPayload,
-} from "@/types/therapy";
 
 // Vercel deploy: NEXT_PUBLIC_API_URL production backend рүү заасан эсэхийг баталгаажуулах
 // зорилгоор cache-invalidate хийсэн жижиг тайлбар мөр (build cache хуучин utga-г
@@ -462,10 +451,6 @@ export function getSecurityOverview() {
   return apiFetch<{ blockedIps: BlockedIpRow[]; recentFailedLogins: FailedLoginRow[]; windowMinutes: number }>("/security-overview");
 }
 
-export function listAllPayments() {
-  return apiFetch<(PaymentRow & { user: { id: string; name: string; email: string } })[]>("/payments");
-}
-
 // ---- Moderation ----
 export function createReport(payload: { targetType: "song" | "user"; targetId: string; reason: string }) {
   return apiFetch<ReportRow>("/moderation/reports", { method: "POST", body: JSON.stringify(payload) });
@@ -492,38 +477,6 @@ export function markNotificationsRead() {
 /** Админы зарлал — `userId = null` тул БҮХ хэрэглэгчид хүрнэ. */
 export function broadcastNotification(text: string, icon = "📢") {
   return apiFetch<NotificationRow>("/notifications/broadcast", { method: "POST", body: JSON.stringify({ text, icon }) });
-}
-
-// ---- Эмч томилолт (admin) ----
-export function createTherapistAssignment(therapistId: string, userId: string) {
-  return apiFetch<TherapistAssignmentRow>("/assignments/therapists", {
-    method: "POST",
-    body: JSON.stringify({ therapistId, userId }),
-  });
-}
-
-export function listTherapistAssignments() {
-  return apiFetch<TherapistAssignmentRow[]>("/assignments/therapists");
-}
-
-export function removeTherapistAssignment(id: string) {
-  return apiFetch<null>(`/assignments/therapists/${id}`, { method: "DELETE" });
-}
-
-// ---- Эцэг эх-хvvхэд холбоос (admin) ----
-export function createParentLink(parentId: string, childUserId: string) {
-  return apiFetch<ParentLinkRow>("/assignments/parents", {
-    method: "POST",
-    body: JSON.stringify({ parentId, childUserId }),
-  });
-}
-
-export function listParentLinks() {
-  return apiFetch<ParentLinkRow[]>("/assignments/parents");
-}
-
-export function removeParentLink(id: string) {
-  return apiFetch<null>(`/assignments/parents/${id}`, { method: "DELETE" });
 }
 
 // ---- Songs ----
@@ -665,37 +618,6 @@ export function createQrSession() {
 
 export function getQrSession(token: string) {
   return apiFetch<QrSessionRow>(`/qr/sessions/${token}`);
-}
-
-// ---- Эмчилгээ (therapist) ----
-export function listMyPatients() {
-  return apiFetch<AssignedPatient[]>("/assignments/my-patients");
-}
-
-export function listMyChildren() {
-  return apiFetch<LinkedChild[]>("/assignments/my-children");
-}
-
-export function createTherapySession(payload: CreateTherapySessionPayload) {
-  return apiFetch<TherapySession>("/therapy/sessions", { method: "POST", body: JSON.stringify(payload) });
-}
-
-export function listTherapySessions(userId?: string) {
-  const params = userId ? `?${new URLSearchParams({ userId })}` : "";
-  return apiFetch<TherapySession[]>(`/therapy/sessions${params}`);
-}
-
-export function updateTherapySession(id: string, payload: UpdateTherapySessionPayload) {
-  return apiFetch<TherapySession>(`/therapy/sessions/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
-}
-
-export function createProgress(payload: CreateProgressPayload) {
-  return apiFetch<Progress>("/therapy/progress", { method: "POST", body: JSON.stringify(payload) });
-}
-
-export function listProgress(userId?: string) {
-  const params = userId ? `?${new URLSearchParams({ userId })}` : "";
-  return apiFetch<Progress[]>(`/therapy/progress${params}`);
 }
 
 // ---- Мэдрэхүйн тохиргоо (калибровк) ----

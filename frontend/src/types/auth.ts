@@ -1,6 +1,6 @@
 /* ROOT нь ADMIN-аас ДЭЭР зэрэглэлтэй (систем эзэмшигч) — зөвхөн Root Panel-д нэвтэрнэ.
    Үе шат 2: CURATOR/MODERATOR нэмэгдэв (backend/prisma/schema.prisma: enum Role). */
-export type UserRole = "ROOT" | "ADMIN" | "CURATOR" | "MODERATOR" | "THERAPIST" | "ARTIST" | "USER" | "PARENT";
+export type UserRole = "ROOT" | "ADMIN" | "CURATOR" | "MODERATOR" | "ARTIST" | "USER";
 export type UserStatus = "ACTIVE" | "BANNED";
 
 /** Сонсголын байдал — ЭМЗЭГ мэдээлэл, заавал биш (§14). */
@@ -35,19 +35,19 @@ export interface AdminUserRow {
   subPlan: string | null;
 }
 
-/* POST /users (admin staff-бүртгэл) — зөвхөн ADMIN|THERAPIST эрх, sub талбаргүй буцаана. */
+/* POST /users (admin staff-бүртгэл) — зөвхөн ADMIN|ARTIST эрх, sub талбаргүй буцаана. */
 export interface CreateUserPayload {
   name: string;
   email: string;
   password: string;
-  role: "ADMIN" | "THERAPIST";
+  role: "ADMIN" | "ARTIST";
 }
 
 export interface CreatedUser {
   id: string;
   name: string;
   email: string;
-  role: "ADMIN" | "THERAPIST";
+  role: "ADMIN" | "ARTIST";
   createdAt: string;
 }
 

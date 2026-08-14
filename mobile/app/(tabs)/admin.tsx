@@ -14,8 +14,7 @@ const ROLE_COLOR: Record<string, string> = {
   ADMIN: "text-warm",
   CURATOR: "text-purple",
   MODERATOR: "text-purple",
-  THERAPIST: "text-aqua",
-  PARENT: "text-aqua",
+  ARTIST: "text-aqua",
   USER: "text-dim",
 };
 

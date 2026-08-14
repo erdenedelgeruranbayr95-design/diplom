@@ -44,7 +44,7 @@ export default function RootPro({ data }: { data: RootData }) {
     <RootSection
       title="PRO эрх"
       eyebrow="ROOT"
-      description="PATCH /users/:id/subscription — эрх DB-д бодитоор бичигдэнэ, хэрэглэгч шууд харна."
+      description="PRO эрх олгох/цуцлах — өөрчлөлт хэрэглэгчид шууд нөлөөлнө."
       loading={data.loading}
       error={data.error}
       onRetry={data.reload}

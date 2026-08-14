@@ -18,7 +18,6 @@ describe('AuthService', () => {
   let prisma: {
     user: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
     refreshToken: { create: jest.Mock; findUnique: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
-    parentLink: { create: jest.Mock };
     loginAttempt: { create: jest.Mock };
   };
   let jwt: JwtService;
@@ -42,7 +41,6 @@ describe('AuthService', () => {
     prisma = {
       user: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
       refreshToken: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
-      parentLink: { create: jest.fn() },
       loginAttempt: { create: jest.fn().mockResolvedValue({}) },
     };
     jwt = new JwtService({ secret: 'test-secret' });

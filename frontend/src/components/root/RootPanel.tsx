@@ -68,7 +68,7 @@ export default function RootPanel({ open, onClose }: { open: boolean; onClose: (
             <Empty
               icon="shield"
               title="Энэ самбарт хандах эрхгүй"
-              hint="Root Panel-д зөвхөн ROOT дүртэй систем эзэмшигч нэвтэрнэ."
+              hint="Энэ самбарт зөвхөн системийн эзэмшигч нэвтэрнэ."
             />
           </PageContainer>
         )}

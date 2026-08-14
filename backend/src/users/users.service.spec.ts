@@ -17,8 +17,6 @@ describe('UsersService', () => {
     listenHistory: { findMany: jest.Mock };
     userTrackAction: { findMany: jest.Mock };
     playlist: { findMany: jest.Mock };
-    progress: { findMany: jest.Mock };
-    therapySession: { findMany: jest.Mock };
     qRSession: { findMany: jest.Mock };
     artist: { findUnique: jest.Mock; delete: jest.Mock };
     $transaction: jest.Mock;
@@ -48,8 +46,6 @@ describe('UsersService', () => {
       listenHistory: { findMany: jest.fn() },
       userTrackAction: { findMany: jest.fn() },
       playlist: { findMany: jest.fn() },
-      progress: { findMany: jest.fn() },
-      therapySession: { findMany: jest.fn() },
       qRSession: { findMany: jest.fn() },
       artist: { findUnique: jest.fn().mockResolvedValue(null), delete: jest.fn() },
       $transaction: jest.fn((ops) => Promise.all(ops)),
@@ -69,17 +65,17 @@ describe('UsersService', () => {
   describe('create', () => {
     it('rejects a duplicate email', async () => {
       prisma.user.findUnique.mockResolvedValue(baseUser);
-      await expect(service.create({ name: 'X', email: baseUser.email, password: 'aaaaaa', role: Role.THERAPIST } as never)).rejects.toThrow(
+      await expect(service.create({ name: 'X', email: baseUser.email, password: 'aaaaaa', role: Role.ARTIST } as never)).rejects.toThrow(
         ConflictException,
       );
     });
 
     it('creates a staff account and returns a safe DTO (no passwordHash)', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
-      prisma.user.create.mockResolvedValue({ ...baseUser, role: Role.THERAPIST, passwordHash: 'hashed' });
-      const result = await service.create({ name: 'X', email: 'x@x.com', password: 'aaaaaa', role: Role.THERAPIST } as never);
+      prisma.user.create.mockResolvedValue({ ...baseUser, role: Role.ARTIST, passwordHash: 'hashed' });
+      const result = await service.create({ name: 'X', email: 'x@x.com', password: 'aaaaaa', role: Role.ARTIST } as never);
       expect(result).not.toHaveProperty('passwordHash');
-      expect(result.role).toBe(Role.THERAPIST);
+      expect(result.role).toBe(Role.ARTIST);
     });
   });
 
@@ -217,7 +213,7 @@ describe('UsersService', () => {
 
   describe('exportMyData (GDPR)', () => {
     it('throws NotFoundException when the user no longer exists', async () => {
-      prisma.$transaction.mockResolvedValue([null, [], null, [], [], [], [], [], []]);
+      prisma.$transaction.mockResolvedValue([null, [], null, [], [], [], []]);
       await expect(service.exportMyData('ghost')).rejects.toThrow(NotFoundException);
     });
 
@@ -229,8 +225,6 @@ describe('UsersService', () => {
         [{ id: 'listen-1' }],
         [{ userId: 'user-1', songId: 'song-1', action: 'LIKE' }],
         [{ id: 'playlist-1', tracks: [] }],
-        [{ id: 'progress-1' }],
-        [{ id: 'session-1' }],
         [{ id: 'qr-1' }],
       ]);
       const result = await service.exportMyData('user-1');

@@ -5,7 +5,7 @@
 /* `ARTIST` — вэб дээр «Уран бүтээлч» гэж бүртгүүлсэн хэрэглэгч. Гар утасны апп
    дээр дуу нэмэх дэлгэц БАЙХГҮЙ тул тэд энгийн сонсогч шиг ажиллана; дүрийг
    энд бичсэн нь backend-ээс ирэх утгыг үнэн зөв тусгахын тулд. */
-export type UserRole = "ROOT" | "ADMIN" | "CURATOR" | "MODERATOR" | "THERAPIST" | "ARTIST" | "USER" | "PARENT";
+export type UserRole = "ROOT" | "ADMIN" | "CURATOR" | "MODERATOR" | "ARTIST" | "USER";
 export type UserStatus = "ACTIVE" | "BANNED";
 export type HearingProfile = "deaf" | "hoh" | "hearing";
 

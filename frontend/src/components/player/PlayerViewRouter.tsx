@@ -20,12 +20,9 @@ import HelpView from "./views/HelpView";
 import HistoryView from "./views/HistoryView";
 import HomeView from "./views/HomeView";
 import LibraryView from "./views/LibraryView";
-import ParentView from "./views/ParentView";
 import PlaylistsView from "./views/PlaylistsView";
 import ProfileView from "./views/ProfileView";
-import ProgressView from "./views/ProgressView";
 import StatsView from "./views/StatsView";
-import TherapistView from "./views/TherapistView";
 import UploadSongView from "./views/UploadSongView";
 import ArtistProfileView from "./views/ArtistProfileView";
 import type { useDeviceSync } from "@/lib/socket/useDeviceSync";
@@ -89,8 +86,6 @@ export interface SessionSlice {
   subscribed: boolean;
   renewDate: string;
   isAdmin: boolean;
-  isTherapist: boolean;
-  isParent: boolean;
 }
 
 /** Тохиргоо ба төхөөрөмжийн холболт. */
@@ -146,8 +141,6 @@ export default function PlayerViewRouter({ view, catalog, collections, selection
         stats={collections.stats}
         playlists={collections.playlists}
         isAdmin={session.isAdmin}
-        isTherapist={session.isTherapist}
-        isParent={session.isParent}
       />
     );
   }
@@ -196,8 +189,6 @@ export default function PlayerViewRouter({ view, catalog, collections, selection
     return <AdminView allTracksCount={catalog.allTracks.length} onOpenAdmin={actions.onOpenAdminPanel} onGoHome={goHome} />;
   }
 
-  if (view === "therapist" && session.isTherapist) return <TherapistView onGoHome={goHome} />;
-  if (view === "parent" && session.isParent) return <ParentView onGoHome={goHome} />;
   /* Дуу нэмэх: PRO захиалагч ЭСВЭЛ уран бүтээлч. Хоёр дахь нөхцөлийг энд шалгах
      боломжгүй (профайл нь серверт байна) тул дэлгэц өөрөө эрхгүй тохиолдлыг
      тайлбарлана — backend ямар ч байсан `Role.USER`-т зөвшөөрдөг. */
@@ -205,7 +196,6 @@ export default function PlayerViewRouter({ view, catalog, collections, selection
     return <UploadSongView onBack={goHome} onOpenArtistProfile={actions.onOpenArtistProfile} />;
   }
   if (view === "artistProfile" && !session.isAdmin) return <ArtistProfileView onBack={goHome} />;
-  if (view === "progress") return <ProgressView onBack={goHome} />;
   if (view === "profile") return <ProfileView onBack={goHome} prefs={settings.prefs} onUpdatePrefs={settings.onUpdatePrefs} />;
 
   if (view === "devices") {

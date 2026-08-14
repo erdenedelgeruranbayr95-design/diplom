@@ -39,12 +39,6 @@ export default function RootSidebar({
                 >
                   <Icon name={item.icon} size={17} />
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {/* Backend API байхгүй хэсгийг ил тэмдэглэнэ — хуурамч тоо хүлээхээс сэргийлнэ. */}
-                  {!item.live && (
-                    <span className="mono !text-micro !tracking-[.12em] text-faint flex-none" title="Backend API одоогоор байхгүй">
-                      API
-                    </span>
-                  )}
                 </button>
               );
             })}

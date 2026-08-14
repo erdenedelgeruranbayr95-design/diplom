@@ -29,7 +29,7 @@ export default function RootSongs({ data }: { data: RootData }) {
     <RootSection
       title="Дууны сан"
       eyebrow="ROOT"
-      description="GET /songs — каталогийн бүх дуу, анализын төлөв."
+      description="Каталогийн бүх дуу ба тэдгээрийн анализын төлөв."
       loading={data.loading}
       error={data.error}
       onRetry={data.reload}

@@ -35,7 +35,7 @@ describe('UsersController', () => {
   });
 
   it('create() forwards the DTO', () => {
-    const dto = { name: 'X', email: 'x@x.com', password: 'aaaaaa', role: 'THERAPIST' } as never;
+    const dto = { name: 'X', email: 'x@x.com', password: 'aaaaaa', role: 'ARTIST' } as never;
     controller.create(dto);
     expect(service.create).toHaveBeenCalledWith(dto);
   });

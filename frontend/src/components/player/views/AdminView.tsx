@@ -4,8 +4,8 @@
    (Stripe/Vercel Dashboard pattern) руу шинэчлэв: .ab-uname/.ab-uav/.bil-table/.bil-mth/
    .bil-ok/.ab-free/.sp-banner/.auth-ok/.auth-err legacy CSS-ийг Tailwind KPI card/table/
    badge/CTA болгов. listUsers()-ээр бодит backend өгөгдөл ачаална (localStorage mock-оос
-   сольсон) — энэ урсгал, sendBcast() логик, бүх тооцоолол (regular/therapistCount/
-   parentCount/proCount/recentUsers) хэвээр.
+   сольсон) — энэ урсгал, sendBcast() логик, бүх тооцоолол (regular/artistCount/
+   staffCount/proCount/recentUsers) хэвээр.
    Props: allTracksCount, onOpenAdmin(), onGoHome() */
 import { useEffect, useState } from "react";
 import StatCard from "../StatCard";
@@ -25,9 +25,7 @@ import { TableCard } from "@/components/ui/Surface";
 const ROLE_LABEL: Record<AdminUserRow["role"], string> = {
   ROOT: "Систем эзэмшигч",
   USER: "Хэрэглэгч",
-  THERAPIST: "Эмч",
   ARTIST: "Уран бүтээлч",
-  PARENT: "Эцэг эх",
   ADMIN: "Админ",
   CURATOR: "Куратор",
   MODERATOR: "Модератор",
@@ -63,8 +61,8 @@ export default function AdminView({
   }, []);
 
   const regular = users.filter((u) => u.role !== "ADMIN");
-  const therapistCount = users.filter((u) => u.role === "THERAPIST").length;
-  const parentCount = users.filter((u) => u.role === "PARENT").length;
+  const artistCount = users.filter((u) => u.role === "ARTIST").length;
+  const staffCount = users.filter((u) => u.role === "CURATOR" || u.role === "MODERATOR").length;
   const proCount = users.filter((u) => u.subActive).length;
   const recentUsers = regular.slice(0, 5);
 
@@ -110,12 +108,11 @@ export default function AdminView({
 
       {!loading && !err && (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(196px,1fr))] gap-4">
-          {/* icon-ууд семантикаараа тааруулсан: эмч→стетоскоп, эцэг эх→том/жижиг дүр,
-              дууны сан→винил диск, PRO→титэм (өмнө нь эмч дээр наушник, эцэг эх дээр
-              алмаз байсан нь ойлгомжгүй байв) */}
+          {/* icon-ууд семантикаараа тааруулсан: уран бүтээлч→микрофон, каталогийн
+              ажилтан→бамбай, дууны сан→винил диск, PRO→титэм */}
           <StatCard icon={ICONS.users} color="c-aqua" value={regular.length} label="Нийт хэрэглэгч" />
-          <StatCard icon={ICONS.stethoscope} color="c-purple" value={therapistCount} label="Эмч" />
-          <StatCard icon={ICONS.family} color="c-gold" value={parentCount} label="Эцэг эх" />
+          <StatCard icon={ICONS.mic} color="c-purple" value={artistCount} label="Уран бүтээлч" />
+          <StatCard icon={ICONS.shield} color="c-gold" value={staffCount} label="Каталогийн ажилтан" />
           <StatCard icon={ICONS.disc} color="c-rose" value={allTracksCount} label="Дууны сан" />
           <StatCard icon={ICONS.crown} color="c-aqua" value={proCount} label="PRO захиалагч" />
         </div>

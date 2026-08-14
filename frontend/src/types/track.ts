@@ -4,6 +4,8 @@ export interface Track {
   artist?: string;
   singer?: string;
   composer?: string;
+  /** Цомгийн нэр — хайлтад ашиглагдана (цомоггүй дуунд undefined). */
+  album?: string;
   genre: string;
   file?: string;
   cover?: string;

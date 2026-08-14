@@ -13,15 +13,13 @@ import type { SessionUser } from "@/types";
    `NSHTTPCookieStorage`-д хадгалдаг бөгөөд хоёул диск дээр тогтвортой үлддэг тул
    апп хаагаад нээхэд cookie амьд байна. Апп бүрэн УСТГАВАЛ л алга болно. */
 
-type Role = "root" | "user" | "admin" | "therapist" | "parent" | "curator" | "moderator" | null;
+type Role = "root" | "user" | "admin" | "artist" | "curator" | "moderator" | null;
 
 interface AuthContextValue {
   user: SessionUser | null;
   role: Role;
   isRoot: boolean;
   isAdmin: boolean;
-  isTherapist: boolean;
-  isParent: boolean;
   subscribed: boolean;
   /** Эхний сесс сэргээлт дууссан эсэх — үүнээс өмнө чиглүүлэлт хийвэл нэвтэрсэн
    *  хэрэглэгчийг ч нэвтрэх дэлгэц рүү шидэж эхэлнэ. */
@@ -104,8 +102,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role,
       isRoot,
       isAdmin,
-      isTherapist: role === "therapist",
-      isParent: role === "parent",
       subscribed: !!user?.sub?.active,
       ready,
       login,

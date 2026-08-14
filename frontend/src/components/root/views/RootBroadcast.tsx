@@ -52,7 +52,7 @@ export default function RootBroadcast() {
     <RootSection
       title="Зарлал"
       eyebrow="ROOT"
-      description="POST /notifications/broadcast — зарлал бүх хэрэглэгчийн хонхонд бодитоор очно."
+      description="Илгээсэн зарлал бүх хэрэглэгчийн мэдэгдлийн хонхонд шууд очно."
       error={error}
       onRetry={reload}
     >

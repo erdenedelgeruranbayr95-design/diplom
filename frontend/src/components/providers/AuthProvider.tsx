@@ -11,14 +11,12 @@ import type { SessionUser, UserSub } from "@/types/auth";
 
 interface AuthContextValue {
   user: SessionUser | null;
-  role: "root" | "user" | "admin" | "therapist" | "parent" | null;
+  role: "root" | "user" | "admin" | "artist" | "curator" | "moderator" | null;
   /** Систем эзэмшигч — ADMIN-аас дээр зэрэглэлтэй, Root Panel-д нэвтэрнэ. */
   isRoot: boolean;
   isAdmin: boolean;
   /** Куратор/модератор — контент лиценз/нийтлэл удирдах Curator Panel-д нэвтэрнэ. */
   isCurator: boolean;
-  isTherapist: boolean;
-  isParent: boolean;
   subscribed: boolean;
   ready: boolean;
   login: (email: string, password: string) => Promise<SessionUser>;
@@ -45,9 +43,9 @@ interface AuthContextValue {
 
 const AuthCtx = createContext<AuthContextValue | null>(null);
 
-function normalizeRole(role: string | undefined): "root" | "user" | "admin" | "therapist" | "parent" | null {
+function normalizeRole(role: string | undefined): "root" | "user" | "admin" | "artist" | "curator" | "moderator" | null {
   if (!role) return null;
-  return role.toLowerCase() as "root" | "user" | "admin" | "therapist" | "parent";
+  return role.toLowerCase() as "root" | "user" | "admin" | "artist" | "curator" | "moderator";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -72,8 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /* ADMIN/ROOT нь CURATOR/MODERATOR-ийн бүх эрхийг мөн хамарна (шатлал) — backend-ийн
      RolesGuard-д CURATOR_ROLES = [CURATOR, MODERATOR, ADMIN, ROOT] гэж тодорхойлогдсонтой нийцтэй. */
   const isCurator = user?.role === "CURATOR" || user?.role === "MODERATOR" || isAdmin;
-  const isTherapist = role === "therapist";
-  const isParent = role === "parent";
   const subscribed = isAdmin || !!user?.sub?.active;
 
   async function login(email: string, password: string) {
@@ -130,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthCtx.Provider
-      value={{ user, role, isRoot, isAdmin, isCurator, isTherapist, isParent, subscribed, ready, login, register, loginWithGoogle, logout, updateUser, setSub, cancelSub, refreshSession }}
+      value={{ user, role, isRoot, isAdmin, isCurator, subscribed, ready, login, register, loginWithGoogle, logout, updateUser, setSub, cancelSub, refreshSession }}
     >
       {children}
     </AuthCtx.Provider>

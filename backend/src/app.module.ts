@@ -8,8 +8,6 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { SongsModule } from './songs/songs.module';
 import { ArtistsModule } from './artists/artists.module';
-import { AssignmentsModule } from './assignments/assignments.module';
-import { TherapyModule } from './therapy/therapy.module';
 import { QrModule } from './qr/qr.module';
 import { HistoryModule } from './history/history.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -51,8 +49,6 @@ import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor
     UsersModule,
     SongsModule,
     ArtistsModule,
-    AssignmentsModule,
-    TherapyModule,
     QrModule,
     HistoryModule,
     NotificationsModule,

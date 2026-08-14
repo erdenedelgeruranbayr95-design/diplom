@@ -30,7 +30,7 @@ export default function Page() {
   }, []);
 
   /* auth төлөв AuthContext-оос (session нэг эх сурвалж, backend JWT дээр суурилна) */
-  const { user, isRoot, isAdmin, isCurator, isTherapist, isParent, subscribed, logout: authLogout, cancelSub } = useAuth();
+  const { user, isRoot, isAdmin, isCurator, subscribed, logout: authLogout, cancelSub } = useAuth();
 
   const [authOpen, setAuthOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
@@ -104,8 +104,6 @@ export default function Page() {
         isRoot={isRoot}
         isAdmin={isAdmin}
         isCurator={isCurator}
-        isTherapist={isTherapist}
-        isParent={isParent}
         onRoot={() => setRootOpen(true)}
         onAdmin={() => setAdminOpen(true)}
         onCurator={() => setCuratorOpen(true)}

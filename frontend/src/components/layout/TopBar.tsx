@@ -15,8 +15,8 @@ import SettingsDropdown from "@/components/player/SettingsDropdown";
 import ProfileDropdown from "@/components/player/ProfileDropdown";
 import Icon from "@/components/ui/Icon";
 
-/* Icon товчнуудын нийтлэг класс — 5 газар (нүүр/админ/эмч/эцэг эх/хаах) бүр өөрөөр
-   бичигдсэн байсныг нэгтгэв: ижил хэмжээ, ижил hit-area, ижил transition. */
+/* Icon товчнуудын нийтлэг класс — газар бүрд өөрөөр бичигдсэн байсныг нэгтгэв:
+   ижил хэмжээ, ижил hit-area, ижил transition. */
 const ICON_BTN =
   "w-[42px] h-[42px] max-viz:w-[38px] max-viz:h-[38px] flex-none rounded-full flex items-center justify-center transition-[color,background,box-shadow] duration-250 cursor-none focus-visible:outline-none disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none";
 
@@ -28,8 +28,6 @@ export default function TopBar({
   vizRef,
   user,
   isAdmin,
-  isTherapist,
-  isParent,
   subscribed,
   onSubscribe,
   onLogout,
@@ -49,8 +47,6 @@ export default function TopBar({
   vizRef: MutableRefObject<(HTMLElement | null)[]>;
   user: SessionUser | null;
   isAdmin: boolean;
-  isTherapist: boolean;
-  isParent: boolean;
   subscribed: boolean;
   onSubscribe: () => void;
   onLogout: () => void;
@@ -114,15 +110,18 @@ export default function TopBar({
           >
             <Icon name="home" size={19} />
           </button>
-          <div className="flex-1 max-w-[500px] max-viz:max-w-none mx-auto flex items-center gap-3 h-[46px] max-nav:h-10 bg-white/[.05] border border-white/[.07] rounded-full px-[18px] max-nav:px-3.5 text-dim transition-[border-color,background,box-shadow] duration-300 focus-within:bg-white/[.08] focus-within:border-aqua/60 focus-within:shadow-glow-aqua">
+          {/* Фокусын тэмдэглэгээ НЭГ давхар: хүрээний өнгө + зөөлөн ореол. Урьд нь
+              `shadow-glow-aqua` (2px хатуу цагираг + ореол) хүрээн дээр давхарлаж
+              хоёр цагираг харагдуулж байв. */}
+          <div className="flex-1 max-w-[500px] max-viz:max-w-none mx-auto flex items-center gap-3 h-[46px] max-nav:h-10 bg-white/[.05] border border-white/[.07] rounded-full px-[18px] max-nav:px-3.5 text-dim transition-[border-color,background,box-shadow] duration-300 focus-within:bg-white/[.08] focus-within:border-aqua/60 focus-within:shadow-[0_0_0_4px_rgba(56,232,206,.13)]">
             <Icon name="search" size={17} />
             <input
               type="search"
-              placeholder="Юу сонсмоор байна?"
+              placeholder="Дуу, дуучин, төрөл, цомгоор хайх"
               value={query}
               onFocus={() => setView("home")}
               onChange={(e) => setQuery(e.target.value)}
-              aria-label="Дуу хайх"
+              aria-label="Дуу, дуучин, төрөл, цомгоор хайх"
               className="flex-1 bg-transparent border-none text-ink font-body text-copy cursor-none outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden appearance-none"
             />
           </div>
@@ -154,9 +153,7 @@ export default function TopBar({
             </button>
           )}
 
-          {/* Дүрийн самбарууд — icon-ууд семантикаараа тааруулсан (эмч→стетоскоп,
-              эцэг эх→том/жижиг дүр). Өмнө нь эмч дээр "хоёр хүн", эцэг эх дээр "зүрх"
-              байсан нь дашбоардын KPI icon-уудтай зөрж байв. */}
+          {/* Админы хяналтын самбар руу шилжих товч. */}
           {isAdmin && (
             <button
               className={
@@ -167,32 +164,6 @@ export default function TopBar({
               title="Хяналтын самбар"
             >
               <Icon name="grid" size={19} />
-            </button>
-          )}
-
-          {isTherapist && (
-            <button
-              className={
-                ICON_BTN + " focus-visible:shadow-glow-warm bg-white/[.05] hover:bg-white/10 " + (view === "therapist" ? "text-warm bg-warm/[.14]" : "text-warm")
-              }
-              onClick={() => setView("therapist")}
-              aria-label="Эмчийн самбар"
-              title="Эмчийн самбар"
-            >
-              <Icon name="stethoscope" size={19} />
-            </button>
-          )}
-
-          {isParent && (
-            <button
-              className={
-                ICON_BTN + " focus-visible:shadow-glow-warm bg-white/[.05] hover:bg-white/10 " + (view === "parent" ? "text-warm bg-warm/[.14]" : "text-warm")
-              }
-              onClick={() => setView("parent")}
-              aria-label="Эцэг эхийн самбар"
-              title="Эцэг эхийн самбар"
-            >
-              <Icon name="family" size={19} />
             </button>
           )}
 
@@ -213,8 +184,6 @@ export default function TopBar({
             open={dropdown === "profile"}
             user={user}
             isAdmin={isAdmin}
-            isTherapist={isTherapist}
-            isParent={isParent}
             subscribed={subscribed}
             renewDate={renewDate}
             setView={setView}

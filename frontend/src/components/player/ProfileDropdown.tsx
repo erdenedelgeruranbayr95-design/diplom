@@ -39,8 +39,6 @@ export default function ProfileDropdown({
   open,
   user,
   isAdmin,
-  isTherapist,
-  isParent,
   subscribed,
   renewDate,
   setView,
@@ -50,8 +48,6 @@ export default function ProfileDropdown({
   open: boolean;
   user: SessionUser | null;
   isAdmin: boolean;
-  isTherapist: boolean;
-  isParent: boolean;
   subscribed: boolean;
   renewDate: string;
   setView: (v: ViewName) => void;
@@ -146,14 +142,11 @@ export default function ProfileDropdown({
             <MenuItem icon="upload" label="Дуу, цомог нэмэх" onClick={() => go("upload")} />
           )}
           <MenuItem icon="device" label="Төхөөрөмж холбох" onClick={() => go("devices")} />
-          <MenuItem icon="trend" label="Миний ахиц" onClick={() => go("progress")} />
           <MenuItem icon="card" label="Захиалга удирдах" onClick={() => go("billing")} />
           <MenuItem icon="help" label="Тусламж" onClick={() => go("help")} />
 
-          {(isAdmin || isTherapist || isParent) && <div className="h-px bg-white/[.06] my-1 mx-1" aria-hidden="true"></div>}
+          {isAdmin && <div className="h-px bg-white/[.06] my-1 mx-1" aria-hidden="true"></div>}
           {isAdmin && <MenuItem icon="grid" label="Хяналтын самбар" onClick={() => go("admin")} />}
-          {isTherapist && <MenuItem icon="stethoscope" label="Эмчийн самбар" onClick={() => go("therapist")} />}
-          {isParent && <MenuItem icon="family" label="Эцэг эхийн самбар" onClick={() => go("parent")} />}
 
           <div className="h-px bg-white/[.06] my-1 mx-1" aria-hidden="true"></div>
           <MenuItem icon="logout" label="Гарах" onClick={onLogout} danger />

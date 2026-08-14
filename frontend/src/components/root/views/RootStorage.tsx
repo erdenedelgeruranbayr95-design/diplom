@@ -53,7 +53,7 @@ export default function RootStorage() {
     <RootSection
       title="Файл сан"
       eyebrow="ROOT"
-      description="Аудио файл, ковер зураг, Haptic Score-ийн хадгалалт ба хэмжээ (MinIO)."
+      description="Аудио файл, ковер зураг, Haptic Score-ийн хадгалалт ба эзлэх хэмжээ."
       loading={loading}
       error={error}
       onRetry={reload}
@@ -77,7 +77,7 @@ export default function RootStorage() {
 
       <h3 className="font-display font-semibold text-title tracking-[-.03em] text-ink mb-3">Prefix-ээр задаргаа</h3>
       {prefixRows.length === 0 ? (
-        <Empty icon="disc" title="Файл алга" hint="MinIO дотор одоогоор объект бүртгэгдээгүй байна" />
+        <Empty icon="disc" title="Файл алга" hint="Файлын санд одоогоор ямар ч файл байршуулаагүй байна" />
       ) : (
         <TableCard className="mb-6">
           <div className="grid grid-cols-[1fr_.6fr_.6fr] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-white/[.02]">

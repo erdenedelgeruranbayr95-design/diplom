@@ -8,7 +8,6 @@ import { Role, UserStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { RegisterParentDto } from './dto/register-parent.dto';
 import { decryptField } from '../common/crypto/field-encryption';
 
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -128,32 +127,6 @@ export class AuthService {
           : {}),
       },
     });
-
-    const accessToken = this.signAccessToken(user);
-    const refreshToken = await this.issueRefreshToken(user.id);
-    return { accessToken, refreshToken, user: this.toSessionUser(user) };
-  }
-
-  /* PARENT бүртгэл — childEmail-ээр одоо байгаа USER-тэй нэн даруй ParentLink үүсгэнэ (approval алхамгүй, диплом хэмжээнд хангалттай). */
-  async registerParent(dto: RegisterParentDto) {
-    if (dto.password !== dto.password2) {
-      throw new ConflictException('Нууц үг таарахгүй байна');
-    }
-    const email = dto.email.trim().toLowerCase();
-    const existing = await this.prisma.user.findUnique({ where: { email } });
-    if (existing) throw new ConflictException('Энэ имэйл бүртгэлтэй байна');
-
-    const childEmail = dto.childEmail.trim().toLowerCase();
-    const child = await this.prisma.user.findUnique({ where: { email: childEmail } });
-    if (!child || child.role !== Role.USER) {
-      throw new BadRequestException('Хүүхдийн имэйл хаяг олдсонгүй');
-    }
-
-    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
-    const user = await this.prisma.user.create({
-      data: { name: dto.name.trim(), email, passwordHash, role: Role.PARENT },
-    });
-    await this.prisma.parentLink.create({ data: { parentId: user.id, childUserId: child.id } });
 
     const accessToken = this.signAccessToken(user);
     const refreshToken = await this.issueRefreshToken(user.id);

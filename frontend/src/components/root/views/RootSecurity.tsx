@@ -70,7 +70,7 @@ export default function RootSecurity({ data }: { data: RootData }) {
     <RootSection
       title="Аюулгүй байдал"
       eyebrow="ROOT"
-      description="PATCH /users/:id/status, GET/DELETE /users/:id/sessions — идэвхтэй сесс/түдгэлзүүлэлт бодитоор удирдагдана."
+      description="Бүртгэл түдгэлзүүлэх ба идэвхтэй сессийг албадан хаах."
       loading={data.loading}
       error={data.error}
       onRetry={data.reload}
@@ -103,7 +103,7 @@ export default function RootSecurity({ data }: { data: RootData }) {
           {loadingSessions ? (
             <p className="text-dim text-body">Ачаалж байна…</p>
           ) : !sessions || sessions.length === 0 ? (
-            <Empty icon="eye" title="Идэвхтэй session алга" />
+            <Empty icon="eye" title="Идэвхтэй холболт алга" />
           ) : (
             <TableCard>
               <div className="grid grid-cols-[1fr_1fr_1fr] gap-3 items-center py-3 px-5 border-b border-white/[.08] bg-white/[.02]">

@@ -16,13 +16,18 @@ export function resolveTracks<T extends { id: number | string }>(ids: (number | 
   return ids.map((id) => index.get(String(id))).filter((t): t is T => !!t);
 }
 
-/** Хайлт/төрлийн шүүлт — Нүүр хуудасны хайлтын логик. */
+/** Хайлт/төрлийн шүүлт — Нүүр хуудасны хайлтын логик.
+ *
+ *  Дууны нэр, дуучин, төрөл, цомгийн нэр дөрвүүлээр хайна. Хоосон талбарууд
+ *  "undefined" болж нийлэхээс сэргийлж шүүнэ (эс бөгөөс "undef" гэж хайхад
+ *  цомоггүй бүх дуу олдоно). */
 export function filterTracks(tracks: PlayerTrack[], { genre, query }: { genre: string; query: string }): PlayerTrack[] {
   const term = query.trim().toLowerCase();
   return tracks.filter((t) => {
     if (genre !== ALL_GENRES && t.genre !== genre) return false;
     if (!term) return true;
-    return (t.title + " " + t.artist + " " + t.genre).toLowerCase().includes(term);
+    const haystack = [t.title, t.artist, t.singer, t.genre, t.album].filter(Boolean).join(" ").toLowerCase();
+    return haystack.includes(term);
   });
 }
 

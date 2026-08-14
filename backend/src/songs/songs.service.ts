@@ -80,7 +80,7 @@ export class SongsService {
     const songs = await this.prisma.song.findMany({
       where: { published: true, uploadConfirmed: true },
       orderBy: { createdAt: 'desc' },
-      include: { artistRef: true },
+      include: { artistRef: true, album: { select: { title: true } } },
     });
     return this.stripBeats(songs);
   }
@@ -88,7 +88,10 @@ export class SongsService {
   /* Curator/Admin/Root-д зориулсан каталог — ноорог (published=false) хамт бүгдийг
      харуулна, лицензийн талбар засаж/publish хийхийн тулд шаардлагатай (Үе шат 5). */
   catalog() {
-    return this.prisma.song.findMany({ orderBy: { createdAt: 'desc' }, include: { artistRef: true } });
+    return this.prisma.song.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { artistRef: true, album: { select: { title: true } } },
+    });
   }
 
   /* Нүүр хуудасны "Онцлох" — админ гараар тэмдэглэсэн featured дуунууд. */
@@ -96,7 +99,7 @@ export class SongsService {
     const songs = await this.prisma.song.findMany({
       where: { featured: true, published: true, uploadConfirmed: true },
       orderBy: { createdAt: 'desc' },
-      include: { artistRef: true },
+      include: { artistRef: true, album: { select: { title: true } } },
     });
     return this.stripBeats(songs);
   }
@@ -108,7 +111,7 @@ export class SongsService {
       where: { published: true, uploadConfirmed: true },
       orderBy: { createdAt: 'desc' },
       take: limit,
-      include: { artistRef: true },
+      include: { artistRef: true, album: { select: { title: true } } },
     });
     return this.stripBeats(songs);
   }
@@ -126,7 +129,7 @@ export class SongsService {
     const ids = grouped.map((g) => g.songId);
     const songs = await this.prisma.song.findMany({
       where: { id: { in: ids }, published: true, uploadConfirmed: true },
-      include: { artistRef: true },
+      include: { artistRef: true, album: { select: { title: true } } },
     });
     const order = new Map(ids.map((id, i) => [id, i]));
     /* `grouped` хоосон үед дээр нь `recent()` буцаадаг бөгөөд тэр нь ХАСАГДСАН
@@ -135,7 +138,10 @@ export class SongsService {
   }
 
   async findOne(id: string) {
-    const song = await this.prisma.song.findUnique({ where: { id }, include: { artistRef: true } });
+    const song = await this.prisma.song.findUnique({
+      where: { id },
+      include: { artistRef: true, album: { select: { title: true } } },
+    });
     if (!song) throw new NotFoundException('Дуу олдсонгүй');
     return song;
   }

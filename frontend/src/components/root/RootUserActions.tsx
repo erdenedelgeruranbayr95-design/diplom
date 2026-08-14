@@ -7,16 +7,14 @@ import { useToast } from "@/components/providers/ToastProvider";
 import * as api from "@/lib/api/client";
 import type { AdminUserRow, UserRole } from "@/types/auth";
 
-const ASSIGNABLE_ROLES: UserRole[] = ["ADMIN", "CURATOR", "MODERATOR", "THERAPIST", "ARTIST", "USER", "PARENT"];
+const ASSIGNABLE_ROLES: UserRole[] = ["ADMIN", "CURATOR", "MODERATOR", "ARTIST", "USER"];
 const ROLE_LABEL_SHORT: Record<UserRole, string> = {
   ROOT: "ROOT",
   ADMIN: "Админ",
   CURATOR: "Куратор",
   MODERATOR: "Модератор",
-  THERAPIST: "Эмч",
   ARTIST: "Уран бүтээлч",
   USER: "Хэрэглэгч",
-  PARENT: "Эцэг эх",
 };
 
 type Confirm =

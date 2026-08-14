@@ -33,6 +33,7 @@ export function songToPlayerTrack(song: Song, fallback?: PlayerTrack | null, art
     title: song.title,
     artist: song.artist || song.artistRef?.name || artistName || fallback?.artist || "Тодорхойгүй",
     artistId: song.artistId || fallback?.artistId || undefined,
+    album: song.album?.title || fallback?.album || undefined,
     genre: song.genre || fallback?.genre || "Бусад",
     description: song.description || fallback?.description || undefined,
     lyrics: song.lyrics || fallback?.lyrics || undefined,

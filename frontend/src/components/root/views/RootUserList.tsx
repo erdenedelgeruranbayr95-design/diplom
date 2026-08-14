@@ -15,9 +15,10 @@ import { ROLE_LABEL, ROLE_TONE } from "./RootDashboard";
 import type { RootData } from "@/lib/root/hooks/useRootMetrics";
 import type { AdminUserRow, UserRole } from "@/types/auth";
 
-/* Хэрэглэгчийн жагсаалтын НЭГ хувилбар — Хэрэглэгчид · Админууд · Эмч нар · Эцэг эхчүүд
-   дөрвүүлээ ижил хүснэгт, зөвхөн дүрийн шүүлт нь өөр (Player-ийн `LibraryView`-ийн
-   COLLECTION_VIEWS хэв маягтай ижил зарчим). Бүгд GET /users дээр суурилна. */
+/* Хэрэглэгчийн жагсаалтын НЭГ хувилбар — Хэрэглэгчид · Админууд · Уран бүтээлчид ·
+   Куратор·Модератор дөрвүүлээ ижил хүснэгт, зөвхөн дүрийн шүүлт нь өөр (Player-ийн
+   `LibraryView`-ийн COLLECTION_VIEWS хэв маягтай ижил зарчим). Бүгд GET /users дээр
+   суурилна. */
 export default function RootUserList({
   data,
   title,
@@ -34,12 +35,12 @@ export default function RootUserList({
   /** Харуулах дүрүүд. Хоосон бол ROOT/ADMIN-аас бусад бүгд. */
   roles?: UserRole[];
   emptyTitle: string;
-  /** "Админууд" жагсаалт дээр л ажилтан (Админ/Эмч) бүртгэх форм харуулна. */
+  /** "Админууд" жагсаалт дээр л ажилтан (Админ/Уран бүтээлч) бүртгэх форм харуулна. */
   showCreateStaff?: boolean;
 }) {
   const toast = useToast();
   const [query, setQuery] = useState("");
-  const [newRole, setNewRole] = useState<"THERAPIST" | "ADMIN">("ADMIN");
+  const [newRole, setNewRole] = useState<"ARTIST" | "ADMIN">("ADMIN");
   const [createMsg, setCreateMsg] = useState("");
   const [creating, setCreating] = useState(false);
 

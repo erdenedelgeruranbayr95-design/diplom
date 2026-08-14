@@ -103,7 +103,7 @@ export default function CuratorPanel({ open, onClose }: { open: boolean; onClose
           </PageContainer>
         ) : (
           <PageContainer>
-            <Empty icon="shield" title="Энэ самбарт хандах эрхгүй" hint="Curator Panel-д зөвхөн CURATOR/MODERATOR (болон ADMIN/ROOT) дүр нэвтэрнэ." />
+            <Empty icon="shield" title="Энэ самбарт хандах эрхгүй" hint="Энэ хэсэгт зөвхөн куратор, модератор (болон админ) эрхтэй ажилтан нэвтэрнэ." />
           </PageContainer>
         )}
       </div>

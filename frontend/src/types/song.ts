@@ -71,6 +71,8 @@ export interface Song {
   /** Цомгийн харьяалал. `trackNumber` нь цомог доторх дараалал (1-ээс). */
   albumId?: string | null;
   trackNumber?: number | null;
+  /** Цомгийн нэр — жагсаалтын endpoint-ууд хайлтад зориулж хамт буцаана. */
+  album?: { title: string } | null;
 
   analyzedBpm: number | null;
   beatCount: number | null;

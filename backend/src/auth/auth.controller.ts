@@ -5,7 +5,6 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { RegisterParentDto } from './dto/register-parent.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -48,15 +47,6 @@ export class AuthController {
   @Post('register')
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const { accessToken, refreshToken, user } = await this.auth.register(dto);
-    this.setRefreshCookie(res, refreshToken);
-    return { accessToken, user };
-  }
-
-  @Public()
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @Post('register-parent')
-  async registerParent(@Body() dto: RegisterParentDto, @Res({ passthrough: true }) res: Response) {
-    const { accessToken, refreshToken, user } = await this.auth.registerParent(dto);
     this.setRefreshCookie(res, refreshToken);
     return { accessToken, user };
   }

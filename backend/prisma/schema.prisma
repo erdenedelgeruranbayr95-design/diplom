@@ -10,25 +10,16 @@ datasource db {
 // ROOT нь ADMIN-аас ДЭЭР зэрэглэлтэй (систем эзэмшигч). Эрхийн шатлалыг
 // `common/guards/roles.guard.ts` нэг газар шийднэ — controller бүрийн @Roles()
 // жагсаалтад ROOT-ыг нэмж бичих шаардлагагүй.
-// Бусад дүр (USER · PARENT · THERAPIST · ADMIN) огт өөрчлөгдөөгүй.
+// Бусад дүр (USER · ARTIST · CURATOR · MODERATOR · ADMIN) огт өөрчлөгдөөгүй.
 enum Role {
   ROOT
   ADMIN
   CURATOR
   MODERATOR
-  THERAPIST
   // Уран бүтээлч — бүртгүүлэхдээ сонгоно, админ баталгаажуулна. Баталгаажсаны
   // дараа дуу, цомгоо ӨӨРӨӨ нэмнэ (дуу тус бүрд куратор шалгахгүй).
   ARTIST
   USER
-  PARENT
-}
-
-enum SessionStatus {
-  SCHEDULED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
 }
 
 enum QRStatus {
@@ -125,16 +116,9 @@ model User {
   refreshTokens RefreshToken[]
   notifications NotificationRead[]
 
-  songs                           Song[]
-  therapySessionsAsTherapist      TherapySession[]      @relation("TherapistSessions")
-  therapySessionsAsPatient        TherapySession[]      @relation("PatientSessions")
-  progress                        Progress[]
-  qrSessions                      QRSession[]
-  therapistAssignmentsAsTherapist TherapistAssignment[] @relation("TherapistOf")
-  therapistAssignmentsAsPatient   TherapistAssignment[] @relation("PatientOf")
-  parentLinksAsParent             ParentLink[]          @relation("ParentOf")
-  parentLinksAsChild              ParentLink[]          @relation("ChildOf")
-  listenHistory                   ListenHistory[]
+  songs         Song[]
+  qrSessions    QRSession[]
+  listenHistory ListenHistory[]
 
   sensoryProfile  SensoryProfile?
   trackActions    UserTrackAction[]
@@ -309,30 +293,6 @@ model RefreshToken {
   createdAt DateTime @default(now())
 }
 
-model TherapistAssignment {
-  id          String   @id @default(cuid())
-  therapistId String
-  userId      String
-  therapist   User     @relation("TherapistOf", fields: [therapistId], references: [id], onDelete: Cascade)
-  patient     User     @relation("PatientOf", fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-
-  @@unique([therapistId, userId])
-  @@index([userId])
-}
-
-model ParentLink {
-  id          String   @id @default(cuid())
-  parentId    String
-  childUserId String
-  parent      User     @relation("ParentOf", fields: [parentId], references: [id], onDelete: Cascade)
-  child       User     @relation("ChildOf", fields: [childUserId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-
-  @@unique([parentId, childUserId])
-  @@index([childUserId])
-}
-
 // Монгол дуучдын каталог — Song.artist (чөлөөт текст) -ээс тусад нь, бодит "дуучны хуудас"
 // (танилцуулга, карьер, зураг) харуулах зорилготой. Хуучин Song.artist string талбарыг
 // устгаагүй (одоо байгаа мөрүүд болон backend-жихгүй static frontend catalog-тай нийцтэй
@@ -498,7 +458,6 @@ model Song {
   coverMediumUrl String? // 400×400 WebP — Player дэлгэц
   coverLargeUrl  String? // 1200×1200 WebP — дэлгэрэнгүй/дэлгэц дүүргэх
 
-  sessions        TherapySession[]
   listenHistory   ListenHistory[]
   trackActions    UserTrackAction[]
   playlistEntries PlaylistTrack[]
@@ -524,40 +483,6 @@ model ListenHistory {
 
   @@index([userId, playedAt])
   @@index([songId])
-}
-
-model TherapySession {
-  id          String        @id @default(cuid())
-  therapistId String
-  therapist   User          @relation("TherapistSessions", fields: [therapistId], references: [id], onDelete: Cascade)
-  userId      String
-  patient     User          @relation("PatientSessions", fields: [userId], references: [id], onDelete: Cascade)
-  songId      String?
-  song        Song?         @relation(fields: [songId], references: [id], onDelete: SetNull)
-  notes       String?
-  status      SessionStatus @default(SCHEDULED)
-  scheduledAt DateTime?
-  completedAt DateTime?
-  createdAt   DateTime      @default(now())
-
-  progress Progress[]
-
-  @@index([therapistId])
-  @@index([userId])
-}
-
-model Progress {
-  id               String          @id @default(cuid())
-  userId           String
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  therapySessionId String?
-  session          TherapySession? @relation(fields: [therapySessionId], references: [id], onDelete: SetNull)
-  completionPct    Int?
-  engagementScore  Int?
-  recordedAt       DateTime        @default(now())
-
-  @@index([userId])
-  @@index([therapySessionId])
 }
 
 // Системийн мэдэгдэл. `userId = null` бол BROADCAST — бүх хэрэглэгчид харагдана

@@ -9,13 +9,11 @@ import type { AdminTab } from "@/components/admin/AdminHeader";
 import AdminStats from "@/components/admin/AdminStats";
 import UsersTable from "@/components/admin/UsersTable";
 import StaffCreationForm from "@/components/admin/StaffCreationForm";
-import AssignmentsPanel from "@/components/admin/AssignmentsPanel";
 import SongLibraryPanel from "@/components/admin/SongLibraryPanel";
 import ProManagementPanel from "@/components/admin/ProManagementPanel";
 import ArtistApprovalsPanel from "@/components/admin/ArtistApprovalsPanel";
 import type { AdminUserRow, SessionUser } from "@/types/auth";
 import type { Song, SongLicense } from "@/types/song";
-import type { ParentLinkRow, TherapistAssignmentRow } from "@/types/therapy";
 
 export default function AdminPanel({
   open,
@@ -28,31 +26,17 @@ export default function AdminPanel({
 }) {
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
-  const [assignments, setAssignments] = useState<TherapistAssignmentRow[]>([]);
   const [tab, setTab] = useState<AdminTab>("users");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [userErr, setUserErr] = useState("");
   const [usersLoading, setUsersLoading] = useState(true);
   const [songsLoading, setSongsLoading] = useState(true);
-  const [assignLoading, setAssignLoading] = useState(true);
   const [q, setQ] = useState("");
 
-  const [newRole, setNewRole] = useState<"THERAPIST" | "ADMIN">("THERAPIST");
+  const [newRole, setNewRole] = useState<"ARTIST" | "ADMIN">("ARTIST");
   const [createMsg, setCreateMsg] = useState("");
   const [creating, setCreating] = useState(false);
-
-  const [assignTherapistId, setAssignTherapistId] = useState("");
-  const [assignUserId, setAssignUserId] = useState("");
-  const [assignMsg, setAssignMsg] = useState("");
-  const [assigning, setAssigning] = useState(false);
-
-  const [parentLinks, setParentLinks] = useState<ParentLinkRow[]>([]);
-  const [linksLoading, setLinksLoading] = useState(true);
-  const [linkParentId, setLinkParentId] = useState("");
-  const [linkChildId, setLinkChildId] = useState("");
-  const [linkMsg, setLinkMsg] = useState("");
-  const [linking, setLinking] = useState(false);
 
   function loadSongs() {
     setSongsLoading(true);
@@ -71,23 +55,6 @@ export default function AdminPanel({
       .catch((e) => setUserErr(e.message))
       .finally(() => setUsersLoading(false));
   }
-  function loadAssignments() {
-    setAssignLoading(true);
-    api
-      .listTherapistAssignments()
-      .then(setAssignments)
-      .catch(() => {})
-      .finally(() => setAssignLoading(false));
-  }
-  function loadParentLinks() {
-    setLinksLoading(true);
-    api
-      .listParentLinks()
-      .then(setParentLinks)
-      .catch(() => {})
-      .finally(() => setLinksLoading(false));
-  }
-
   /* Гарах animation · Escape · focus trap · backdrop-click — дөрвүүлээ нэг hook-т. */
   const { closing, handleClose, trapRef, backdropProps } = useModalShell({ open, onClose });
 
@@ -95,8 +62,6 @@ export default function AdminPanel({
     if (!open) return;
     loadUsers();
     loadSongs();
-    loadAssignments();
-    loadParentLinks();
     setMsg("");
   }, [open]);
 
@@ -146,68 +111,6 @@ export default function AdminPanel({
       setCreateMsg("❌ " + (err as Error).message);
     } finally {
       setCreating(false);
-    }
-  }
-
-  async function createAssignment(e: React.FormEvent) {
-    e.preventDefault();
-    setAssignMsg("");
-    if (!assignTherapistId || !assignUserId) {
-      setAssignMsg("❌ Эмч болон хэрэглэгч хоёуланг сонгоно уу");
-      return;
-    }
-    setAssigning(true);
-    try {
-      await api.createTherapistAssignment(assignTherapistId, assignUserId);
-      setAssignMsg("✅ Томилогдлоо");
-      setAssignTherapistId("");
-      setAssignUserId("");
-      loadAssignments();
-    } catch (err) {
-      setAssignMsg("❌ " + (err as Error).message);
-    } finally {
-      setAssigning(false);
-    }
-  }
-
-  async function removeAssignment(id: string) {
-    if (!confirm("Энэ томилолтыг цуцлах уу?")) return;
-    try {
-      await api.removeTherapistAssignment(id);
-      setAssignments((prev) => prev.filter((a) => a.id !== id));
-    } catch (e) {
-      setAssignMsg("❌ " + (e as Error).message);
-    }
-  }
-
-  async function createLink(e: React.FormEvent) {
-    e.preventDefault();
-    setLinkMsg("");
-    if (!linkParentId || !linkChildId) {
-      setLinkMsg("❌ Эцэг эх болон хvvхэд хоёуланг сонгоно уу");
-      return;
-    }
-    setLinking(true);
-    try {
-      await api.createParentLink(linkParentId, linkChildId);
-      setLinkMsg("✅ Холбогдлоо");
-      setLinkParentId("");
-      setLinkChildId("");
-      loadParentLinks();
-    } catch (err) {
-      setLinkMsg("❌ " + (err as Error).message);
-    } finally {
-      setLinking(false);
-    }
-  }
-
-  async function removeLink(id: string) {
-    if (!confirm("Энэ холбоосыг цуцлах уу?")) return;
-    try {
-      await api.removeParentLink(id);
-      setParentLinks((prev) => prev.filter((l) => l.id !== id));
-    } catch (e) {
-      setLinkMsg("❌ " + (e as Error).message);
     }
   }
 
@@ -267,13 +170,6 @@ export default function AdminPanel({
   }
 
   const regular = users.filter((u) => u.role !== "ADMIN");
-  const therapists = users.filter((u) => u.role === "THERAPIST");
-  const patients = users.filter((u) => u.role === "USER");
-  const parents = users.filter((u) => u.role === "PARENT");
-  /* ParentLink.childUserId нь USER (эмчийн patients-тэй ижил эх) — эцэг эх хvvхдээ
-     сонгохдоо мєн энэ жагсаалтаас сонгоно (харилцаа THERAPIST-ийн patients-тэй давхцаж
-     болно, PARENT ба THERAPIST хоёр өөр context-д тухайн хэрэглэгчид хамаарна). */
-  const childUsers = patients;
 
   return (
     <div
@@ -309,35 +205,6 @@ export default function AdminPanel({
               onSubChanged={loadUsers}
             />
           </>
-        )}
-
-        {tab === "assign" && (
-          <AssignmentsPanel
-            therapists={therapists}
-            patients={patients}
-            assignTherapistId={assignTherapistId}
-            setAssignTherapistId={setAssignTherapistId}
-            assignUserId={assignUserId}
-            setAssignUserId={setAssignUserId}
-            assignMsg={assignMsg}
-            assigning={assigning}
-            onSubmit={createAssignment}
-            loading={assignLoading}
-            assignments={assignments}
-            onRemove={removeAssignment}
-            parents={parents}
-            childUsers={childUsers}
-            linkParentId={linkParentId}
-            setLinkParentId={setLinkParentId}
-            linkChildId={linkChildId}
-            setLinkChildId={setLinkChildId}
-            linkMsg={linkMsg}
-            linking={linking}
-            onLinkSubmit={createLink}
-            linksLoading={linksLoading}
-            parentLinks={parentLinks}
-            onUnlink={removeLink}
-          />
         )}
 
         {tab === "tracks" && <SongLibraryPanel msg={msg} busy={busy} onSubmit={addTrack} loading={songsLoading} songs={songs} />}

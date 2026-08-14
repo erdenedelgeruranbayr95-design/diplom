@@ -26,10 +26,10 @@ describe('JwtStrategy', () => {
 
   it('returns the AuthUser shape for a valid, active user', async () => {
     prisma.user.findUnique.mockResolvedValue({ status: UserStatus.ACTIVE });
-    await expect(strategy.validate({ sub: 'u1', email: 'x@x.com', role: Role.THERAPIST })).resolves.toEqual({
+    await expect(strategy.validate({ sub: 'u1', email: 'x@x.com', role: Role.ARTIST })).resolves.toEqual({
       userId: 'u1',
       email: 'x@x.com',
-      role: Role.THERAPIST,
+      role: Role.ARTIST,
     });
   });
 });

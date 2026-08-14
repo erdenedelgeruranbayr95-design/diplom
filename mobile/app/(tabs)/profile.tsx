@@ -17,8 +17,7 @@ const ROLE_LABEL: Record<string, string> = {
   ADMIN: "Админ",
   CURATOR: "Куратор",
   MODERATOR: "Модератор",
-  THERAPIST: "Эмчилгээний мэргэжилтэн",
-  PARENT: "Эцэг эх",
+  ARTIST: "Уран бүтээлч",
   USER: "Хэрэглэгч",
 };
 

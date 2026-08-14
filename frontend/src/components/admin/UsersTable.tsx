@@ -19,9 +19,7 @@ import Icon from "@/components/ui/Icon";
 const ROLE_LABEL: Record<AdminUserRow["role"], string> = {
   ROOT: "Систем эзэмшигч",
   USER: "Хэрэглэгч",
-  THERAPIST: "Эмч",
   ARTIST: "Уран бүтээлч",
-  PARENT: "Эцэг эх",
   ADMIN: "Админ",
   CURATOR: "Куратор",
   MODERATOR: "Модератор",
@@ -30,9 +28,7 @@ const ROLE_LABEL: Record<AdminUserRow["role"], string> = {
 const ROLE_TONE: Record<AdminUserRow["role"], StatusTone> = {
   ROOT: "rose",
   USER: "faint",
-  THERAPIST: "purple",
-  ARTIST: "aqua",
-  PARENT: "warm",
+  ARTIST: "warm",
   ADMIN: "aqua",
   CURATOR: "purple",
   MODERATOR: "purple",

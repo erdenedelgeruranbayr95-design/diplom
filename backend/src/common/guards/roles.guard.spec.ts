@@ -41,7 +41,7 @@ describe('RolesGuard', () => {
   });
 
   it('ROOT satisfies ANY @Roles() requirement, even ones that do not name ROOT explicitly', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Role.THERAPIST]);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Role.ARTIST]);
     expect(guard.canActivate(makeContext({ role: Role.ROOT }))).toBe(true);
   });
 

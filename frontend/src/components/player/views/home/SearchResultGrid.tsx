@@ -45,7 +45,7 @@ function SearchResultCard({ track }: { track: PlayerTrack }) {
         {track.custom && <em className="not-italic text-micro text-aqua border border-aqua/40 rounded-full py-px px-1.5 ml-1.5 align-[1px]">шинэ</em>}
       </b>
       <i className="not-italic text-note text-dim whitespace-nowrap overflow-hidden text-ellipsis">
-        {track.artist} · {track.genre}
+        {[track.artist, track.album, track.genre].filter(Boolean).join(" · ")}
       </i>
     </motion.article>
   );
@@ -54,8 +54,10 @@ function SearchResultCard({ track }: { track: PlayerTrack }) {
 export default function SearchResultGrid({ tracks, query }: { tracks: PlayerTrack[]; query: string }) {
   return (
     <>
-      <SectionTitle title="Бүх дуунуудаас хайх" />
-      {tracks.length === 0 && <Empty title={`"${query}" — олдсонгүй`} hint="Өөр түлхүүр үгээр хайж үзнэ үү" />}
+      <SectionTitle title="Хайлтын үр дүн" description="Дууны нэр, дуучин, төрөл, цомгоор хайна" />
+      {tracks.length === 0 && (
+        <Empty title={`«${query}» — олдсонгүй`} hint="Дууны нэр, дуучны нэр, төрөл эсвэл цомгийн нэрээр хайж үзнэ үү" />
+      )}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-5 max-nav:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] max-nav:gap-3.5">
         {tracks.map((track) => (
           <SearchResultCard key={track.id} track={track} />

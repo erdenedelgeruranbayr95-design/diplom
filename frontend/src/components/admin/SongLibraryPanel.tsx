@@ -105,7 +105,7 @@ export default function SongLibraryPanel({
       </form>
 
       {loading && <Loading label="Дуунууд ачааллаж байна…" />}
-      {!loading && songs.length === 0 && <Empty icon="music" title="Backend-д нэмсэн дуу алга" hint="Дээрх формоор шинэ дуу нэмээрэй" />}
+      {!loading && songs.length === 0 && <Empty icon="music" title="Каталогт дуу алга" hint="Дээрх формоор шинэ дуу нэмээрэй" />}
       {!loading && songs.length > 0 && (
         <div className="border border-white/[.08] rounded-2xl max-h-[320px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--faint)_transparent]">
           <div className="grid grid-cols-[1.6fr_.8fr_.8fr_auto] max-[600px]:grid-cols-[1fr_auto] gap-3 items-center py-3 px-4 border-b border-white/[.08] text-note bg-[#0d1413] backdrop-blur-xl sticky top-0 z-[1]">

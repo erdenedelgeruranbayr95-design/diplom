@@ -40,7 +40,7 @@ export class UsersService {
     return decryptField(value, key);
   }
 
-  /* Admin-аар THERAPIST/ADMIN эрхтэй account үүсгэх — staff бүртгэл нь self-service биш. */
+  /* Admin-аар ADMIN/ARTIST эрхтэй account үүсгэх — staff бүртгэл нь self-service биш. */
   async create(dto: CreateUserDto) {
     const email = dto.email.trim().toLowerCase();
     const existing = await this.prisma.user.findUnique({ where: { email } });
@@ -274,7 +274,7 @@ export class UsersService {
      эрх. Хэрэглэгчтэй холбоотой БҮХ хүснэгтийг JSON болгож буцаана (passwordHash
      эс тооцвол — нууц үгийн hash-ийг ч гэсэн дамжуулах шаардлагагүй). */
   async exportMyData(userId: string) {
-    const [user, payments, subscription, listenHistory, trackActions, playlists, progress, therapySessions, qrSessions] =
+    const [user, payments, subscription, listenHistory, trackActions, playlists, qrSessions] =
       await this.prisma.$transaction([
         this.prisma.user.findUnique({
           where: { id: userId },
@@ -299,8 +299,6 @@ export class UsersService {
         this.prisma.listenHistory.findMany({ where: { userId }, orderBy: { playedAt: 'desc' } }),
         this.prisma.userTrackAction.findMany({ where: { userId } }),
         this.prisma.playlist.findMany({ where: { userId }, include: { tracks: true } }),
-        this.prisma.progress.findMany({ where: { userId } }),
-        this.prisma.therapySession.findMany({ where: { OR: [{ userId }, { therapistId: userId }] } }),
         this.prisma.qRSession.findMany({ where: { userId } }),
       ]);
     if (!user) throw new NotFoundException('Хэрэглэгч олдсонгүй');
@@ -313,8 +311,6 @@ export class UsersService {
       listenHistory,
       trackActions,
       playlists,
-      progress,
-      therapySessions,
       qrSessions,
     };
   }
